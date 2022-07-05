@@ -32,7 +32,9 @@ export type AsyncFnReturn<T extends FunctionReturningPromise = FunctionReturning
 ];
 
 /**
+ * Wraps an asynchronous function and returns the {@link AsyncState} corresponding to the execution of the function with the callback to trigger the execution of the function.
  *
+ * You can specify an initial state (default being `{ loading: false }`) and a reference to an AbortController to cancel a previous call when triggering a new one.
  */
 export function useAsyncFunction<T extends FunctionReturningPromise>(
   fn: T,
