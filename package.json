@@ -1,14 +1,17 @@
 {
   "name": "@raycast/utils",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Set of utilities to streamline building Raycast extensions",
+  "author": "Raycast Technologies Ltd.",
+  "homepage": "https://developers.raycast.com",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "lint": "eslint src/",
     "build": "tsc",
     "test": "npm run lint",
-    "prepublish": "npm run build && npm test"
+    "prepublish": "npm run build && npm test",
+    "postpublish": "gh workflow run --repo raycast/extensions"
   },
   "peerDependencies": {
     "@raycast/api": "^1.37.0"
@@ -21,7 +24,6 @@
   "files": [
     "dist"
   ],
-  "author": "Mathieu Dutour",
   "license": "MIT",
   "dependencies": {
     "content-type": "^1.0.4",
