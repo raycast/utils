@@ -4,22 +4,22 @@ import { FunctionReturningPromise, PromiseType } from "./types";
 
 export type AsyncState<T> =
   | {
-      loading: boolean;
+      isLoading: boolean;
       error?: undefined;
       value?: undefined;
     }
   | {
-      loading: true;
+      isLoading: true;
       error?: Error | undefined;
       value?: T;
     }
   | {
-      loading: false;
+      isLoading: false;
       error: Error;
       value?: undefined;
     }
   | {
-      loading: false;
+      isLoading: false;
       error?: undefined;
       value: T;
     };
@@ -32,9 +32,40 @@ export type AsyncFnReturn<T extends FunctionReturningPromise = FunctionReturning
 ];
 
 /**
- * Wraps an asynchronous function and returns the {@link AsyncState} corresponding to the execution of the function with the callback to trigger the execution of the function.
+ * Wraps an asynchronous function or a function that returns a promise and returns the {@link AsyncState} corresponding to the execution of the function with the callback to trigger the execution of the function.
  *
- * You can specify an initial state (default being `{ loading: false }`) and a reference to an AbortController to cancel a previous call when triggering a new one.
+ * You can specify an initial state (default being `{ isLoading: false }`) and a reference to an AbortController to cancel a previous call when triggering a new one.
+ *
+ * @example
+ * ```
+ * import { useAsyncFunction } from '@raycast/utils';
+ *
+ * const Demo = ({url}) => {
+ * const [state, doFetch] = useAsyncFunction(async (url: string) => {
+ *   const response = await fetch(url);
+ *   const result = await response.text();
+ *   return result
+ * });
+ *
+ * useEffect(() => {
+ *   if (state.error) {
+ *     showToast({ style: Toast.Style.Failure, title: state.error.message })
+ *   }
+ * }, [state.error])
+ *
+ * return (
+ *   <Detail
+ *     isLoading={state.isLoading}
+ *     markdown={state.value}
+ *     actions={
+ *       <ActionPanel>
+ *         <Action title="Start Loading" onAction={() => doFetch()} />
+ *       </ActionPanel>
+ *     }
+ *   />
+ * );
+};
+ * ```
  */
 export function useAsyncFunction<T extends FunctionReturningPromise>(
   fn: T,
@@ -44,7 +75,7 @@ export function useAsyncFunction<T extends FunctionReturningPromise>(
   }
 ): AsyncFnReturn<T> {
   const lastCallId = useRef(0);
-  const [state, set] = useState<StateFromFunctionReturningPromise<T>>(config?.initialState ?? { loading: false });
+  const [state, set] = useState<StateFromFunctionReturningPromise<T>>(config?.initialState ?? { isLoading: false });
 
   const fnRef = useLatest(fn);
   const configRef = useLatest(config);
@@ -63,7 +94,7 @@ export function useAsyncFunction<T extends FunctionReturningPromise>(
       return fnRef.current(...args).then(
         (value) => {
           if (callId === lastCallId.current) {
-            set({ value, loading: false });
+            set({ value, isLoading: false });
           }
 
           return value;
@@ -74,7 +105,7 @@ export function useAsyncFunction<T extends FunctionReturningPromise>(
           }
 
           if (callId === lastCallId.current) {
-            set({ error, loading: false });
+            set({ error, isLoading: false });
           }
           return error;
         }

@@ -28,7 +28,7 @@ export function useCachedAsync<T extends FunctionReturningPromise, U = undefined
   );
 
   const [state, revalidate] = useAsyncFunction(fn, {
-    initialState: { loading: true },
+    initialState: { isLoading: true },
     abortable: config?.abortable,
   });
 
@@ -117,7 +117,7 @@ export function useCachedAsync<T extends FunctionReturningPromise, U = undefined
   return {
     data: returnedData as PromiseType<ReturnType<T>> | U,
     mutate,
-    isLoading: state.loading,
+    isLoading: state.isLoading,
     error: state.error,
   };
 }
