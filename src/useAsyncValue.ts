@@ -14,7 +14,7 @@ export function useAsyncValue<T extends FunctionReturningPromise>(
   const [state, callback] = useAsyncFunction(fn, {
     abortable: config?.abortable,
     initialState: {
-      loading: true,
+      isLoading: true,
     },
   });
 
