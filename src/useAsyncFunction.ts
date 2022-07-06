@@ -73,7 +73,14 @@ export type AsyncFnReturn<T extends FunctionReturningPromise = FunctionReturning
 export function useAsyncFunction<T extends FunctionReturningPromise>(
   fn: T,
   config?: {
+    /**
+     * A reference to an `AbortController` to cancel a previous call when triggering a new one
+     */
     abortable?: MutableRefObject<AbortController | null | undefined>;
+    /**
+     * The initial async state.
+     * @default { isLoading: false }
+     */
     initialState?: StateFromFunctionReturningPromise<T>;
   }
 ): AsyncFnReturn<T> {

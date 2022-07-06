@@ -9,7 +9,12 @@ import { FunctionReturningPromise } from "./types";
 export function useAsyncValue<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
-  config?: { abortable?: MutableRefObject<AbortController | null> }
+  config?: {
+    /**
+     * A reference to an `AbortController` to cancel a previous call when triggering a new one
+     */
+    abortable?: MutableRefObject<AbortController | null>;
+  }
 ) {
   const [state, callback] = useAsyncFunction(fn, {
     abortable: config?.abortable,

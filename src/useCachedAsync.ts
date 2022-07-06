@@ -14,9 +14,27 @@ export function useCachedAsync<T extends FunctionReturningPromise, U = undefined
   fn: T,
   args: Parameters<T>,
   config?: {
+    /**
+     * The initial value if there aren't any in the Cache yet.
+     */
     initialValue?: U;
+    /**
+     * A reference to an `AbortController` to cancel a previous call when triggering a new one
+     */
     abortable?: MutableRefObject<AbortController | null | undefined>;
+    /**
+     * Whether to actually execute the function or not.
+     * This is useful for cases where a `useCachedAsync`'s arguments depends on something that
+     * might not be available right away (for example, depends on some user inputs). Because React requires
+     * every hooks to be defined on the render, this flag enables you to define the hook right away but
+     * wait util you have all the arguments ready to execute the function.
+     */
     execute?: boolean;
+    /**
+     * Tells the hook to keep the previous results instead of returning the initial value
+     * if there aren't any in the cache for the new arguments.
+     * This is particularly useful when used for data for a List to avoid flickering.
+     */
     keepPreviousData?: boolean;
   }
 ) {
