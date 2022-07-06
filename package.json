@@ -11,7 +11,7 @@
     "build": "tsc",
     "test": "npm run lint",
     "prepublish": "npm run build && npm test",
-    "postpublish": "gh workflow run --repo raycast/extensions"
+    "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
   },
   "peerDependencies": {
     "@raycast/api": "^1.37.0"

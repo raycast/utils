@@ -7,6 +7,7 @@ import { useCachedState } from "./useCachedState";
 
 import { useLatest } from "./useLatest";
 
+// Symbol to differentiate an empty cache from `undefined`
 const emptyCache = Symbol();
 
 export function useCachedAsync<T extends FunctionReturningPromise, U = undefined>(
@@ -14,7 +15,7 @@ export function useCachedAsync<T extends FunctionReturningPromise, U = undefined
   args: Parameters<T>,
   config?: {
     initialValue?: U;
-    abortable?: MutableRefObject<AbortController | null>;
+    abortable?: MutableRefObject<AbortController | null | undefined>;
     execute?: boolean;
     keepPreviousData?: boolean;
   }

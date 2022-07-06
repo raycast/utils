@@ -41,10 +41,13 @@ export type AsyncFnReturn<T extends FunctionReturningPromise = FunctionReturning
  * import { useAsyncFunction } from '@raycast/utils';
  *
  * const Demo = ({url}) => {
+ * const abortable = useRef<AbortController>();
  * const [state, doFetch] = useAsyncFunction(async (url: string) => {
- *   const response = await fetch(url);
+ *   const response = await fetch(url, { signal: abortable.current?.signal });
  *   const result = await response.text();
  *   return result
+ * }, {
+ *   abortable
  * });
  *
  * useEffect(() => {
@@ -59,7 +62,7 @@ export type AsyncFnReturn<T extends FunctionReturningPromise = FunctionReturning
  *     markdown={state.value}
  *     actions={
  *       <ActionPanel>
- *         <Action title="Start Loading" onAction={() => doFetch()} />
+ *         <Action title="Start Loading" onAction={() => doFetch(url)} />
  *       </ActionPanel>
  *     }
  *   />
@@ -70,7 +73,7 @@ export type AsyncFnReturn<T extends FunctionReturningPromise = FunctionReturning
 export function useAsyncFunction<T extends FunctionReturningPromise>(
   fn: T,
   config?: {
-    abortable?: MutableRefObject<AbortController | null>;
+    abortable?: MutableRefObject<AbortController | null | undefined>;
     initialState?: StateFromFunctionReturningPromise<T>;
   }
 ): AsyncFnReturn<T> {

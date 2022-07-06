@@ -51,7 +51,7 @@ export function useFetch<T, U = undefined>(
   const { parseResponse, initialValue, ...fetchOptions } = options;
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
-  const abortable = useRef<AbortController | null>(null);
+  const abortable = useRef<AbortController>();
 
   const fn = useCallback(
     async (url: RequestInfo, options?: RequestInit) => {
