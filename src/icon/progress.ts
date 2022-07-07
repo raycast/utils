@@ -34,7 +34,7 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
  * <List.Item icon={progressIcon(0.1)} title="Project" />
  * ```
  */
-export function progressIcon(
+export function progress(
   progress: number,
   color = "#FF6363",
   options?: { background?: string; backgroundOpacity?: number; padding?: number; strokeWidth?: number }
@@ -49,7 +49,7 @@ export function progressIcon(
   const svg = `<svg width="100px" height="100px">
       <circle cx="50" cy="50" r="${radius}" stroke-width="${stroke}" stroke="${
     progress < 1 ? background : color
-  }" opacity="${backgroundOpacity}" fill="none" />
+  }" opacity="${progress < 1 ? backgroundOpacity : "1"}" fill="none" />
       ${
         progress > 0 && progress < 1
           ? `<path d="${describeArc(

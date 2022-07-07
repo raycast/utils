@@ -1,6 +1,6 @@
 {
   "name": "@raycast/utils",
-  "version": "0.0.3",
+  "version": "0.0.6",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com",
@@ -10,7 +10,7 @@
     "lint": "eslint src/",
     "build": "tsc",
     "test": "npm run lint",
-    "prepublish": "npm run build && npm test",
+    "prepublishOnly": "npm run build && npm test",
     "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
   },
   "peerDependencies": {
