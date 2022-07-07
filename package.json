@@ -1,6 +1,6 @@
 {
   "name": "@raycast/utils",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com",

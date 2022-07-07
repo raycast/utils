@@ -6,5 +6,6 @@ export * from "./useLatest";
 export * from "./useFetch";
 
 export * as suspense from "./suspense";
+export * as icon from "./icon";
 
 export type { AsyncState } from "./useAsyncFunction";
