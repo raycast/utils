@@ -133,7 +133,7 @@ export function useCachedAsync<T extends FunctionReturningPromise, U = undefined
   config?: CachedAsyncOptions<U>
 ) {
   const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (PromiseType<ReturnType<T>> | U)>(
-    createCacheKey(args),
+    createCacheKey(args || []),
     emptyCache,
     {
       cacheNamespace: createCacheKey(fn),
