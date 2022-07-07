@@ -1,35 +1,6 @@
 import { useCallback, useRef, useState, MutableRefObject } from "react";
 import { useLatest } from "./useLatest";
-import { FunctionReturningPromise, PromiseType } from "./types";
-
-export type AsyncState<T> =
-  | {
-      isLoading: boolean;
-      error?: undefined;
-      value?: undefined;
-    }
-  | {
-      isLoading: true;
-      error?: Error | undefined;
-      value?: T;
-    }
-  | {
-      isLoading: false;
-      error: Error;
-      value?: undefined;
-    }
-  | {
-      isLoading: false;
-      error?: undefined;
-      value: T;
-    };
-
-type StateFromFunctionReturningPromise<T extends FunctionReturningPromise> = AsyncState<PromiseType<ReturnType<T>>>;
-
-export type AsyncFnReturn<T extends FunctionReturningPromise = FunctionReturningPromise> = [
-  StateFromFunctionReturningPromise<T>,
-  T
-];
+import { FunctionReturningPromise, AsyncStateFromFunctionReturningPromise, AsyncFnReturn } from "./types";
 
 /**
  * Wraps an asynchronous function or a function that returns a promise and returns the {@link AsyncState} corresponding to the execution of the function with the callback to trigger the execution of the function.
@@ -81,11 +52,13 @@ export function useAsyncFunction<T extends FunctionReturningPromise>(
      * The initial async state.
      * @default { isLoading: false }
      */
-    initialState?: StateFromFunctionReturningPromise<T>;
+    initialState?: AsyncStateFromFunctionReturningPromise<T>;
   }
 ): AsyncFnReturn<T> {
   const lastCallId = useRef(0);
-  const [state, set] = useState<StateFromFunctionReturningPromise<T>>(config?.initialState ?? { isLoading: false });
+  const [state, set] = useState<AsyncStateFromFunctionReturningPromise<T>>(
+    config?.initialState ?? { isLoading: false }
+  );
 
   const fnRef = useLatest(fn);
   const configRef = useLatest(config);

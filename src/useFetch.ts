@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useMemo } from "react";
-import { showToast, Toast } from "@raycast/api";
+import { useCallback, useRef, useMemo } from "react";
 import { fetch, RequestInfo, RequestInit, Response } from "undici";
 import mediaTyper from "media-typer";
 import contentType from "content-type";
-import { useCachedAsync } from "./useCachedAsync";
+import { useCachedAsync, CachedAsyncOptions } from "./useCachedAsync";
 import { useLatest } from "./useLatest";
 
 function isJSON(contentTypeHeader: string | null | undefined): boolean {
@@ -46,9 +45,12 @@ async function defaultParsing(response: Response) {
 
 export function useFetch<T, U = undefined>(
   url: RequestInfo,
-  options: RequestInit & { parseResponse?: (response: Response) => Promise<T>; initialValue?: U }
+  options: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
+      CachedAsyncOptions<U>,
+      "abortable"
+    >
 ) {
-  const { parseResponse, initialValue, ...fetchOptions } = options;
+  const { parseResponse, initialValue, execute, keepPreviousData, onError, ...fetchOptions } = options;
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
   const abortable = useRef<AbortController>();
@@ -65,13 +67,6 @@ export function useFetch<T, U = undefined>(
     () => [url, fetchOptions],
     [url, ...Object.keys(fetchOptions), ...Object.values(fetchOptions)]
   );
-  const state = useCachedAsync(fn, args, { initialValue, abortable });
 
-  useEffect(() => {
-    if (state.error) {
-      showToast({ style: Toast.Style.Failure, title: state.error.message });
-    }
-  }, [state.error]);
-
-  return { data: state.data as T | U, mutate: state.mutate, isLoading: state.isLoading };
+  return useCachedAsync(fn, args, { initialValue, abortable, execute, keepPreviousData, onError });
 }

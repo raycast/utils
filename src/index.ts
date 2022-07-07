@@ -1,4 +1,4 @@
-export { useAsyncFunction } from "./useAsyncFunction";
+export * from "./useAsyncFunction";
 export * from "./useAsyncValue";
 export * from "./useCachedAsync";
 export * from "./useCachedState";
@@ -8,4 +8,4 @@ export * from "./useFetch";
 export * as suspense from "./suspense";
 export * as icon from "./icon";
 
-export type { AsyncState } from "./useAsyncFunction";
+export type { AsyncState } from "./types";
