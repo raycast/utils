@@ -82,7 +82,7 @@ export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
    * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
    * data if the asynchronous update fails.
    */
-  mutate: MutatePromise<T>;
+  mutate: MutatePromise<PromiseType<ReturnType<T>> | undefined>;
   /**
    * Function to manually call the function again
    */
