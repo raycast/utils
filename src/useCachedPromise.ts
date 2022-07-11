@@ -27,19 +27,20 @@ const emptyCache = Symbol();
  * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
  * the change introduced by the asynchronous update.
  *
- * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
- * data if the asynchronous update fails.
+ * When doing so, you can specify a `rollbackOnError` function to mutate back the
+ * data if the asynchronous update fails. If not specified, the data will be automatically
+ * rolled back to its previous value (before the optimistic update).
  */
-export type MutateCachedAsync<T> = (
+export type MutateCachedPromise<T> = (
   asyncUpdate?: Promise<any>,
   options?: {
     optimisticUpdate?: (data: T) => T;
-    rollbackOnError?: (data: T) => T;
+    rollbackOnError?: boolean | ((data: T) => T);
     revalidate?: boolean;
   }
 ) => Promise<any>;
 
-export type CachedAsyncOptions<U> = {
+export type CachedPromiseOptions<U> = {
   /**
    * The initial value if there aren't any in the Cache yet.
    */
@@ -69,7 +70,7 @@ export type CachedAsyncOptions<U> = {
   onError?: (error: Error) => void | Promise<void>;
 };
 
-export function useCachedAsync<T extends FunctionReturningPromise<[]>>(
+export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
   fn: T
 ): {
   data: PromiseType<ReturnType<T>> | undefined;
@@ -93,14 +94,14 @@ export function useCachedAsync<T extends FunctionReturningPromise<[]>>(
    * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
    * data if the asynchronous update fails.
    */
-  mutate: MutateCachedAsync<PromiseType<ReturnType<T>> | undefined>;
+  mutate: MutateCachedPromise<PromiseType<ReturnType<T>> | undefined>;
   error: Error | undefined;
   isLoading: boolean;
 };
-export function useCachedAsync<T extends FunctionReturningPromise, U = undefined>(
+export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args: Parameters<T>,
-  config?: CachedAsyncOptions<U>
+  config?: CachedPromiseOptions<U>
 ): {
   data: PromiseType<ReturnType<T>> | U;
   /**
@@ -123,14 +124,14 @@ export function useCachedAsync<T extends FunctionReturningPromise, U = undefined
    * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
    * data if the asynchronous update fails.
    */
-  mutate: MutateCachedAsync<PromiseType<ReturnType<T>> | U>;
+  mutate: MutateCachedPromise<PromiseType<ReturnType<T>> | U>;
   error: Error | undefined;
   isLoading: boolean;
 };
-export function useCachedAsync<T extends FunctionReturningPromise, U = undefined>(
+export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args?: Parameters<T>,
-  config?: CachedAsyncOptions<U>
+  config?: CachedPromiseOptions<U>
 ) {
   const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (PromiseType<ReturnType<T>> | U)>(
     createCacheKey(args || []),
@@ -160,16 +161,24 @@ export function useCachedAsync<T extends FunctionReturningPromise, U = undefined
   const latestArgs = useLatest(args || []);
   const latestOnError = useLatest(config?.onError);
 
-  const mutate = useCallback<MutateCachedAsync<PromiseType<ReturnType<T>> | U>>(
+  const mutate = useCallback<MutateCachedPromise<PromiseType<ReturnType<T>> | U>>(
     async (asyncUpdate, options) => {
+      let dataBeforeOptimisticUpdate;
       try {
         if (options?.optimisticUpdate) {
+          if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
+            // keep track of the data before the optimistic update,
+            // but only if we need it (eg. only when we want to automatically rollback after)
+            dataBeforeOptimisticUpdate = JSON.parse(JSON.stringify(latestData.current));
+          }
           mutateCache(options.optimisticUpdate(latestData.current));
         }
         return await asyncUpdate;
       } catch (err) {
-        if (options?.rollbackOnError) {
+        if (typeof options?.rollbackOnError === "function") {
           mutateCache(options.rollbackOnError(latestData.current));
+        } else if (options?.optimisticUpdate && options?.rollbackOnError !== false) {
+          mutateCache(dataBeforeOptimisticUpdate);
         }
         throw err;
       } finally {

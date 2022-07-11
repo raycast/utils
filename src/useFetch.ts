@@ -2,7 +2,7 @@ import { useCallback, useRef, useMemo } from "react";
 import { fetch, RequestInfo, RequestInit, Response } from "undici";
 import mediaTyper from "media-typer";
 import contentType from "content-type";
-import { useCachedAsync, CachedAsyncOptions } from "./useCachedAsync";
+import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 
 function isJSON(contentTypeHeader: string | null | undefined): boolean {
@@ -46,7 +46,7 @@ async function defaultParsing(response: Response) {
 export function useFetch<T, U = undefined>(
   url: RequestInfo,
   options: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
-      CachedAsyncOptions<U>,
+      CachedPromiseOptions<U>,
       "abortable"
     >
 ) {
@@ -68,5 +68,5 @@ export function useFetch<T, U = undefined>(
     [url, ...Object.keys(fetchOptions), ...Object.values(fetchOptions)]
   );
 
-  return useCachedAsync(fn, args, { initialValue, abortable, execute, keepPreviousData, onError });
+  return useCachedPromise(fn, args, { initialValue, abortable, execute, keepPreviousData, onError });
 }

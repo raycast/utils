@@ -6,8 +6,8 @@ import { FunctionReturningPromise, AsyncStateFromFunctionReturningPromise } from
  * React hook that resolves an async function or a function that returns a promise;
  * @remark This hook assumes that the function is constant
  */
-export function useAsyncValue<T extends FunctionReturningPromise<[]>>(fn: T): AsyncStateFromFunctionReturningPromise<T>;
-export function useAsyncValue<T extends FunctionReturningPromise>(
+export function usePromise<T extends FunctionReturningPromise<[]>>(fn: T): AsyncStateFromFunctionReturningPromise<T>;
+export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
   config?: {
@@ -17,7 +17,7 @@ export function useAsyncValue<T extends FunctionReturningPromise>(
     abortable?: MutableRefObject<AbortController | null>;
   }
 ): AsyncStateFromFunctionReturningPromise<T>;
-export function useAsyncValue<T extends FunctionReturningPromise>(
+export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args?: Parameters<T>,
   config?: {

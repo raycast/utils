@@ -34,7 +34,7 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
  * <List.Item icon={progressIcon(0.1)} title="Project" />
  * ```
  */
-export function progress(
+export function getProgressIcon(
   progress: number,
   color = "#FF6363",
   options?: { background?: string; backgroundOpacity?: number; padding?: number; strokeWidth?: number }

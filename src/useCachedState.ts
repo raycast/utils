@@ -1,4 +1,4 @@
-import { useCallback, Dispatch, SetStateAction, useSyncExternalStore, useMemo } from "react";
+import { useCallback, Dispatch, SetStateAction, useSyncExternalStore, useMemo, useState, useRef } from "react";
 import { Cache } from "@raycast/api";
 import { useLatest } from "./useLatest";
 
@@ -21,12 +21,16 @@ export function useCachedState<T>(
   config?: { cacheNamespace?: string }
 ): [T, Dispatch<SetStateAction<T>>] {
   const cache = useMemo(() => new Cache({ namespace: config?.cacheNamespace }), [config?.cacheNamespace]);
+  const optimisticValue = useRef<string>();
+  const [, setRender] = useState(0);
+  const rerender = useCallback(() => setRender((x) => x++), [setRender]);
 
   const keyRef = useLatest(key);
   const initialValueRef = useLatest(initialState);
 
   const cachedState = useSyncExternalStore(cache.subscribe, () => {
     try {
+      optimisticValue.current = undefined;
       return cache.get(keyRef.current);
     } catch (error) {
       console.error("Could not get Cache data:", error);
@@ -35,12 +39,14 @@ export function useCachedState<T>(
   });
 
   const state = useMemo(() => {
-    if (typeof cachedState !== "undefined") {
+    if (typeof optimisticValue.current !== "undefined") {
+      return JSON.parse(optimisticValue.current);
+    } else if (typeof cachedState !== "undefined") {
       return JSON.parse(cachedState);
     } else {
       return initialValueRef.current;
     }
-  }, [cachedState, initialValueRef]);
+  }, [cachedState, initialValueRef, optimisticValue]);
 
   const stateRef = useLatest(state);
 
@@ -48,7 +54,10 @@ export function useCachedState<T>(
     (updater: SetStateAction<T>) => {
       // @ts-expect-error TS struggles to infer the types as T could potentially be a function
       const newValue = typeof updater === "function" ? updater(stateRef.current) : updater;
-      cache.set(keyRef.current, JSON.stringify(newValue));
+      const stringifiedValue = JSON.stringify(newValue);
+      cache.set(keyRef.current, stringifiedValue);
+      optimisticValue.current = stringifiedValue;
+      rerender();
       return newValue;
     },
     [cache, keyRef, stateRef]
