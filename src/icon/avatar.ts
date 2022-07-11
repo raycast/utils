@@ -66,7 +66,7 @@ const avatarColorSet = [
  *
  * @example
  * ```
- * <List.Item icon={avatarIcon('Mathieu Dutour')} title="Project" />
+ * <List.Item icon={getAvatarIcon('Mathieu Dutour')} title="Project" />
  * ```
  */
 export function getAvatarIcon(

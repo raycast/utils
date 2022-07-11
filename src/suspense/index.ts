@@ -1,1 +1,1 @@
-export * from "./useAsyncValue";
+export * from "./usePromise";

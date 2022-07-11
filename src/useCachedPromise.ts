@@ -1,82 +1,70 @@
-import { useEffect, MutableRefObject, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import hash from "object-hash";
-import { showToast, Toast, Clipboard } from "@raycast/api";
-import { FunctionReturningPromise, PromiseType } from "./types";
-import { useAsyncFunction } from "./useAsyncFunction";
+import { FunctionReturningPromise, PromiseType, AsyncStateFromFunctionReturningPromise, MutatePromise } from "./types";
 import { useCachedState } from "./useCachedState";
+import { usePromise, PromiseOptions } from "./usePromise";
 
 import { useLatest } from "./useLatest";
 
 // Symbol to differentiate an empty cache from `undefined`
 const emptyCache = Symbol();
 
-/**
- * Function to wrap an asynchronous update and gives some control about how the
- * `useCachedAcync`'s data should be updated.
- *
- * By default, the data will be revalidated (eg. the function will be called again)
- * after the update is done.
- *
- * **Optimistic Update**
- *
- * In an optimistic update, the UI behaves as though a change was successfully
- * completed before receiving confirmation from the server that it actually was -
- * it is being optimistic that it will eventually get the confirmation rather than an error.
- * This allows for a more responsive user experience.
- *
- * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
- * the change introduced by the asynchronous update.
- *
- * When doing so, you can specify a `rollbackOnError` function to mutate back the
- * data if the asynchronous update fails. If not specified, the data will be automatically
- * rolled back to its previous value (before the optimistic update).
- */
-export type MutateCachedPromise<T> = (
-  asyncUpdate?: Promise<any>,
-  options?: {
-    optimisticUpdate?: (data: T) => T;
-    rollbackOnError?: boolean | ((data: T) => T);
-    revalidate?: boolean;
-  }
-) => Promise<any>;
-
-export type CachedPromiseOptions<U> = {
+export type CachedPromiseOptions<U> = PromiseOptions & {
   /**
-   * The initial value if there aren't any in the Cache yet.
+   * The initial data if there aren't any in the Cache yet.
    */
-  initialValue?: U;
-  /**
-   * A reference to an `AbortController` to cancel a previous call when triggering a new one
-   */
-  abortable?: MutableRefObject<AbortController | null | undefined>;
-  /**
-   * Whether to actually execute the function or not.
-   * This is useful for cases where a `useCachedAsync`'s arguments depends on something that
-   * might not be available right away (for example, depends on some user inputs). Because React requires
-   * every hooks to be defined on the render, this flag enables you to define the hook right away but
-   * wait util you have all the arguments ready to execute the function.
-   */
-  execute?: boolean;
+  initialData?: U;
   /**
    * Tells the hook to keep the previous results instead of returning the initial value
    * if there aren't any in the cache for the new arguments.
    * This is particularly useful when used for data for a List to avoid flickering.
    */
   keepPreviousData?: boolean;
-  /**
-   * Called when an execution fails. By default it will log the error and show
-   * a generic failure toast.
-   */
-  onError?: (error: Error) => void | Promise<void>;
 };
 
+/**
+ * Wraps an asynchronous function or a function that returns a promise and returns the {@link AsyncState} corresponding to the execution of the function. The last value will be kept between command runs.
+ *
+ * @remark The value needs to be JSON serializable.
+ * @remark The function is assumed to be constant (eg. changing it won't trigger a revalidation).
+ *
+ * @example
+ * ```
+ * import { usePromise } from '@raycast/utils';
+ *
+ * const Demo = ({url}) => {
+ *   const abortable = useRef<AbortController>();
+ *   const { isLoading, data, revalidate } = usePromise(async (url: string) => {
+ *     const response = await fetch(url, { signal: abortable.current?.signal });
+ *     const result = await response.text();
+ *     return result
+ *   },
+ *   ['https://api.example'],
+ *   {
+ *     abortable
+ *   });
+ *
+ *   return (
+ *     <Detail
+ *       isLoading={isLoading}
+ *       markdown={data}
+ *       actions={
+ *         <ActionPanel>
+ *           <Action title="Reload" onAction={() => revalidate()} />
+ *         </ActionPanel>
+ *       }
+ *     />
+ *   );
+ * };
+ * ```
+ */
 export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
   fn: T
-): {
+): AsyncStateFromFunctionReturningPromise<T> & {
   data: PromiseType<ReturnType<T>> | undefined;
   /**
    * Function to wrap an asynchronous update and gives some control about how the
-   * `useCachedAcync`'s data should be updated.
+   * `useCachedPromise`'s data should be updated.
    *
    * By default, the data will be revalidated (eg. the function will be called again)
    * after the update is done.
@@ -94,19 +82,21 @@ export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
    * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
    * data if the asynchronous update fails.
    */
-  mutate: MutateCachedPromise<PromiseType<ReturnType<T>> | undefined>;
-  error: Error | undefined;
-  isLoading: boolean;
+  mutate: MutatePromise<T>;
+  /**
+   * Function to manually call the function again
+   */
+  revalidate: () => void;
 };
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args: Parameters<T>,
-  config?: CachedPromiseOptions<U>
-): {
+  options?: CachedPromiseOptions<U>
+): AsyncStateFromFunctionReturningPromise<T> & {
   data: PromiseType<ReturnType<T>> | U;
   /**
    * Function to wrap an asynchronous update and gives some control about how the
-   * `useCachedAcync`'s data should be updated.
+   * `useCachedPromise`'s data should be updated.
    *
    * By default, the data will be revalidated (eg. the function will be called again)
    * after the update is done.
@@ -124,44 +114,43 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
    * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
    * data if the asynchronous update fails.
    */
-  mutate: MutateCachedPromise<PromiseType<ReturnType<T>> | U>;
-  error: Error | undefined;
-  isLoading: boolean;
+  mutate: MutatePromise<PromiseType<ReturnType<T>> | U>;
+  /**
+   * Function to manually call the function again
+   */
+  revalidate: () => void;
 };
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args?: Parameters<T>,
-  config?: CachedPromiseOptions<U>
+  options?: CachedPromiseOptions<U>
 ) {
+  const { initialData, keepPreviousData, ...usePromiseOptions } = options || {};
   const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (PromiseType<ReturnType<T>> | U)>(
-    createCacheKey(args || []),
+    hash(args || []),
     emptyCache,
     {
-      cacheNamespace: createCacheKey(fn),
+      cacheNamespace: hash(fn),
     }
   );
 
-  const [state, revalidate] = useAsyncFunction(fn, {
-    initialState: { isLoading: true },
-    abortable: config?.abortable,
-  });
+  const {
+    mutate: _mutate,
+    revalidate,
+    ...state
+  } = usePromise(fn, args || ([] as any as Parameters<T>), usePromiseOptions);
 
-  const data = cachedData !== emptyCache ? cachedData : (config?.initialValue as U);
+  const data = cachedData !== emptyCache ? cachedData : (initialData as U);
 
   // Use a ref to store previous returned data. Use the inital data as its inital value.
   const laggyDataRef = useRef(data);
 
-  const returnedData = config?.keepPreviousData
-    ? cachedData !== emptyCache
-      ? cachedData
-      : laggyDataRef.current
-    : data;
+  const returnedData = keepPreviousData ? (cachedData !== emptyCache ? cachedData : laggyDataRef.current) : data;
 
   const latestData = useLatest(returnedData);
-  const latestArgs = useLatest(args || []);
-  const latestOnError = useLatest(config?.onError);
 
-  const mutate = useCallback<MutateCachedPromise<PromiseType<ReturnType<T>> | U>>(
+  // we rewrite the mutate function to update the cache instead
+  const mutate = useCallback<MutatePromise<PromiseType<ReturnType<T>> | U>>(
     async (asyncUpdate, options) => {
       let dataBeforeOptimisticUpdate;
       try {
@@ -173,7 +162,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
           }
           mutateCache(options.optimisticUpdate(latestData.current));
         }
-        return await asyncUpdate;
+        return await _mutate(asyncUpdate, { shouldRevalidateAfter: options?.shouldRevalidateAfter });
       } catch (err) {
         if (typeof options?.rollbackOnError === "function") {
           mutateCache(options.rollbackOnError(latestData.current));
@@ -181,67 +170,24 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
           mutateCache(dataBeforeOptimisticUpdate);
         }
         throw err;
-      } finally {
-        if (options?.revalidate !== false) {
-          revalidate(...latestArgs.current);
-        }
       }
     },
-    [mutateCache, revalidate, latestData, latestArgs]
+    [mutateCache, _mutate, latestData]
   );
-
-  // revalidate when the args change
-  useEffect(() => {
-    if (config?.execute !== false) {
-      revalidate(...(args || []));
-    }
-  }, [...(args || []), config?.execute, revalidate]);
 
   // update the cache when we fetch new values
   useEffect(() => {
-    if (typeof state.value !== "undefined") {
-      mutateCache(state.value);
-      laggyDataRef.current = state.value;
+    if (typeof state.data !== "undefined") {
+      mutateCache(state.data);
+      laggyDataRef.current = state.data;
     }
-  }, [state.value, mutateCache, laggyDataRef]);
-
-  useEffect(() => {
-    if (state.error) {
-      if (latestOnError.current) {
-        latestOnError.current(state.error);
-      } else {
-        console.error(state.error);
-        showToast({
-          style: Toast.Style.Failure,
-          title: "Failed to fetch latest data",
-          message: state.error.message,
-          primaryAction: {
-            title: "Retry",
-            onAction(toast) {
-              toast.hide();
-              revalidate(...latestArgs.current);
-            },
-          },
-          secondaryAction: {
-            title: "Copy Logs",
-            onAction(toast) {
-              toast.hide();
-              Clipboard.copy(state.error?.stack || state.error?.message || "");
-            },
-          },
-        });
-      }
-    }
-  }, [state.error, latestArgs, revalidate, latestOnError]);
+  }, [state.data, mutateCache, laggyDataRef]);
 
   return {
     data: returnedData as PromiseType<ReturnType<T>> | U,
-    mutate,
     isLoading: state.isLoading,
     error: state.error,
+    mutate,
+    revalidate,
   };
-}
-
-function createCacheKey(args: any): string {
-  return hash(args);
 }

@@ -31,7 +31,7 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
  *
  * @example
  * ```
- * <List.Item icon={progressIcon(0.1)} title="Project" />
+ * <List.Item icon={getProgressIcon(0.1)} title="Project" />
  * ```
  */
 export function getProgressIcon(

@@ -10,7 +10,7 @@ interface PromiseCache {
 
 const promiseCaches: PromiseCache[] = [];
 
-export function useAsyncValue<T extends FunctionReturningPromise>(
+export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
   lifespan = 0

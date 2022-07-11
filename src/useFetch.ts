@@ -50,7 +50,7 @@ export function useFetch<T, U = undefined>(
       "abortable"
     >
 ) {
-  const { parseResponse, initialValue, execute, keepPreviousData, onError, ...fetchOptions } = options;
+  const { parseResponse, initialData, execute, keepPreviousData, onError, ...fetchOptions } = options;
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
   const abortable = useRef<AbortController>();
@@ -68,5 +68,5 @@ export function useFetch<T, U = undefined>(
     [url, ...Object.keys(fetchOptions), ...Object.values(fetchOptions)]
   );
 
-  return useCachedPromise(fn, args, { initialValue, abortable, execute, keepPreviousData, onError });
+  return useCachedPromise(fn, args, { initialData, abortable, execute, keepPreviousData, onError });
 }
