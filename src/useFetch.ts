@@ -45,12 +45,12 @@ async function defaultParsing(response: Response) {
 
 export function useFetch<T, U = undefined>(
   url: RequestInfo,
-  options: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
+  options?: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
       CachedPromiseOptions<() => Promise<T>, U>,
       "abortable"
     >
 ) {
-  const { parseResponse, initialData, execute, keepPreviousData, onError, ...fetchOptions } = options;
+  const { parseResponse, initialData, execute, keepPreviousData, onError, ...fetchOptions } = options || {};
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
   const abortable = useRef<AbortController>();
