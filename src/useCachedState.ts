@@ -22,16 +22,12 @@ export function useCachedState<T>(
   config?: { cacheNamespace?: string }
 ): [T, Dispatch<SetStateAction<T>>] {
   const cache = useMemo(() => new Cache({ namespace: config?.cacheNamespace }), [config?.cacheNamespace]);
-  const optimisticValue = useRef<string>();
-  const [, setRender] = useState(0);
-  const rerender = useCallback(() => setRender((x) => x++), [setRender]);
 
   const keyRef = useLatest(key);
   const initialValueRef = useLatest(initialState);
 
   const cachedState = useSyncExternalStore(cache.subscribe, () => {
     try {
-      optimisticValue.current = undefined;
       return cache.get(keyRef.current);
     } catch (error) {
       console.error("Could not get Cache data:", error);
@@ -40,14 +36,12 @@ export function useCachedState<T>(
   });
 
   const state = useMemo(() => {
-    if (typeof optimisticValue.current !== "undefined") {
-      return JSON.parse(optimisticValue.current);
-    } else if (typeof cachedState !== "undefined") {
+    if (typeof cachedState !== "undefined") {
       return JSON.parse(cachedState);
     } else {
       return initialValueRef.current;
     }
-  }, [cachedState, initialValueRef, optimisticValue]);
+  }, [cachedState, initialValueRef]);
 
   const stateRef = useLatest(state);
 
@@ -57,11 +51,9 @@ export function useCachedState<T>(
       const newValue = typeof updater === "function" ? updater(stateRef.current) : updater;
       const stringifiedValue = JSON.stringify(newValue);
       cache.set(keyRef.current, stringifiedValue);
-      optimisticValue.current = stringifiedValue;
-      rerender();
       return newValue;
     },
-    [cache, keyRef, stateRef, rerender]
+    [cache, keyRef, stateRef]
   );
 
   return [state, setStateAndCache];

@@ -3,7 +3,7 @@ import { showToast, Toast, Clipboard } from "@raycast/api";
 import { FunctionReturningPromise, AsyncStateFromFunctionReturningPromise, PromiseType, MutatePromise } from "./types";
 import { useLatest } from "./useLatest";
 
-export type PromiseOptions = {
+export type PromiseOptions<T extends FunctionReturningPromise> = {
   /**
    * A reference to an `AbortController` to cancel a previous call when triggering a new one
    */
@@ -21,6 +21,10 @@ export type PromiseOptions = {
    * a generic failure toast.
    */
   onError?: (error: Error) => void | Promise<void>;
+  /**
+   * Called when an execution succeeds.
+   */
+  onData?: (data: PromiseType<ReturnType<T>>) => void | Promise<void>;
 };
 
 /**
@@ -91,7 +95,7 @@ export function usePromise<T extends FunctionReturningPromise<[]>>(
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
-  options?: PromiseOptions
+  options?: PromiseOptions<T>
 ): AsyncStateFromFunctionReturningPromise<T> & {
   /**
    * Function to manually call the function again
@@ -123,7 +127,7 @@ export function usePromise<T extends FunctionReturningPromise>(
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args?: Parameters<T>,
-  options?: PromiseOptions
+  options?: PromiseOptions<T>
 ): AsyncStateFromFunctionReturningPromise<T> & {
   revalidate: () => void;
   mutate: MutatePromise<PromiseType<ReturnType<T>> | undefined>;
@@ -135,6 +139,7 @@ export function usePromise<T extends FunctionReturningPromise>(
   const latestAbortable = useLatest(options?.abortable);
   const latestArgs = useLatest(args || []);
   const latestOnError = useLatest(options?.onError);
+  const latestOnData = useLatest(options?.onData);
   const latestValue = useLatest(state.data);
 
   const callback = useCallback(
@@ -151,6 +156,9 @@ export function usePromise<T extends FunctionReturningPromise>(
       return fnRef.current(...args).then(
         (data) => {
           if (callId === lastCallId.current) {
+            if (latestOnData.current) {
+              latestOnData.current(data);
+            }
             set({ data, isLoading: false });
           }
 
@@ -162,8 +170,34 @@ export function usePromise<T extends FunctionReturningPromise>(
           }
 
           if (callId === lastCallId.current) {
+            // handle errors
+            if (latestOnError.current) {
+              latestOnError.current(error);
+            } else {
+              console.error(state.error);
+              showToast({
+                style: Toast.Style.Failure,
+                title: "Failed to fetch latest data",
+                message: error.message,
+                primaryAction: {
+                  title: "Retry",
+                  onAction(toast) {
+                    toast.hide();
+                    revalidate();
+                  },
+                },
+                secondaryAction: {
+                  title: "Copy Logs",
+                  onAction(toast) {
+                    toast.hide();
+                    Clipboard.copy(state.error?.stack || state.error?.message || "");
+                  },
+                },
+              });
+            }
             set({ error, isLoading: false });
           }
+
           return error;
         }
       ) as ReturnType<T>;
@@ -213,35 +247,14 @@ export function usePromise<T extends FunctionReturningPromise>(
     }
   }, [...(args || []), options?.execute, callback]);
 
-  // handle errors
+  // abort request when unmounting
   useEffect(() => {
-    if (state.error) {
-      if (latestOnError.current) {
-        latestOnError.current(state.error);
-      } else {
-        console.error(state.error);
-        showToast({
-          style: Toast.Style.Failure,
-          title: "Failed to fetch latest data",
-          message: state.error.message,
-          primaryAction: {
-            title: "Retry",
-            onAction(toast) {
-              toast.hide();
-              revalidate();
-            },
-          },
-          secondaryAction: {
-            title: "Copy Logs",
-            onAction(toast) {
-              toast.hide();
-              Clipboard.copy(state.error?.stack || state.error?.message || "");
-            },
-          },
-        });
+    return () => {
+      if (latestAbortable.current) {
+        latestAbortable.current.current?.abort();
       }
-    }
-  }, [state.error, revalidate, latestOnError]);
+    };
+  }, [latestAbortable]);
 
   return { ...state, revalidate, mutate };
 }

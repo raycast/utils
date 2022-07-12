@@ -9,7 +9,7 @@ import { useLatest } from "./useLatest";
 // Symbol to differentiate an empty cache from `undefined`
 const emptyCache = Symbol();
 
-export type CachedPromiseOptions<U> = PromiseOptions & {
+export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = PromiseOptions<T> & {
   /**
    * The initial data if there aren't any in the Cache yet.
    */
@@ -91,7 +91,7 @@ export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args: Parameters<T>,
-  options?: CachedPromiseOptions<U>
+  options?: CachedPromiseOptions<T, U>
 ): AsyncStateFromFunctionReturningPromise<T> & {
   data: PromiseType<ReturnType<T>> | U;
   /**
@@ -123,9 +123,11 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args?: Parameters<T>,
-  options?: CachedPromiseOptions<U>
+  options?: CachedPromiseOptions<T, U>
 ) {
   const { initialData, keepPreviousData, ...usePromiseOptions } = options || {};
+  const lastUpdateFrom = useRef<"cache" | "promise">();
+
   const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (PromiseType<ReturnType<T>> | U)>(
     hash(args || []),
     emptyCache,
@@ -134,18 +136,42 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
     }
   );
 
+  // Use a ref to store previous returned data. Use the inital data as its inital value from the cache.
+  const laggyDataRef = useRef<PromiseType<ReturnType<T>> | U>(
+    cachedData !== emptyCache ? cachedData : (initialData as U)
+  );
+
   const {
     mutate: _mutate,
     revalidate,
     ...state
-  } = usePromise(fn, args || ([] as any as Parameters<T>), usePromiseOptions);
+  } = usePromise(fn, args || ([] as any as Parameters<T>), {
+    ...usePromiseOptions,
+    onData(data) {
+      if (usePromiseOptions.onData) {
+        usePromiseOptions.onData(data);
+      }
+      // update the cache when we fetch new values
+      lastUpdateFrom.current = "promise";
+      laggyDataRef.current = data;
+      mutateCache(data);
+    },
+  });
 
+  // data returned if there are no special cases
   const data = cachedData !== emptyCache ? cachedData : (initialData as U);
 
-  // Use a ref to store previous returned data. Use the inital data as its inital value.
-  const laggyDataRef = useRef(data);
-
-  const returnedData = keepPreviousData ? (cachedData !== emptyCache ? cachedData : laggyDataRef.current) : data;
+  const returnedData =
+    // if the latest update if from the promise, we keep it
+    lastUpdateFrom.current === "promise"
+      ? laggyDataRef.current
+      : // if we want to keep the latest data, we pick the cache but only if it's not empty
+      keepPreviousData
+      ? cachedData !== emptyCache
+        ? cachedData
+        : // if the cache is empty, we will return the previous data
+          laggyDataRef.current
+      : data;
 
   const latestData = useLatest(returnedData);
 
@@ -175,13 +201,12 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
     [mutateCache, _mutate, latestData]
   );
 
-  // update the cache when we fetch new values
   useEffect(() => {
-    if (typeof state.data !== "undefined") {
-      mutateCache(state.data);
-      laggyDataRef.current = state.data;
+    if (cachedData !== emptyCache) {
+      lastUpdateFrom.current = "cache";
+      laggyDataRef.current = cachedData;
     }
-  }, [state.data, mutateCache, laggyDataRef]);
+  }, [cachedData]);
 
   return {
     data: returnedData as PromiseType<ReturnType<T>> | U,
