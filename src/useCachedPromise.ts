@@ -23,7 +23,7 @@ export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = Promis
 };
 
 /**
- * Wraps an asynchronous function or a function that returns a promise and returns the {@link AsyncState} corresponding to the execution of the function. The last value will be kept between command runs.
+ * Wraps an asynchronous function or a function that returns a Promise and returns the {@link AsyncState} corresponding to the execution of the function. The last value will be kept between command runs.
  *
  * @remark The value needs to be JSON serializable.
  * @remark The function is assumed to be constant (eg. changing it won't trigger a revalidation).
@@ -32,7 +32,7 @@ export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = Promis
  * ```
  * import { usePromise } from '@raycast/utils';
  *
- * const Demo = ({url}) => {
+ * const Demo = () => {
  *   const abortable = useRef<AbortController>();
  *   const { isLoading, data, revalidate } = usePromise(async (url: string) => {
  *     const response = await fetch(url, { signal: abortable.current?.signal });
@@ -162,7 +162,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   const data = cachedData !== emptyCache ? cachedData : (initialData as U);
 
   const returnedData =
-    // if the latest update if from the promise, we keep it
+    // if the latest update if from the Promise, we keep it
     lastUpdateFrom.current === "promise"
       ? laggyDataRef.current
       : // if we want to keep the latest data, we pick the cache but only if it's not empty

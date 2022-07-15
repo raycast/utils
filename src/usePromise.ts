@@ -28,7 +28,7 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
 };
 
 /**
- * Wraps an asynchronous function or a function that returns a promise and returns the {@link AsyncState} corresponding to the execution of the function.
+ * Wraps an asynchronous function or a function that returns a Promise and returns the {@link AsyncState} corresponding to the execution of the function.
  *
  * @remark The function is assumed to be constant (eg. changing it won't trigger a revalidation).
  *
@@ -36,7 +36,7 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
  * ```
  * import { usePromise } from '@raycast/utils';
  *
- * const Demo = ({url}) => {
+ * const Demo = () => {
  *   const abortable = useRef<AbortController>();
  *   const { isLoading, data, revalidate } = usePromise(async (url: string) => {
  *     const response = await fetch(url, { signal: abortable.current?.signal });

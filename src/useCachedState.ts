@@ -1,4 +1,4 @@
-import { useCallback, Dispatch, SetStateAction, useSyncExternalStore, useMemo, useState, useRef } from "react";
+import { useCallback, Dispatch, SetStateAction, useSyncExternalStore, useMemo } from "react";
 import { Cache } from "@raycast/api";
 import { useLatest } from "./useLatest";
 

@@ -81,7 +81,6 @@ export function getAvatarIcon(
      * @default true
      */
     gradient?: boolean;
-    padding?: number;
   }
 ): Image.Asset {
   const words = name.trim().split(" ");
@@ -112,7 +111,7 @@ export function getAvatarIcon(
     backgroundColor = avatarColorSet[colorIndex];
   }
 
-  const padding = options?.padding || 0;
+  const padding = 0;
   const radius = 50 - padding;
 
   const svg = `<svg width="100px" height="100px">

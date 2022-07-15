@@ -37,13 +37,13 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
 export function getProgressIcon(
   progress: number,
   color = "#FF6363",
-  options?: { background?: string; backgroundOpacity?: number; padding?: number; strokeWidth?: number }
+  options?: { background?: string; backgroundOpacity?: number }
 ): Image.Asset {
-  const stroke = options?.strokeWidth || 10;
   const background = options?.background || (environment.theme === "light" ? "black" : "white");
   const backgroundOpacity = options?.backgroundOpacity || 0.1;
-  const padding = options?.padding || 5;
 
+  const stroke = 10;
+  const padding = 5;
   const radius = 50 - padding - stroke / 2;
 
   const svg = `<svg width="100px" height="100px">

@@ -43,6 +43,30 @@ async function defaultParsing(response: Response) {
   return await response.text();
 }
 
+/**
+ * Fetch the URL and returns the {@link AsyncState} corresponding to the execution of the fetch. The last value will be kept between command runs.
+ *
+ * @example
+ * ```
+ * import { useFetch } from '@raycast/utils';
+ *
+ * const Demo = () => {
+ *   const { isLoading, data, revalidate } = useFetch('https://api.example');
+ *
+ *   return (
+ *     <Detail
+ *       isLoading={isLoading}
+ *       markdown={data}
+ *       actions={
+ *         <ActionPanel>
+ *           <Action title="Reload" onAction={() => revalidate()} />
+ *         </ActionPanel>
+ *       }
+ *     />
+ *   );
+ * };
+ * ```
+ */
 export function useFetch<T, U = undefined>(
   url: RequestInfo,
   options?: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
