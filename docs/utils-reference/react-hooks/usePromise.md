@@ -29,13 +29,13 @@ function usePromise<T>(
 ### Arguments
 
 - `fn` is an asynchronous function or a function that returns a Promise.
-- `args` is the array of arguments to pass to the function. Everytime they changes, the function will be executed again. You can omit the array if the function doesn't require any argument.
+- `args` is the array of arguments to pass to the function. Every time they change, the function will be executed again. You can omit the array if the function doesn't require any argument.
 
 With a few options:
 
 - `options.abortable` is a reference to an [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) to cancel a previous call when triggering a new one.
-- `options.execute` is a boolean to indicate whether to actually execute the function or not. This is useful for cases where one of the function's arguments depends on something that might not be available right away (for example, depends on some user inputs). Because React requires every hooks to be defined on the render, this flag enables you to define the hook right away but wait util you have all the arguments ready to execute the function.
-- `options.onError` is a function called when an execution fails. By default it will log the error and show a generic failure toast with an action to retry.
+- `options.execute` is a boolean to indicate whether to actually execute the function or not. This is useful for cases where one of the function's arguments depends on something that might not be available right away (for example, depends on some user inputs). Because React requires every hook to be defined on the render, this flag enables you to define the hook right away but wait until you have all the arguments ready to execute the function.
+- `options.onError` is a function called when an execution fails. By default, it will log the error and show a generic failure toast with an action to retry.
 - `options.onData` is a function called when an execution succeeds.
 
 ### Returns
@@ -82,7 +82,7 @@ const Demo = () => {
 
 ## Mutation and Optimistic Updates
 
-In an optimistic update, the UI behaves as though a change was successfullycompleted before receiving confirmation from the server that it actually was - it is being optimistic that it will eventually get the confirmation rather than an error. This allows for a more responsive user experience.
+In an optimistic update, the UI behaves as though a change was successfully completed before receiving confirmation from the server that it was - it is being optimistic that it will eventually get the confirmation rather than an error. This allows for a more responsive user experience.
 
 You can specify an `optimisticUpdate` function to mutate the data in order to reflect the change introduced by the asynchronous update.
 

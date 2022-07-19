@@ -32,11 +32,11 @@ function useCachedPromise<T, U>(
 ### Arguments
 
 - `fn` is an asynchronous function or a function that returns a Promise.
-- `args` is the array of arguments to pass to the function. Everytime they changes, the function will be executed again. You can omit the array if the function doesn't require any argument.
+- `args` is the array of arguments to pass to the function. Every time they change, the function will be executed again. You can omit the array if the function doesn't require any argument.
 
 With a few options:
 
-- `options.keepPreviousData` is a boolean to tells the hook to keep the previous results instead of returning the initial value if there aren't any in the cache for the new arguments. This is particularly useful when used for data for a List to avoid flickering.
+- `options.keepPreviousData` is a boolean to tell the hook to keep the previous results instead of returning the initial value if there aren't any in the cache for the new arguments. This is particularly useful when used for data for a List to avoid flickering.
 
 Including the [useCachedState](./useCachedState.md)'s options:
 
@@ -45,8 +45,8 @@ Including the [useCachedState](./useCachedState.md)'s options:
 Including the [usePromise](./usePromise.md)'s options:
 
 - `options.abortable` is a reference to an [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) to cancel a previous call when triggering a new one.
-- `options.execute` is a boolean to indicate whether to actually execute the function or not. This is useful for cases where one of the function's arguments depends on something that might not be available right away (for example, depends on some user inputs). Because React requires every hooks to be defined on the render, this flag enables you to define the hook right away but wait util you have all the arguments ready to execute the function.
-- `options.onError` is a function called when an execution fails. By default it will log the error and show a generic failure toast with an action to retry.
+- `options.execute` is a boolean to indicate whether to actually execute the function or not. This is useful for cases where one of the function's arguments depends on something that might not be available right away (for example, depends on some user inputs). Because React requires every hook to be defined on the render, this flag enables you to define the hook right away but wait until you have all the arguments ready to execute the function.
+- `options.onError` is a function called when an execution fails. By default, it will log the error and show a generic failure toast with an action to retry.
 - `options.onData` is a function called when an execution succeeds.
 
 ### Return
@@ -55,7 +55,7 @@ Returns an object with the [AsyncState](#asyncstate) corresponding to the execut
 
 - `data`, `error`, `isLoading` - see [AsyncState](#asyncstate).
 - `revalidate` is a method to manually call the function with the same arguments again.
-- `mutate` is a method to wrap an asynchronous update and gives some control about how the `useCachedPromise`'s data should be updated while the update is going through. By default, the data will be revalidated (eg. the function will be called again) after the update is done. See [Mutation and Optimistic Updates](#mutation-and-optimistic-updates) for more information.
+- `mutate` is a method to wrap an asynchronous update and gives some control over how the `useCachedPromise`'s data should be updated while the update is going through. By default, the data will be revalidated (eg. the function will be called again) after the update is done. See [Mutation and Optimistic Updates](#mutation-and-optimistic-updates) for more information.
 
 ## Example
 
@@ -93,9 +93,9 @@ const Demo = () => {
 
 ## Promise Argument dependent on List search text
 
-By default, when an argument passed to the hook changes, the function will be executed again and the cache's value for those argument will be returned immediatly. This means that in the case of new arguments that haven't been used yet, the initial data will be returned.
+By default, when an argument passed to the hook changes, the function will be executed again and the cache's value for those arguments will be returned immediately. This means that in the case of new arguments that haven't been used yet, the initial data will be returned.
 
-This bahaviour can cause some flickering (initial data -> fetched data -> arguments change -> initial data -> fetched data, etc.). To avoid that, we can set `keepPreviousData` to `true` and the hook will keep the latest fetched data if the cache is empty for the new arguments (initial data -> fetched data -> arguments change -> fetched data).
+This behaviour can cause some flickering (initial data -> fetched data -> arguments change -> initial data -> fetched data, etc.). To avoid that, we can set `keepPreviousData` to `true` and the hook will keep the latest fetched data if the cache is empty for the new arguments (initial data -> fetched data -> arguments change -> fetched data).
 
 ```tsx
 import { useState } from "react";
@@ -129,7 +129,7 @@ const Demo = () => {
 
 ## Mutation and Optimistic Updates
 
-In an optimistic update, the UI behaves as though a change was successfullycompleted before receiving confirmation from the server that it actually was - it is being optimistic that it will eventually get the confirmation rather than an error. This allows for a more responsive user experience.
+In an optimistic update, the UI behaves as though a change was successfully completed before receiving confirmation from the server that it was - it is being optimistic that it will eventually get the confirmation rather than an error. This allows for a more responsive user experience.
 
 You can specify an `optimisticUpdate` function to mutate the data in order to reflect the change introduced by the asynchronous update.
 

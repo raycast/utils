@@ -17,7 +17,7 @@ function getAvatarIcon(
 ```
 
 - `name` is a string of the subject's name.
-- `options.background` is an hexadecimal representation of a color to be used as the background color. By default, the hook will pick a random but consistent (eg. the same name will the same color) color from a set handpicked to nicely match Raycast.
+- `options.background` is a hexadecimal representation of a color to be used as the background color. By default, the hook will pick a random but consistent (eg. the same name will the same color) color from a set handpicked to nicely match Raycast.
 - `options.gradient` is a boolean to choose whether the background should have a slight gradient or not. By default, it will.
 
 Returns an [Image.Asset](../../api-reference/user-interface/icons-and-images.md) that can be used where Raycast expects them.
