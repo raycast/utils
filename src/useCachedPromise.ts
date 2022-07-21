@@ -145,6 +145,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
     mutate: _mutate,
     revalidate,
     ...state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } = usePromise(fn, args || ([] as any as Parameters<T>), {
     ...usePromiseOptions,
     onData(data) {
@@ -186,19 +187,27 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
             // but only if we need it (eg. only when we want to automatically rollback after)
             dataBeforeOptimisticUpdate = JSON.parse(JSON.stringify(latestData.current));
           }
-          mutateCache(options.optimisticUpdate(latestData.current));
+          const data = options.optimisticUpdate(latestData.current);
+          lastUpdateFrom.current = "cache";
+          laggyDataRef.current = data;
+          mutateCache(data);
         }
         return await _mutate(asyncUpdate, { shouldRevalidateAfter: options?.shouldRevalidateAfter });
       } catch (err) {
         if (typeof options?.rollbackOnError === "function") {
-          mutateCache(options.rollbackOnError(latestData.current));
+          const data = options.rollbackOnError(latestData.current);
+          lastUpdateFrom.current = "cache";
+          laggyDataRef.current = data;
+          mutateCache(data);
         } else if (options?.optimisticUpdate && options?.rollbackOnError !== false) {
+          lastUpdateFrom.current = "cache";
+          laggyDataRef.current = dataBeforeOptimisticUpdate;
           mutateCache(dataBeforeOptimisticUpdate);
         }
         throw err;
       }
     },
-    [mutateCache, _mutate, latestData]
+    [mutateCache, _mutate, latestData, laggyDataRef, lastUpdateFrom]
   );
 
   useEffect(() => {

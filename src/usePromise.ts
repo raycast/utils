@@ -1,5 +1,6 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
 import { showToast, Toast, Clipboard } from "@raycast/api";
+import { useDeepMemo } from "./useDeepMemo";
 import { FunctionReturningPromise, AsyncStateFromFunctionReturningPromise, PromiseType, MutatePromise } from "./types";
 import { useLatest } from "./useLatest";
 
@@ -141,6 +142,7 @@ export function usePromise<T extends FunctionReturningPromise>(
   const latestOnError = useLatest(options?.onError);
   const latestOnData = useLatest(options?.onData);
   const latestValue = useLatest(state.data);
+  const latestCallback = useRef<T>();
 
   const callback = useCallback(
     (...args: Parameters<T>): ReturnType<T> => {
@@ -174,7 +176,7 @@ export function usePromise<T extends FunctionReturningPromise>(
             if (latestOnError.current) {
               latestOnError.current(error);
             } else {
-              console.error(state.error);
+              console.error(error);
               showToast({
                 style: Toast.Style.Failure,
                 title: "Failed to fetch latest data",
@@ -183,14 +185,14 @@ export function usePromise<T extends FunctionReturningPromise>(
                   title: "Retry",
                   onAction(toast) {
                     toast.hide();
-                    revalidate();
+                    latestCallback.current?.(...(latestArgs.current || []));
                   },
                 },
                 secondaryAction: {
                   title: "Copy Logs",
                   onAction(toast) {
                     toast.hide();
-                    Clipboard.copy(state.error?.stack || state.error?.message || "");
+                    Clipboard.copy(error?.stack || error?.message || "");
                   },
                 },
               });
@@ -202,8 +204,11 @@ export function usePromise<T extends FunctionReturningPromise>(
         }
       ) as ReturnType<T>;
     },
-    [latestAbortable, fnRef, set]
+    [latestAbortable, latestOnData, latestOnError, latestArgs, fnRef, set, latestCallback]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) as any as T;
+
+  latestCallback.current = callback;
 
   const revalidate = useCallback(() => {
     callback(...(latestArgs.current || []));
@@ -245,12 +250,14 @@ export function usePromise<T extends FunctionReturningPromise>(
     if (options?.execute !== false) {
       callback(...(args || []));
     }
-  }, [...(args || []), options?.execute, callback]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, useDeepMemo([args, options?.execute, callback]));
 
   // abort request when unmounting
   useEffect(() => {
     return () => {
       if (latestAbortable.current) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         latestAbortable.current.current?.abort();
       }
     };

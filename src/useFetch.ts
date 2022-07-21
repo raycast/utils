@@ -1,7 +1,8 @@
-import { useCallback, useRef, useMemo } from "react";
+import { useCallback, useRef } from "react";
 import { fetch, RequestInfo, RequestInit, Response } from "undici";
 import mediaTyper from "media-typer";
 import contentType from "content-type";
+import { useDeepMemo } from "./useDeepMemo";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 
@@ -87,10 +88,7 @@ export function useFetch<T, U = undefined>(
     [parseResponseRef]
   );
 
-  const args = useMemo<Parameters<typeof fetch>>(
-    () => [url, fetchOptions],
-    [url, ...Object.keys(fetchOptions), ...Object.values(fetchOptions)]
-  );
+  const args = useDeepMemo<Parameters<typeof fetch>>([url, fetchOptions]);
 
   return useCachedPromise(fn, args, { initialData, abortable, execute, keepPreviousData, onError });
 }
