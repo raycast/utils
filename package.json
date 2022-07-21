@@ -1,6 +1,6 @@
 {
   "name": "@raycast/utils",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com",
@@ -14,7 +14,7 @@
     "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
   },
   "peerDependencies": {
-    "@raycast/api": ">=1.37.0"
+    "@raycast/api": ">=1.38.1"
   },
   "keywords": [
     "Raycast",
@@ -35,7 +35,7 @@
     "undici": "^5.6.0"
   },
   "devDependencies": {
-    "@raycast/api": "^1.37.0",
+    "@raycast/api": "^1.38.1",
     "@types/content-type": "^1.1.5",
     "@types/media-typer": "^1.1.1",
     "@types/object-hash": "^2.2.1",

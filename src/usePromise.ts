@@ -1,5 +1,5 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
-import { showToast, Toast, Clipboard, environment } from "@raycast/api";
+import { showToast, Toast, Clipboard, environment, LaunchType } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
 import { FunctionReturningPromise, AsyncStateFromFunctionReturningPromise, PromiseType, MutatePromise } from "./types";
 import { useLatest } from "./useLatest";
@@ -177,8 +177,7 @@ export function usePromise<T extends FunctionReturningPromise>(
               latestOnError.current(error);
             } else {
               console.error(error);
-              // @ts-expect-error to update once v1.38 is released
-              if (environment.launchType !== "background") {
+              if (environment.launchType !== LaunchType.Background) {
                 showToast({
                   style: Toast.Style.Failure,
                   title: "Failed to fetch latest data",
