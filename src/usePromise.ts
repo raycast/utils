@@ -1,5 +1,5 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
-import { showToast, Toast, Clipboard } from "@raycast/api";
+import { showToast, Toast, Clipboard, environment } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
 import { FunctionReturningPromise, AsyncStateFromFunctionReturningPromise, PromiseType, MutatePromise } from "./types";
 import { useLatest } from "./useLatest";
@@ -177,25 +177,28 @@ export function usePromise<T extends FunctionReturningPromise>(
               latestOnError.current(error);
             } else {
               console.error(error);
-              showToast({
-                style: Toast.Style.Failure,
-                title: "Failed to fetch latest data",
-                message: error.message,
-                primaryAction: {
-                  title: "Retry",
-                  onAction(toast) {
-                    toast.hide();
-                    latestCallback.current?.(...(latestArgs.current || []));
+              // @ts-expect-error to update once v1.38 is released
+              if (environment.launchType !== "background") {
+                showToast({
+                  style: Toast.Style.Failure,
+                  title: "Failed to fetch latest data",
+                  message: error.message,
+                  primaryAction: {
+                    title: "Retry",
+                    onAction(toast) {
+                      toast.hide();
+                      latestCallback.current?.(...(latestArgs.current || []));
+                    },
                   },
-                },
-                secondaryAction: {
-                  title: "Copy Logs",
-                  onAction(toast) {
-                    toast.hide();
-                    Clipboard.copy(error?.stack || error?.message || "");
+                  secondaryAction: {
+                    title: "Copy Logs",
+                    onAction(toast) {
+                      toast.hide();
+                      Clipboard.copy(error?.stack || error?.message || "");
+                    },
                   },
-                },
-              });
+                });
+              }
             }
             set({ error, isLoading: false });
           }

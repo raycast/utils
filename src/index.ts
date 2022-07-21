@@ -8,3 +8,4 @@ export * from "./useFetch";
 export * from "./icon";
 
 export type { AsyncState, MutatePromise } from "./types";
+export type { Response } from "undici";
