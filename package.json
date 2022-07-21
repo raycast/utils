@@ -1,6 +1,6 @@
 {
   "name": "@raycast/utils",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com",
@@ -22,7 +22,9 @@
     "extensions"
   ],
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "docs/utils-reference/.gitbook/assets/utils-illustration.jpg"
   ],
   "license": "MIT",
   "dependencies": {
