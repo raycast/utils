@@ -153,7 +153,7 @@ export function usePromise<T extends FunctionReturningPromise>(
         latestAbortable.current.current = new AbortController();
       }
 
-      set((prevState) => ({ ...prevState, loading: true }));
+      set((prevState) => ({ ...prevState, isLoading: true }));
 
       return fnRef.current(...args).then(
         (data) => {

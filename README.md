@@ -2,7 +2,7 @@
 
 In addition to the [Raycast API](../api-reference/cache.md) which is bundled as part of the app, we also provide a sibling package that contains a set of utilities to streamline common patterns and operations used in extensions.
 
-![](./docs/utils-reference/.gitbook/assets/utils-illustration.jpg)
+![image](https://user-images.githubusercontent.com/3254314/181186048-37bf34c2-a317-4181-8976-2122af6a8506.png)
 
 ## Installation
 
