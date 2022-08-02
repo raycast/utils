@@ -26,6 +26,10 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
    * Called when an execution succeeds.
    */
   onData?: (data: PromiseType<ReturnType<T>>) => void | Promise<void>;
+  /**
+   * Called when an execution will start
+   */
+  onWillExecute?: (parameters: Parameters<T>) => void;
 };
 
 /**
@@ -141,6 +145,7 @@ export function usePromise<T extends FunctionReturningPromise>(
   const latestArgs = useLatest(args || []);
   const latestOnError = useLatest(options?.onError);
   const latestOnData = useLatest(options?.onData);
+  const latestOnWillExecute = useLatest(options?.onWillExecute);
   const latestValue = useLatest(state.data);
   const latestCallback = useRef<T>();
 
@@ -152,6 +157,8 @@ export function usePromise<T extends FunctionReturningPromise>(
         latestAbortable.current.current?.abort();
         latestAbortable.current.current = new AbortController();
       }
+
+      latestOnWillExecute.current?.(args);
 
       set((prevState) => ({ ...prevState, isLoading: true }));
 
@@ -206,7 +213,7 @@ export function usePromise<T extends FunctionReturningPromise>(
         }
       ) as ReturnType<T>;
     },
-    [latestAbortable, latestOnData, latestOnError, latestArgs, fnRef, set, latestCallback]
+    [latestAbortable, latestOnData, latestOnError, latestArgs, fnRef, set, latestCallback, latestOnWillExecute]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) as any as T;
 

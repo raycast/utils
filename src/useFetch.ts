@@ -1,10 +1,27 @@
 import { useCallback, useRef } from "react";
-import { fetch, RequestInfo, RequestInit, Response } from "undici";
 import mediaTyper from "media-typer";
 import contentType from "content-type";
 import { useDeepMemo } from "./useDeepMemo";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
+
+const { emitWarning } = process;
+
+// to remove when we switch to Node 18
+process.emitWarning = (warning, ...args) => {
+  if (args[0] === "ExperimentalWarning") {
+    return;
+  }
+
+  if (args[0] && typeof args[0] === "object" && args[0].type === "ExperimentalWarning") {
+    return;
+  }
+
+  // @ts-expect-error too many different types but it's ok since we pass what was passed
+  return emitWarning(warning, ...args);
+};
+
+import { fetch, RequestInfo, RequestInit, Response } from "undici";
 
 function isJSON(contentTypeHeader: string | null | undefined): boolean {
   if (contentTypeHeader) {
