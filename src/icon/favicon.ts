@@ -4,7 +4,7 @@ import { URL } from "url";
 /**
  * Icon to represent the progress of _something_.
  *
- * @param progress The URL of the website to represent.
+ * @param url The URL of the website to represent.
  *
  * @returns an Image that can be used where Raycast expects them.
  *
