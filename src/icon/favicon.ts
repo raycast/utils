@@ -2,7 +2,9 @@ import { Icon, Image } from "@raycast/api";
 import { URL } from "url";
 
 /**
- * Icon to represent the progress of _something_.
+ * Icon showing the favicon of a website.
+ *
+ * A favicon (favorite icon) is a tiny icon included along with a website, which is displayed in places like the browser's address bar, page tabs, and bookmarks menu.
  *
  * @param url The URL of the website to represent.
  *

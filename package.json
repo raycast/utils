@@ -37,7 +37,6 @@
     "@raycast/api": "^1.38.1",
     "@types/content-type": "^1.1.5",
     "@types/media-typer": "^1.1.1",
-    "@types/node": "^16.10.3",
     "@types/object-hash": "^2.2.1",
     "@typescript-eslint/eslint-plugin": "5.26.0",
     "@typescript-eslint/parser": "5.26.0",
