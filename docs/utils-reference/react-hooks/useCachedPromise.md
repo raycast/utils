@@ -105,7 +105,7 @@ import { useCachedPromise } from "@raycast/utils";
 
 const Demo = () => {
   const [searchText, setSearchText] = useState("");
-  const { isLoading, data, mutate } = useCachedPromise(
+  const { isLoading, data } = useCachedPromise(
     async (url: string) => {
       const response = await fetch(url);
       const result = await response.text();

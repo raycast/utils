@@ -55,6 +55,7 @@ Returns an object with the [AsyncState](#asyncstate) corresponding to the execut
 ## Example
 
 ```tsx
+import { Detail, ActionPanel, Action } from "@raycast/api";
 import { useFetch } from "@raycast/utils";
 
 const Demo = () => {
@@ -87,7 +88,7 @@ import { useFetch } from "@raycast/utils";
 
 const Demo = () => {
   const [searchText, setSearchText] = useState("");
-  const { isLoading, data, mutate } = useFetch(`https://api.example?q=${searchText}`, {
+  const { isLoading, data } = useFetch(`https://api.example?q=${searchText}`, {
     // to make sure the screen isn't flickering when the searchText changes
     keepPreviousData: true,
   });
