@@ -2,6 +2,20 @@ import { useCallback, Dispatch, SetStateAction, useSyncExternalStore, useMemo } 
 import { Cache } from "@raycast/api";
 import { useLatest } from "./useLatest";
 
+function dateReplacer(_key: string, value: unknown) {
+  if (value instanceof Date) {
+    return `__raycast_cached_date__${value.toString()}`
+  }
+  return value
+}
+
+function dateReviver(_key: string, value: unknown) {
+  if (typeof value === 'string' && value.startsWith('__raycast_cached_date__')) {
+    return new Date(value.replace('__raycast_cached_date__', ''))
+  }
+  return value
+}
+
 /**
  * Returns a stateful value, and a function to update it. The value will be kept between command runs.
  *
@@ -37,7 +51,7 @@ export function useCachedState<T>(
 
   const state = useMemo(() => {
     if (typeof cachedState !== "undefined") {
-      return JSON.parse(cachedState);
+      return JSON.parse(cachedState, dateReviver);
     } else {
       return initialValueRef.current;
     }
@@ -49,7 +63,7 @@ export function useCachedState<T>(
     (updater: SetStateAction<T>) => {
       // @ts-expect-error TS struggles to infer the types as T could potentially be a function
       const newValue = typeof updater === "function" ? updater(stateRef.current) : updater;
-      const stringifiedValue = JSON.stringify(newValue);
+      const stringifiedValue = JSON.stringify(newValue, dateReplacer);
       cache.set(keyRef.current, stringifiedValue);
       return newValue;
     },
