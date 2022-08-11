@@ -4,6 +4,8 @@ export * from "./useCachedPromise";
 
 export * from "./useFetch";
 
+export * from "./useForm";
+
 //export * as suspense from "./suspense";
 export * from "./icon";
 
