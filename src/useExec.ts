@@ -12,7 +12,65 @@ import onExit from "signal-exit";
 import { useDeepMemo } from "./useDeepMemo";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
-import { AsyncState, MutatePromise } from "./types";
+import { UseCachedPromiseReturnType } from "./types";
+
+type ExecOptions = {
+  /**
+   * If `true`, runs the command inside of a shell. Uses `/bin/sh`. A different shell can be specified as a string. The shell should understand the `-c` switch.
+   *
+   * We recommend against using this option since it is:
+   * - not cross-platform, encouraging shell-specific syntax.
+   * - slower, because of the additional shell interpretation.
+   * - unsafe, potentially allowing command injection.
+   *
+   * @default false
+   */
+  shell?: boolean | string;
+  /**
+   * Strip the final newline character from the output.
+   * @default true
+   */
+  stripFinalNewline?: boolean;
+  /**
+   * Current working directory of the child process.
+   * @default process.cwd()
+   */
+  cwd?: string;
+  /**
+   * Environment key-value pairs. Extends automatically from `process.env`.
+   * @default process.env
+   */
+  env?: NodeJS.ProcessEnv;
+  /**
+   * Specify the character encoding used to decode the stdout and stderr output. If set to `"buffer"`, then stdout and stderr will be a Buffer instead of a string.
+   *
+   * @default "utf8"
+   */
+  encoding?: BufferEncoding | "buffer";
+  /** If timeout is greater than `0`, the parent will send the signal `SIGTERM` if the child runs longer than timeout milliseconds. */
+  timeout?: number;
+};
+
+export type ParseExecOutputHandler<T extends string | Buffer, U> = (args: {
+  /** The output of the process on stdout. */
+  stdout: T;
+  /** The output of the process on stderr. */
+  stderr: T;
+  error?: Error;
+  /** The numeric exit code of the process that was run. */
+  exitCode: number | null;
+  /**
+   * The name of the signal that was used to terminate the process. For example, SIGFPE.
+   *
+   * If a signal terminated the process, this property is defined. Otherwise it is null.
+   */
+  signal: NodeJS.Signals | null;
+  /** Whether the process timed out. */
+  timedOut: boolean;
+  /** The command that was run, for logging purposes. */
+  command: string;
+  options?: ExecOptions;
+}) => U;
 
 type SpawnedPromise = Promise<{
   exitCode: number | null;
@@ -22,7 +80,10 @@ type SpawnedPromise = Promise<{
 }>;
 
 const SPACES_REGEXP = / +/g;
-function parseCommand(command: string) {
+function parseCommand(command: string, args?: string[]) {
+  if (args) {
+    return [command, ...args];
+  }
   const tokens: string[] = [];
   for (const token of command.trim().split(SPACES_REGEXP)) {
     // Allow spaces to be escaped by a backslash if not meant as a delimiter
@@ -36,16 +97,6 @@ function parseCommand(command: string) {
   }
 
   return tokens;
-}
-
-const NO_ESCAPE_REGEXP = /^[\w.-]+$/;
-const DOUBLE_QUOTES_REGEXP = /"/g;
-function escapeArg(arg: string) {
-  if (typeof arg !== "string" || NO_ESCAPE_REGEXP.test(arg)) {
-    return arg;
-  }
-
-  return `"${arg.replace(DOUBLE_QUOTES_REGEXP, '\\"')}"`;
 }
 
 function getSpawnedPromise(spawned: childProcess.ChildProcessWithoutNullStreams): SpawnedPromise {
@@ -268,7 +319,6 @@ const makeError = ({
   signal,
   exitCode,
   command,
-  escapedCommand,
   timedOut,
   options,
 }: {
@@ -279,7 +329,6 @@ const makeError = ({
   signal: NodeJS.Signals | null;
   timedOut: boolean;
   command: string;
-  escapedCommand: string;
   options?: { timeout?: number };
 }) => {
   const prefix = getErrorPrefix({ timedOut, timeout: options?.timeout, signal, exitCode });
@@ -325,7 +374,6 @@ function defaultParsing<T extends string | Buffer>({
   signal,
   timedOut,
   command,
-  escapedCommand,
   options,
 }: {
   stdout: T;
@@ -335,8 +383,7 @@ function defaultParsing<T extends string | Buffer>({
   signal: NodeJS.Signals | null;
   timedOut: boolean;
   command: string;
-  escapedCommand: string;
-  options?: { timeout?: number };
+  options?: ExecOptions;
 }) {
   if (error || exitCode !== 0 || signal !== null) {
     const returnedError = makeError({
@@ -346,7 +393,6 @@ function defaultParsing<T extends string | Buffer>({
       stdout,
       stderr,
       command,
-      escapedCommand,
       timedOut,
       options,
     });
@@ -357,192 +403,123 @@ function defaultParsing<T extends string | Buffer>({
   return stdout;
 }
 
+/**
+ * Executes a command and returns the {@link AsyncState} corresponding to the execution of the command. The last value will be kept between command runs.
+ *
+ * @remark When specifying the arguments via the `command` string, if the file or an argument of the command contains spaces, they must be escaped with backslashes. This matters especially if `command` is not a constant but a variable, for example with `__dirname` or `process.cwd()`. Except for spaces, no escaping/quoting is needed.
+ *
+ * The `shell` option must be used if the command uses shell-specific features (for example, `&&` or `||`), as opposed to being a simple file followed by its arguments.
+ *
+ * @example
+ * ```
+ * import { useExec } from '@raycast/utils';
+ *
+ * const Demo = () => {
+ *   const { isLoading, data, revalidate } = useExec("brew info --json=v2 --installed");
+ *   const results = useMemo<{}[]>(() => JSON.parse(data || "[]"), [data]);
+ *
+ *   return (
+ *     <List isLoading={isLoading}>
+ *      {(data || []).map((item) => (
+ *        <List.Item key={item.id} title={item.name} />
+ *      ))}
+ *    </List>
+ *   );
+ * };
+ * ```
+ */
 export function useExec<T = Buffer, U = undefined>(
   command: string,
   options: {
-    parseOutput?: (output: {
-      stdout: Buffer;
-      stderr: Buffer;
-      error?: Error;
-      exitCode: number | null;
-      signal: NodeJS.Signals | null;
-      timedOut: boolean;
-      command: string;
-      escapedCommand: string;
-    }) => T;
-    shell?: boolean;
-    stripFinalNewline?: boolean;
-    cwd?: string;
-    env?: NodeJS.ProcessEnv;
-    encoding: "buffer";
-    timeout?: number;
-  } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
-): AsyncState<T> & {
-  /**
-   * Function to wrap an asynchronous update and gives some control about how the
-   * `useCachedPromise`'s data should be updated.
-   *
-   * By default, the data will be revalidated (eg. the function will be called again)
-   * after the update is done.
-   *
-   * **Optimistic Update**
-   *
-   * In an optimistic update, the UI behaves as though a change was successfully
-   * completed before receiving confirmation from the server that it actually was -
-   * it is being optimistic that it will eventually get the confirmation rather than an error.
-   * This allows for a more responsive user experience.
-   *
-   * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
-   * the change introduced by the asynchronous update.
-   *
-   * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
-   * data if the asynchronous update fails.
-   */
-  mutate: MutatePromise<T | U>;
-  /**
-   * Function to manually call the function again
-   */
-  revalidate: () => void;
-};
+    parseOutput?: ParseExecOutputHandler<Buffer, T>;
+  } & ExecOptions & {
+      encoding: "buffer";
+    } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+): UseCachedPromiseReturnType<T, U>;
 export function useExec<T = string, U = undefined>(
   command: string,
+  options?: {
+    parseOutput?: ParseExecOutputHandler<string, T>;
+  } & ExecOptions & {
+      encoding?: BufferEncoding;
+    } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+): UseCachedPromiseReturnType<T, U>;
+export function useExec<T = Buffer, U = undefined>(
+  file: string,
+  /**
+   * The arguments to pass to the file. No escaping/quoting is needed.
+   *
+   * If defined, the commands needs to be a file to execute. If undefined, the arguments will be parsed from the command.
+   */
+  args: string[],
   options: {
-    parseOutput?: (output: {
-      stdout: string;
-      stderr: string;
-      error?: Error;
-      exitCode: number | null;
-      signal: NodeJS.Signals | null;
-      timedOut: boolean;
-      command: string;
-      escapedCommand: string;
-    }) => T;
-    shell?: boolean;
-    stripFinalNewline?: boolean;
-    cwd?: string;
-    env?: NodeJS.ProcessEnv;
-    encoding?: BufferEncoding;
-    timeout?: number;
-  } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
-): AsyncState<T> & {
+    parseOutput?: ParseExecOutputHandler<Buffer, T>;
+  } & ExecOptions & {
+      encoding: "buffer";
+    } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+): UseCachedPromiseReturnType<T, U>;
+export function useExec<T = string, U = undefined>(
+  file: string,
   /**
-   * Function to wrap an asynchronous update and gives some control about how the
-   * `useCachedPromise`'s data should be updated.
+   * The arguments to pass to the file. No escaping/quoting is needed.
    *
-   * By default, the data will be revalidated (eg. the function will be called again)
-   * after the update is done.
-   *
-   * **Optimistic Update**
-   *
-   * In an optimistic update, the UI behaves as though a change was successfully
-   * completed before receiving confirmation from the server that it actually was -
-   * it is being optimistic that it will eventually get the confirmation rather than an error.
-   * This allows for a more responsive user experience.
-   *
-   * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
-   * the change introduced by the asynchronous update.
-   *
-   * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
-   * data if the asynchronous update fails.
+   * If defined, the commands needs to be a file to execute. If undefined, the arguments will be parsed from the command.
    */
-  mutate: MutatePromise<T | U>;
-  /**
-   * Function to manually call the function again
-   */
-  revalidate: () => void;
-};
+  args: string[],
+  options?: {
+    parseOutput?: ParseExecOutputHandler<string, T>;
+  } & ExecOptions & {
+      encoding?: BufferEncoding;
+    } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+): UseCachedPromiseReturnType<T, U>;
 export function useExec<T, U = undefined>(
   command: string,
+  optionsOrArgs?:
+    | string[]
+    | ({
+        parseOutput?: ParseExecOutputHandler<Buffer, T> | ParseExecOutputHandler<string, T>;
+      } & ExecOptions &
+        Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">),
   options?: {
-    parseOutput?:
-      | ((output: {
-          stdout: Buffer;
-          stderr: Buffer;
-          error?: Error;
-          exitCode: number | null;
-          signal: NodeJS.Signals | null;
-          timedOut: boolean;
-          command: string;
-          escapedCommand: string;
-        }) => T)
-      | ((output: {
-          stdout: string;
-          stderr: string;
-          error?: Error;
-          exitCode: number | null;
-          signal: NodeJS.Signals | null;
-          timedOut: boolean;
-          command: string;
-          escapedCommand: string;
-        }) => T);
-    shell?: boolean;
-    stripFinalNewline?: boolean;
-    cwd?: string;
-    env?: NodeJS.ProcessEnv;
-    encoding?: BufferEncoding | "buffer";
-    timeout?: number;
-  } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
-): AsyncState<T> & {
-  /**
-   * Function to wrap an asynchronous update and gives some control about how the
-   * `useCachedPromise`'s data should be updated.
-   *
-   * By default, the data will be revalidated (eg. the function will be called again)
-   * after the update is done.
-   *
-   * **Optimistic Update**
-   *
-   * In an optimistic update, the UI behaves as though a change was successfully
-   * completed before receiving confirmation from the server that it actually was -
-   * it is being optimistic that it will eventually get the confirmation rather than an error.
-   * This allows for a more responsive user experience.
-   *
-   * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
-   * the change introduced by the asynchronous update.
-   *
-   * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
-   * data if the asynchronous update fails.
-   */
-  mutate: MutatePromise<T | U>;
-  /**
-   * Function to manually call the function again
-   */
-  revalidate: () => void;
-} {
-  const { initialData, execute, keepPreviousData, onError, parseOutput, ...execOptions } = options || {};
+    parseOutput?: ParseExecOutputHandler<Buffer, T> | ParseExecOutputHandler<string, T>;
+  } & ExecOptions &
+    Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+): UseCachedPromiseReturnType<T, U> {
+  const { initialData, execute, keepPreviousData, onError, parseOutput, ...execOptions } = Array.isArray(optionsOrArgs)
+    ? options || {}
+    : optionsOrArgs || {};
+
+  const args = useDeepMemo<[string[], ExecOptions]>([Array.isArray(optionsOrArgs) ? optionsOrArgs : [], execOptions]);
 
   const abortable = useRef<AbortController>();
   const parseOutputRef = useLatest(parseOutput || defaultParsing);
 
   const fn = useCallback(
-    async (
-      _command: string,
-      options?: {
-        shell?: boolean;
-        stripFinalNewline?: boolean;
-        cwd?: string;
-        env?: NodeJS.ProcessEnv;
-        encoding?: BufferEncoding | "buffer";
-        timeout?: number;
-      }
-    ) => {
-      const [file, ...args] = parseCommand(_command);
+    async (_command: string, _args: string[], _options?: ExecOptions) => {
+      const [file, ...args] = parseCommand(_command, _args);
       const command = [file, ...args].join(" ");
-      const escapedCommand = [file, ...args].map(escapeArg).join(" ");
 
-      const spawned = childProcess.spawn(file, args, { ...options, signal: abortable.current?.signal });
+      const options = {
+        stripFinalNewline: true,
+        ..._options,
+        signal: abortable.current?.signal,
+        encoding: _options?.encoding === null ? "buffer" : _options?.encoding || "utf8",
+        env: { ...process.env, ..._options?.env },
+      };
+
+      const spawned = childProcess.spawn(file, args, options);
 
       const spawnedPromise = getSpawnedPromise(spawned);
-      const timedPromise = setupTimeout(spawned, options || {}, spawnedPromise);
+      const timedPromise = setupTimeout(spawned, options, spawnedPromise);
       const processDone = setExitHandler(spawned, timedPromise);
 
       const [{ error, exitCode, signal, timedOut }, stdoutResult, stderrResult] = await getSpawnedResult(
         spawned,
-        { ...options, encoding: options?.encoding === null ? "buffer" : options?.encoding || "utf8" },
+        options,
         processDone
       );
-      const stdout = handleOutput({ stripFinalNewline: true, ...options }, stdoutResult);
-      const stderr = handleOutput({ stripFinalNewline: true, ...options }, stderrResult);
+      const stdout = handleOutput(options, stdoutResult);
+      const stderr = handleOutput(options, stderrResult);
 
       return parseOutputRef.current({
         // @ts-expect-error too many generics, I give up
@@ -554,14 +531,11 @@ export function useExec<T, U = undefined>(
         signal,
         timedOut,
         command,
-        escapedCommand,
         options,
       }) as T;
     },
     [parseOutputRef]
   );
 
-  const args = useDeepMemo(execOptions);
-
-  return useCachedPromise(fn, [command, args], { initialData, abortable, execute, keepPreviousData, onError });
+  return useCachedPromise(fn, [command, ...args], { initialData, abortable, execute, keepPreviousData, onError });
 }

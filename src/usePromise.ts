@@ -1,7 +1,7 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
 import { showToast, Toast, Clipboard, environment, LaunchType } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
-import { FunctionReturningPromise, AsyncStateFromFunctionReturningPromise, PromiseType, MutatePromise } from "./types";
+import { FunctionReturningPromise, PromiseReturnType, MutatePromise, UsePromiseReturnType, AsyncState } from "./types";
 import { useLatest } from "./useLatest";
 
 export type PromiseOptions<T extends FunctionReturningPromise> = {
@@ -25,7 +25,7 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
   /**
    * Called when an execution succeeds.
    */
-  onData?: (data: PromiseType<ReturnType<T>>) => void | Promise<void>;
+  onData?: (data: PromiseReturnType<T>) => void | Promise<void>;
   /**
    * Called when an execution will start
    */
@@ -67,78 +67,19 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
  * };
  * ```
  */
-export function usePromise<T extends FunctionReturningPromise<[]>>(
-  fn: T
-): AsyncStateFromFunctionReturningPromise<T> & {
-  /**
-   * Function to manually call the function again
-   */
-  revalidate: () => void;
-  /**
-   * Function to wrap an asynchronous update and gives some control about how the
-   * `usePromise`'s data should be updated while the update is going through.
-   *
-   * By default, the data will be revalidated (eg. the function will be called again)
-   * after the update is done.
-   *
-   * **Optimistic Update**
-   *
-   * In an optimistic update, the UI behaves as though a change was successfully
-   * completed before receiving confirmation from the server that it actually was -
-   * it is being optimistic that it will eventually get the confirmation rather than an error.
-   * This allows for a more responsive user experience.
-   *
-   * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
-   * the change introduced by the asynchronous update.
-   *
-   * When doing so, you can specify a `rollbackOnError` function to mutate back the
-   * data if the asynchronous update fails. If not specified, the data will be automatically
-   * rolled back to its previous value (before the optimistic update).
-   */
-  mutate: MutatePromise<PromiseType<ReturnType<T>> | undefined>;
-};
+export function usePromise<T extends FunctionReturningPromise<[]>>(fn: T): UsePromiseReturnType<PromiseReturnType<T>>;
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
   options?: PromiseOptions<T>
-): AsyncStateFromFunctionReturningPromise<T> & {
-  /**
-   * Function to manually call the function again
-   */
-  revalidate: () => void;
-  /**
-   * Function to wrap an asynchronous update and gives some control about how the
-   * `usePromise`'s data should be updated while the update is going through.
-   *
-   * By default, the data will be revalidated (eg. the function will be called again)
-   * after the update is done.
-   *
-   * **Optimistic Update**
-   *
-   * In an optimistic update, the UI behaves as though a change was successfully
-   * completed before receiving confirmation from the server that it actually was -
-   * it is being optimistic that it will eventually get the confirmation rather than an error.
-   * This allows for a more responsive user experience.
-   *
-   * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
-   * the change introduced by the asynchronous update.
-   *
-   * When doing so, you can specify a `rollbackOnError` function to mutate back the
-   * data if the asynchronous update fails. If not specified, the data will be automatically
-   * rolled back to its previous value (before the optimistic update).
-   */
-  mutate: MutatePromise<PromiseType<ReturnType<T>> | undefined>;
-};
+): UsePromiseReturnType<PromiseReturnType<T>>;
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args?: Parameters<T>,
   options?: PromiseOptions<T>
-): AsyncStateFromFunctionReturningPromise<T> & {
-  revalidate: () => void;
-  mutate: MutatePromise<PromiseType<ReturnType<T>> | undefined>;
-} {
+): UsePromiseReturnType<PromiseReturnType<T>> {
   const lastCallId = useRef(0);
-  const [state, set] = useState<AsyncStateFromFunctionReturningPromise<T>>({ isLoading: true });
+  const [state, set] = useState<AsyncState<PromiseReturnType<T>>>({ isLoading: true });
 
   const fnRef = useLatest(fn);
   const latestAbortable = useLatest(options?.abortable);
@@ -223,9 +164,9 @@ export function usePromise<T extends FunctionReturningPromise>(
     callback(...(latestArgs.current || []));
   }, [callback, latestArgs]);
 
-  const mutate = useCallback<MutatePromise<PromiseType<ReturnType<T>> | undefined>>(
+  const mutate = useCallback<MutatePromise<PromiseReturnType<T>, undefined>>(
     async (asyncUpdate, options) => {
-      let dataBeforeOptimisticUpdate: PromiseType<ReturnType<T>> | undefined;
+      let dataBeforeOptimisticUpdate: PromiseReturnType<T> | undefined;
       try {
         if (options?.optimisticUpdate) {
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
