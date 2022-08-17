@@ -51,11 +51,11 @@ type ExecOptions = {
   timeout?: number;
 };
 
-export type ParseExecOutputHandler<T extends string | Buffer, U> = (args: {
+export type ParseExecOutputHandler<T, DecodedOutput extends string | Buffer = string | Buffer> = (args: {
   /** The output of the process on stdout. */
-  stdout: T;
+  stdout: DecodedOutput;
   /** The output of the process on stderr. */
-  stderr: T;
+  stderr: DecodedOutput;
   error?: Error;
   /** The numeric exit code of the process that was run. */
   exitCode: number | null;
@@ -70,7 +70,7 @@ export type ParseExecOutputHandler<T extends string | Buffer, U> = (args: {
   /** The command that was run, for logging purposes. */
   command: string;
   options?: ExecOptions;
-}) => U;
+}) => T;
 
 type SpawnedPromise = Promise<{
   exitCode: number | null;
@@ -415,7 +415,7 @@ function defaultParsing<T extends string | Buffer>({
  * import { useExec } from '@raycast/utils';
  *
  * const Demo = () => {
- *   const { isLoading, data, revalidate } = useExec("brew info --json=v2 --installed");
+ *   const { isLoading, data, revalidate } = useExec("brew", ["info", "--json=v2", "--installed"]);
  *   const results = useMemo<{}[]>(() => JSON.parse(data || "[]"), [data]);
  *
  *   return (
@@ -431,7 +431,7 @@ function defaultParsing<T extends string | Buffer>({
 export function useExec<T = Buffer, U = undefined>(
   command: string,
   options: {
-    parseOutput?: ParseExecOutputHandler<Buffer, T>;
+    parseOutput?: ParseExecOutputHandler<T, Buffer>;
   } & ExecOptions & {
       encoding: "buffer";
     } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
@@ -439,7 +439,7 @@ export function useExec<T = Buffer, U = undefined>(
 export function useExec<T = string, U = undefined>(
   command: string,
   options?: {
-    parseOutput?: ParseExecOutputHandler<string, T>;
+    parseOutput?: ParseExecOutputHandler<T, string>;
   } & ExecOptions & {
       encoding?: BufferEncoding;
     } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
@@ -453,7 +453,7 @@ export function useExec<T = Buffer, U = undefined>(
    */
   args: string[],
   options: {
-    parseOutput?: ParseExecOutputHandler<Buffer, T>;
+    parseOutput?: ParseExecOutputHandler<T, Buffer>;
   } & ExecOptions & {
       encoding: "buffer";
     } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
@@ -467,7 +467,7 @@ export function useExec<T = string, U = undefined>(
    */
   args: string[],
   options?: {
-    parseOutput?: ParseExecOutputHandler<string, T>;
+    parseOutput?: ParseExecOutputHandler<T, string>;
   } & ExecOptions & {
       encoding?: BufferEncoding;
     } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
@@ -477,11 +477,11 @@ export function useExec<T, U = undefined>(
   optionsOrArgs?:
     | string[]
     | ({
-        parseOutput?: ParseExecOutputHandler<Buffer, T> | ParseExecOutputHandler<string, T>;
+        parseOutput?: ParseExecOutputHandler<T, Buffer> | ParseExecOutputHandler<T, string>;
       } & ExecOptions &
         Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">),
   options?: {
-    parseOutput?: ParseExecOutputHandler<Buffer, T> | ParseExecOutputHandler<string, T>;
+    parseOutput?: ParseExecOutputHandler<T, Buffer> | ParseExecOutputHandler<T, string>;
   } & ExecOptions &
     Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
 ): UseCachedPromiseReturnType<T, U> {
