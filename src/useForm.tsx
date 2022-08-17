@@ -2,6 +2,10 @@ import { Form } from "@raycast/api";
 import { useState, useCallback, useMemo, useRef } from "react";
 import { useLatest } from "./useLatest";
 
+/**
+ * A enum describing the built-in validation types
+ * - Required: the value is required
+ */
 export enum FormValidation {
   Required = "required",
 }
@@ -45,7 +49,6 @@ type Validation<T extends Form.Values> = { [id in keyof T]?: Validator<T[id]> };
 
 /**
  * Form state and methods that will be returned to the consumer of the `useHook`.
- * This is the internal state of the form and is not intended to be used directly.
  */
 interface FormProps<T extends Form.Values> {
   /** Function that will be called when the form is submitted. Use it to pass into the `onSubmit` prop of the `<Action.SubmitForm>` element. */
@@ -71,6 +74,7 @@ interface FormProps<T extends Form.Values> {
  * Controlling form items is easy with the hook. Simply pass the value to the `setValue()` function and the Form will update the value.
  * It will automatically update the form validation state when the form is submitted.
  * You can easily use the hook's validation state to render error messages automatically.
+ *
  *
  * @returns Form state and helpers. See {@link FormProps} for more details.
  *
@@ -124,7 +128,7 @@ function useForm<T extends Form.Values>(props: {
   onSubmit: (values: T) => void | boolean | Promise<void | boolean>;
   /** Initial values of the form. */
   initialValues?: Partial<T>;
-  /** Validation rules for the form.  */
+  /** Validation rules for the form. */
   validation?: Validation<T>;
 }): FormProps<T> {
   const { onSubmit: _onSubmit, validation, initialValues = {} } = props;
