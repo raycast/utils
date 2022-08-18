@@ -97,9 +97,9 @@ const Demo = () => {
 
 ## Argument dependent on List search text
 
-By default, when an argument passed to the hook changes, the function will be executed again and the cache's value for those arguments will be returned immediately. This means that in the case of new arguments that haven't been used yet, the initial data will be returned.
+By default, when the query passed to the hook changes, it will be executed again and the cache's value for this query will be returned immediately. This means that in the case of new arguments that haven't been used yet, the initial data will be returned.
 
-This behaviour can cause some flickering (initial data -> fetched data -> arguments change -> initial data -> fetched data, etc.). To avoid that, we can set `keepPreviousData` to `true` and the hook will keep the latest fetched data if the cache is empty for the new arguments (initial data -> fetched data -> arguments change -> fetched data).
+This behaviour can cause some flickering (initial data -> fetched data -> query change -> initial data -> fetched data, etc.). To avoid that, we can set `keepPreviousData` to `true` and the hook will keep the latest fetched data if the cache is empty for the new arguments (initial data -> fetched data -> query change -> fetched data).
 
 ```tsx
 import { useState } from "react";
@@ -115,7 +115,10 @@ type NoteItem = {
 
 const Demo = () => {
   const [searchText, setSearchText] = useState("");
-  const { isLoading, data, permissionView } = useSQL<NoteItem>(NOTES_DB, notesQuery(searchText));
+  const { isLoading, data, permissionView } = useSQL<NoteItem>(NOTES_DB, notesQuery(searchText), {
+    // to make sure the screen isn't flickering when the searchText changes
+    keepPreviousData: true,
+  });
 
   if (permissionView) {
     return permissionView;
