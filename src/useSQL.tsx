@@ -1,4 +1,15 @@
-import { showToast, Toast, List, ActionPanel, Action, Clipboard } from "@raycast/api";
+import {
+  showToast,
+  Toast,
+  List,
+  ActionPanel,
+  Action,
+  Clipboard,
+  environment,
+  MenuBarExtra,
+  Icon,
+  open,
+} from "@raycast/api";
 import { readFile } from "fs/promises";
 import { useRef, useState, useEffect, useCallback } from "react";
 import initSqlJs, { Database, SqlJsStatic } from "sql.js";
@@ -107,6 +118,28 @@ function isPermissionError(error: unknown) {
 }
 
 function PermissionErrorScreen(props: { priming?: string }) {
+  if (environment.commandMode === "menu-bar") {
+    return (
+      <MenuBarExtra icon={Icon.Warning} title={environment.commandName}>
+        <MenuBarExtra.Item
+          title="Raycast needs full disk access"
+          tooltip="You can revert this access in preferences whenever you want"
+        />
+        {props.priming ? (
+          <MenuBarExtra.Item
+            title={props.priming}
+            tooltip="You can revert this access in preferences whenever you want"
+          />
+        ) : null}
+        <MenuBarExtra.Separator />
+        <MenuBarExtra.Item
+          title="Open System Preferences - Privacy"
+          onAction={() => open("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")}
+        />
+      </MenuBarExtra>
+    );
+  }
+
   return (
     <List>
       <List.EmptyView
