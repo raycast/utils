@@ -1,17 +1,19 @@
-import { environment, showToast, Toast, List, ActionPanel, Action, Clipboard } from "@raycast/api";
+import { showToast, Toast, List, ActionPanel, Action, Clipboard } from "@raycast/api";
 import { readFile } from "fs/promises";
-import { resolve } from "path";
 import { useRef, useState, useEffect, useCallback } from "react";
 import initSqlJs, { Database, SqlJsStatic } from "sql.js";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 
+// @ts-expect-error importing a wasm is tricky :)
+// eslint-disable-next-line import/no-unresolved
+import wasmBinary from "sql.js/dist/sql-wasm.wasm";
+
 let SQL: SqlJsStatic;
 
 async function loadDatabase(path: string) {
   if (!SQL) {
-    const wasmBinary = await readFile(resolve(environment.assetsPath, "sql-wasm.wasm"));
-    SQL = await initSqlJs({ wasmBinary });
+    SQL = await initSqlJs({ wasmBinary: Buffer.from(wasmBinary as Uint8Array) });
   }
   const fileContents = await readFile(path);
   return new SQL.Database(fileContents);
@@ -121,7 +123,7 @@ function PermissionErrorScreen(props: { priming?: string }) {
         actions={
           <ActionPanel>
             <Action.Open
-              title="System Preferences - Privacy"
+              title="Open System Preferences - Privacy"
               target="x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
             />
           </ActionPanel>

@@ -4,10 +4,9 @@ Hook which executes a query on a local SQL database and returns the [AsyncState]
 
 ## Requirement
 
-For this hook to work you need a few things:
+For this hook to work you need to:
 
-- the `sql.js` dependency. Install it by running `npm install --save sql.js`.
-- the WebAssembly bindings for SQL in the assets folder. Get it by adding the following script in your package.json: `"postinstall": "cp -f ./node_modules/sql.js/dist/sql-wasm.wasm ./assets/sql-wasm.wasm"` and running `npm install`.
+- install the `sql.js` dependency by running `npm install --save sql.js`.
 
 ## Signature
 
@@ -22,6 +21,7 @@ function useSQL<T, U>(
     execute?: boolean;
     onError?: (error: Error) => void;
     onData?: (data: T) => void;
+    onWillExecute?: (args: string[]) -> void;
   }
 ): AsyncState<T> & {
   revalidate: () => void;
@@ -37,7 +37,7 @@ function useSQL<T, U>(
 
 With a few options:
 
-- `options.permissionPriming` is a string explaining why the extension needs full disk access. For example, the Apple Notes extension uses `"This is required to search your Apple Notes."`. While it is optional, we recommend to set it to help users understand.
+- `options.permissionPriming` is a string explaining why the extension needs full disk access. For example, the Apple Notes extension uses `"This is required to search your Apple Notes."`. While it is optional, we recommend setting it to help users understand.
 
 Including the [useCachedPromise](./useCachedPromise.md)'s options:
 
