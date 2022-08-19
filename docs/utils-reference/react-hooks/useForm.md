@@ -92,18 +92,6 @@ export default function Main() {
           return <Form.Dropdown.Item value={String(num)} title={String(num)} key={num} />;
         })}
       </Form.Dropdown>
-      <Form.TagPicker title="Hobbies" {...itemProps.hobbies}>
-        <Form.TagPicker.Item value="traveling" title="Traveling" icon="🌏" />
-        <Form.TagPicker.Item value="listening_to_music" title="Listening to music" icon="🎧" />
-        <Form.TagPicker.Item value="reading" title="Reading" icon="📖" />
-        <Form.TagPicker.Item value="football" title="Football" icon="⚽" />
-        <Form.TagPicker.Item value="video_Games" title="Video Games" icon="🎮" />
-        <Form.TagPicker.Item value="watching_Films" title="Watching Films" icon="📽" />
-        <Form.TagPicker.Item value="going_to_the_gym" title="Going to the gym" icon="👟" />
-        <Form.TagPicker.Item value="eating" title="Eating" icon="🍕️" />
-        <Form.TagPicker.Item value="cooking" title="Cooking" icon="🍳" />
-        <Form.TagPicker.Item value="driving" title="Driving" icon="🚗" />
-      </Form.TagPicker>
     </Form>
   );
 }
