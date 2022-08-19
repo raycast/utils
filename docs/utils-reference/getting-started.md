@@ -13,3 +13,13 @@ npm install --save @raycast/utils
 ```
 
 `@raycast/utils` has a [peer dependency](https://docs.npmjs.com/cli/v8/configuring-npm/package-json#peerdependencies) on `@raycast/api`. This means that a certain version of `utils` will require a version above a certain version of `api`. `npm` will warn you if that is not the case.
+
+## Changelog
+
+### v1.1.0
+
+Added [`getFavicon`](./icons/getFavicon.md)
+
+### v1.0.0
+
+First release of the utilities.
