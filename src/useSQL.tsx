@@ -30,7 +30,7 @@ async function loadDatabase(path: string) {
   return new SQL.Database(fileContents);
 }
 
-export function useSQL<T, U = undefined>(
+export function useSQL<T = unknown, U = undefined>(
   databasePath: string,
   query: string,
   options?: { permissionPriming?: string } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">

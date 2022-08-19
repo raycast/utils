@@ -4,6 +4,7 @@ import contentType from "content-type";
 import { useDeepMemo } from "./useDeepMemo";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
+import { UseCachedPromiseReturnType } from "./types";
 
 const { emitWarning } = process;
 
@@ -85,13 +86,13 @@ async function defaultParsing(response: Response) {
  * };
  * ```
  */
-export function useFetch<T, U = undefined>(
+export function useFetch<T = unknown, U = undefined>(
   url: RequestInfo,
   options?: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
       CachedPromiseOptions<() => Promise<T>, U>,
       "abortable"
     >
-) {
+): UseCachedPromiseReturnType<T, U> {
   const { parseResponse, initialData, execute, keepPreviousData, onError, ...fetchOptions } = options || {};
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
