@@ -47,7 +47,11 @@ interface SignUpFormValues {
 export default function Main() {
   const { handleSubmit, itemProps } = useForm({
     onSubmit(values: SignUpFormValues) {
-      showToast(Toast.Style.Success, "Yay!", `${values.firstName} ${values.lastName} account created`);
+      showToast({
+        style: Toast.Style.Success,
+        title: "Yay!",
+        message: `${values.firstName} ${values.lastName} account created`
+      });
     },
     validation: {
       firstName: FormValidation.Required,
