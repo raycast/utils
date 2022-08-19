@@ -30,10 +30,46 @@ async function loadDatabase(path: string) {
   return new SQL.Database(fileContents);
 }
 
+/**
+ * Executes a query on a local SQL database and returns the {@link AsyncState} corresponding to the query of the command. The last value will be kept between command runs.
+ *
+ * @example
+ * ```
+ * import { useSQL } from "@raycast/utils";
+ * import { resolve } from "path";
+ * import { homedir } from "os";
+ *
+ * const NOTES_DB = resolve(homedir(), "Library/Group Containers/group.com.apple.notes/NoteStore.sqlite");
+ * const notesQuery = `SELECT id, title FROM ...`;
+ * type NoteItem = {
+ *   id: string;
+ *   title: string;
+ * };
+ *
+ * const Demo = () => {
+ *   const { isLoading, data, permissionView } = useSQL<NoteItem>(NOTES_DB, notesQuery);
+ *
+ *   if (permissionView) {
+ *     return permissionView;
+ *   }
+ *
+ *   return (
+ *     <List isLoading={isLoading}>
+ *       {(data || []).map((item) => (
+ *         <List.Item key={item.id} title={item.title} />
+ *       ))}
+ *     </List>
+ *  );
+ * };
+ * ```
+ */
 export function useSQL<T = unknown, U = undefined>(
   databasePath: string,
   query: string,
-  options?: { permissionPriming?: string } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+  options?: {
+    /** A string explaining why the extension needs full disk access. For example, the Apple Notes extension uses `"This is required to search your Apple Notes."`. While it is optional, we recommend setting it to help users understand. */
+    permissionPriming?: string;
+  } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
 ) {
   const { initialData, execute, keepPreviousData } = options || {};
 
