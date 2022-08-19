@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import hash from "object-hash";
-import { FunctionReturningPromise, PromiseType, AsyncStateFromFunctionReturningPromise, MutatePromise } from "./types";
+import { FunctionReturningPromise, PromiseReturnType, UseCachedPromiseReturnType, MutatePromise } from "./types";
 import { useCachedState } from "./useCachedState";
 import { usePromise, PromiseOptions } from "./usePromise";
 
@@ -60,66 +60,12 @@ export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = Promis
  */
 export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
   fn: T
-): AsyncStateFromFunctionReturningPromise<T> & {
-  data: PromiseType<ReturnType<T>> | undefined;
-  /**
-   * Function to wrap an asynchronous update and gives some control about how the
-   * `useCachedPromise`'s data should be updated.
-   *
-   * By default, the data will be revalidated (eg. the function will be called again)
-   * after the update is done.
-   *
-   * **Optimistic Update**
-   *
-   * In an optimistic update, the UI behaves as though a change was successfully
-   * completed before receiving confirmation from the server that it actually was -
-   * it is being optimistic that it will eventually get the confirmation rather than an error.
-   * This allows for a more responsive user experience.
-   *
-   * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
-   * the change introduced by the asynchronous update.
-   *
-   * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
-   * data if the asynchronous update fails.
-   */
-  mutate: MutatePromise<PromiseType<ReturnType<T>> | undefined>;
-  /**
-   * Function to manually call the function again
-   */
-  revalidate: () => void;
-};
+): UseCachedPromiseReturnType<PromiseReturnType<T>, undefined>;
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args: Parameters<T>,
   options?: CachedPromiseOptions<T, U>
-): AsyncStateFromFunctionReturningPromise<T> & {
-  data: PromiseType<ReturnType<T>> | U;
-  /**
-   * Function to wrap an asynchronous update and gives some control about how the
-   * `useCachedPromise`'s data should be updated.
-   *
-   * By default, the data will be revalidated (eg. the function will be called again)
-   * after the update is done.
-   *
-   * **Optimistic Update**
-   *
-   * In an optimistic update, the UI behaves as though a change was successfully
-   * completed before receiving confirmation from the server that it actually was -
-   * it is being optimistic that it will eventually get the confirmation rather than an error.
-   * This allows for a more responsive user experience.
-   *
-   * You can specify an `optimisticUpdate` function to mutate the data in order to reflect
-   * the change introduced by the asynchronous update.
-   *
-   * When doing so, you will want to specify the `rollbackOnError` function to mutate back the
-   * data if the asynchronous update fails.
-   */
-  mutate: MutatePromise<PromiseType<ReturnType<T>> | U>;
-  /**
-   * Function to manually call the function again
-   */
-  revalidate: () => void;
-};
+): UseCachedPromiseReturnType<PromiseReturnType<T>, U>;
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args?: Parameters<T>,
@@ -128,7 +74,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   const { initialData, keepPreviousData, ...usePromiseOptions } = options || {};
   const lastUpdateFrom = useRef<"cache" | "promise">();
 
-  const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (PromiseType<ReturnType<T>> | U)>(
+  const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (PromiseReturnType<T> | U)>(
     hash(args || []),
     emptyCache,
     {
@@ -137,9 +83,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   );
 
   // Use a ref to store previous returned data. Use the inital data as its inital value from the cache.
-  const laggyDataRef = useRef<PromiseType<ReturnType<T>> | U>(
-    cachedData !== emptyCache ? cachedData : (initialData as U)
-  );
+  const laggyDataRef = useRef<PromiseReturnType<T> | U>(cachedData !== emptyCache ? cachedData : (initialData as U));
 
   const {
     mutate: _mutate,
@@ -177,7 +121,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   const latestData = useLatest(returnedData);
 
   // we rewrite the mutate function to update the cache instead
-  const mutate = useCallback<MutatePromise<PromiseType<ReturnType<T>> | U>>(
+  const mutate = useCallback<MutatePromise<PromiseReturnType<T> | U>>(
     async (asyncUpdate, options) => {
       let dataBeforeOptimisticUpdate;
       try {
@@ -218,7 +162,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   }, [cachedData]);
 
   return {
-    data: returnedData as PromiseType<ReturnType<T>> | U,
+    data: returnedData as PromiseReturnType<T> | U,
     isLoading: state.isLoading,
     error: state.error,
     mutate,
