@@ -16,9 +16,13 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v1.2.0
+
+Added [`useExec`](./react-hooks/useExec.md) hook.
+
 ### v1.1.0
 
-Added [`getFavicon`](./icons/getFavicon.md)
+Added [`getFavicon`](./icons/getFavicon.md) method.
 
 ### v1.0.0
 
