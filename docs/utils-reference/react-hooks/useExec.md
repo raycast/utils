@@ -72,6 +72,8 @@ or
 
 - `command` is the string to execute.
 
+With a few options:
+
 - `options.shell` is a boolean or a string to tell whether to run the command inside of a shell or not. If `true`, uses `/bin/sh`. A different shell can be specified as a string. The shell should understand the `-c` switch.
 
   We recommend against using this option since it is:

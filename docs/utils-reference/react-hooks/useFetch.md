@@ -26,6 +26,8 @@ function useFetch<T, U>(
 
 - `url` is the string representation of the URL to fetch.
 
+With a few options:
+
 - `options` extends [`RequestInit`](https://github.com/nodejs/undici/blob/v5.7.0/types/fetch.d.ts#L103-L117) allowing you to specify a body, headers, etc. to apply to the request.
 - `options.parseResponse` is a function that accepts the Response as an argument and returns the data the hooks will return. By default, the hook will return `response.json()` if the response has a JSON `Content-Type` header or `response.text()` otherwise.
 
