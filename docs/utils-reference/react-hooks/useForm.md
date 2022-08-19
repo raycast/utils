@@ -45,8 +45,8 @@ interface SignUpFormValues {
 }
 
 export default function Main() {
-  const { handleSubmit, itemProps } = useForm({
-    onSubmit(values: SignUpFormValues) {
+  const { handleSubmit, itemProps } = useForm<SignUpFormValues>({
+    onSubmit(values) {
       showToast({
         style: Toast.Style.Success,
         title: "Yay!",
