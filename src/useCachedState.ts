@@ -2,18 +2,24 @@ import { useCallback, Dispatch, SetStateAction, useSyncExternalStore, useMemo } 
 import { Cache } from "@raycast/api";
 import { useLatest } from "./useLatest";
 
-function dateReplacer(_key: string, value: unknown) {
+function replacer(_key: string, value: unknown) {
   if (value instanceof Date) {
-    return `__raycast_cached_date__${value.toString()}`
+    return `__raycast_cached_date__${value.toString()}`;
   }
-  return value
+  if (Buffer.isBuffer(value)) {
+    return `__raycast_cached_buffer__${value.toString("base64")}`;
+  }
+  return value;
 }
 
-function dateReviver(_key: string, value: unknown) {
-  if (typeof value === 'string' && value.startsWith('__raycast_cached_date__')) {
-    return new Date(value.replace('__raycast_cached_date__', ''))
+function reviver(_key: string, value: unknown) {
+  if (typeof value === "string" && value.startsWith("__raycast_cached_date__")) {
+    return new Date(value.replace("__raycast_cached_date__", ""));
   }
-  return value
+  if (typeof value === "string" && value.startsWith("__raycast_cached_buffer__")) {
+    return Buffer.from(value.replace("__raycast_cached_buffer__", ""), "base64");
+  }
+  return value;
 }
 
 /**
@@ -51,7 +57,7 @@ export function useCachedState<T>(
 
   const state = useMemo(() => {
     if (typeof cachedState !== "undefined") {
-      return JSON.parse(cachedState, dateReviver);
+      return JSON.parse(cachedState, reviver);
     } else {
       return initialValueRef.current;
     }
@@ -63,7 +69,7 @@ export function useCachedState<T>(
     (updater: SetStateAction<T>) => {
       // @ts-expect-error TS struggles to infer the types as T could potentially be a function
       const newValue = typeof updater === "function" ? updater(stateRef.current) : updater;
-      const stringifiedValue = JSON.stringify(newValue, dateReplacer);
+      const stringifiedValue = JSON.stringify(newValue, replacer);
       cache.set(keyRef.current, stringifiedValue);
       return newValue;
     },

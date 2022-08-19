@@ -31,6 +31,7 @@
     "dequal": "^2.0.3",
     "media-typer": "^1.1.0",
     "object-hash": "^3.0.0",
+    "signal-exit": "^3.0.7",
     "undici": "^5.8.0"
   },
   "devDependencies": {
@@ -38,6 +39,7 @@
     "@types/content-type": "^1.1.5",
     "@types/media-typer": "^1.1.1",
     "@types/object-hash": "^2.2.1",
+    "@types/signal-exit": "^3.0.1",
     "@typescript-eslint/eslint-plugin": "5.26.0",
     "@typescript-eslint/parser": "5.26.0",
     "eslint": "8.16.0",

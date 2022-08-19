@@ -11,3 +11,4 @@
   - [useCachedPromise](utils-reference/react-hooks/useCachedPromise.md)
   - [useFetch](utils-reference/react-hooks/useFetch.md)
   - [useForm](utils-reference/react-hooks/useForm.md)
+  - [useExec](utils-reference/react-hooks/useExec.md)
