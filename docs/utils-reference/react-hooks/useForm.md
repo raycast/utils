@@ -56,7 +56,6 @@ export default function Main() {
     validation: {
       firstName: FormValidation.Required,
       lastName: FormValidation.Required,
-      birthday: FormValidation.Required,
       password: (value) => {
         if (value && value.length < 8) {
           return "Password must be at least 8 symbols";
