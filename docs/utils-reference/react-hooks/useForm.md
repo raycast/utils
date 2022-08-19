@@ -69,7 +69,6 @@ export default function Main() {
           return "Please select '2'";
         }
       },
-      hobbies: FormValidation.Required,
     },
   });
   return (
