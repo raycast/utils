@@ -12,7 +12,9 @@ It will automatically update the form validation state when the form is submitte
 function useForm<T extends Form.Values>(props: {
   onSubmit: (values: T) => void | boolean | Promise<void | boolean>;
   initialValues?: Partial<T>;
-  validation?: Validation<T>;
+  validation?: {
+    [id in keyof T]?: ((value: T[id]) => string | undefined | null) | FormValidation;
+  };
 }): FormProps<T>;
 ```
 
@@ -27,7 +29,27 @@ With a few options:
 
 ### Return
 
-Returns an object with the [FormProps](#formprops) contains the form state and methods that will be returned to the consumer of the `useHook`.
+Form state and methods that will be returned to the consumer of the `useHook`.
+
+```tsx
+interface FormProps<T extends Form.Values> {
+  handleSubmit: (values: T) => void | boolean | Promise<void | boolean>;
+  setValidationError: (id: keyof T, error: ValidationError) => void;
+  setValue: <K extends keyof T>(id: K, value: T[K]) => void;
+  values: T;
+  itemProps: {
+    [id in keyof T]: Partial<Form.ItemProps<T[id]>> & {
+      id: string;
+    };
+  };
+}
+```
+
+- `handleSubmit` - function that will be called when the form is submitted. Use it to pass into the `onSubmit` prop of the `<Action.SubmitForm>` element.
+- `setValidationError` - function that you should use to configure the validation error for a specific field.
+- `setValue` - function that you should use to set the value for a specific field.
+- `values` - the current values of the form.
+- `itemProps` - the props that will be passed to the `<Form.Item>` element.
 
 ## Example
 
@@ -50,7 +72,7 @@ export default function Main() {
       showToast({
         style: Toast.Style.Success,
         title: "Yay!",
-        message: `${values.firstName} ${values.lastName} account created`
+        message: `${values.firstName} ${values.lastName} account created`,
       });
     },
     validation: {
@@ -98,27 +120,7 @@ export default function Main() {
 
 ## Types
 
-### FormProps
+### FormValidation
 
-Form state and methods that will be returned to the consumer of the `useHook`.
-This is the internal state of the form and is not intended to be used directly.
-
-```tsx
-interface FormProps<T extends Form.Values> {
-  handleSubmit: (values: T) => void | boolean | Promise<void | boolean>;
-  setValidationError: (id: keyof T, error: ValidationError) => void;
-  setValue: <K extends keyof T>(id: K, value: T[K]) => void;
-  values: T;
-  itemProps: {
-    [id in keyof T]: Partial<Form.ItemProps<T[id]>> & {
-      id: string;
-    };
-  };
-}
-```
-
-- `handleSubmit` - function that will be called when the form is submitted. Use it to pass into the `onSubmit` prop of the `<Action.SubmitForm>` element.
-- `setValidationError` - function that you should use to configure the validation error for a specific field.
-- `setValue` - function that you should use to set the value for a specific field.
-- `values` - the current values of the form.
-- `itemProps` - the props that will be passed to the `<Form.Item>` element.
+A enum describing the built-in validation types
+Use `FormValidation.Required` constant to mark the value of item as required.
