@@ -3,10 +3,10 @@ import { useState, useCallback, useMemo, useRef } from "react";
 import { useLatest } from "./useLatest";
 
 /**
- * A enum describing the built-in validation types
- * - Required: the value is required
+ * Shorthands for common validation cases
  */
 export enum FormValidation {
+  /** Show an error when the value of the item is empty */
   Required = "required",
 }
 

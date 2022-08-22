@@ -117,5 +117,10 @@ export default function Main() {
 
 ### FormValidation
 
-A enum describing the built-in validation types
-Use `FormValidation.Required` constant to mark the value of item as required.
+Shorthands for common validation cases
+
+#### Enumeration members
+
+| Name     | Description                                       |
+| :------- | :------------------------------------------------ |
+| Required | Show an error when the value of the item is empty |
