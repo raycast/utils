@@ -47,19 +47,16 @@ function validationError<ValueType>(
 
 type Validation<T extends Form.Values> = { [id in keyof T]?: Validator<T[id]> };
 
-/**
- * Form state and methods that will be returned to the consumer of the `useHook`.
- */
 interface FormProps<T extends Form.Values> {
-  /** Function that will be called when the form is submitted. Use it to pass into the `onSubmit` prop of the `<Action.SubmitForm>` element. */
+  /** Function to pass to the `onSubmit` prop of the `<Action.SubmitForm>` element. It wraps the initial `onSubmit` argument with some goodies related to the validation. */
   handleSubmit: (values: T) => void | boolean | Promise<void | boolean>;
-  /** Function that you should use to configure the validation error for a specific field. */
+  /** function that can be used to programmatically set the validation of a specific field. */
   setValidationError: (id: keyof T, error: ValidationError) => void;
-  /** Function that you should use to set the value for a specific field. */
+  /** Function that can be used to programmatically set the value of a specific field. */
   setValue: <K extends keyof T>(id: K, value: T[K]) => void;
   /** The current values of the form. */
   values: T;
-  /** The props that will be passed to the `<Form.Item>` element. */
+  /** The props that must be passed to the `<Form.Item>` elements to handle the validations. */
   itemProps: {
     [id in keyof T]: Partial<Form.ItemProps<T[id]>> & {
       id: string;
@@ -68,15 +65,9 @@ interface FormProps<T extends Form.Values> {
 }
 
 /**
- * `useForm()` is a custom React hook that will return all Form state and helpers directly.
- * It is a wrapper around the Form API and provides a simple way to use such things like form validation or controlled form items.
+ * Hook that provides a high-level interface to work with Forms, and more particularly, with Form validations. It incorporates all the good practices to provide a great User Experience for your Forms.
  *
- * Controlling form items is easy with the hook. Simply pass the value to the `setValue()` function and the Form will update the value.
- * It will automatically update the form validation state when the form is submitted.
- * You can easily use the hook's validation state to render error messages automatically.
- *
- *
- * @returns Form state and helpers. See {@link FormProps} for more details.
+ * @returns an object which contains the necessary methods and props to provide a good User Experience in your Form.
  *
  * @example
  * ```
@@ -89,8 +80,8 @@ interface FormProps<T extends Form.Values> {
  * }
  *
  * export default function Main() {
- *   const { handleSubmit, itemProps } = useForm({
- *     onSubmit(values: SignUpFormValues) {
+ *   const { handleSubmit, itemProps } = useForm<SignUpFormValues>({
+ *     onSubmit(values) {
  *       showToast(Toast.Style.Success, "Yay!", `${values.nickname} account created`);
  *     },
  *     validation: {
@@ -104,6 +95,7 @@ interface FormProps<T extends Form.Values> {
  *       },
  *     },
  *   });
+ *
  *   return (
  *     <Form
  *       actions={
@@ -126,9 +118,12 @@ interface FormProps<T extends Form.Values> {
 function useForm<T extends Form.Values>(props: {
   /** Callback that will be called when the form is submitted and all validations pass. */
   onSubmit: (values: T) => void | boolean | Promise<void | boolean>;
-  /** Initial values of the form. */
+  /** The initial values to set when the Form is first rendered. */
   initialValues?: Partial<T>;
-  /** Validation rules for the form. */
+  /** The validation rules for the Form. A validation for a Form item is a function that takes the current value of the item as an argument and must return a string when the validation is failing.
+   *
+   * There are also some shorthands for common cases, see {@link FormValidation}.
+   * */
   validation?: Validation<T>;
 }): FormProps<T> {
   const { onSubmit: _onSubmit, validation, initialValues = {} } = props;

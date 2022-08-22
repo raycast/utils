@@ -1,10 +1,6 @@
 # `useForm`
 
-Hook that will return all Form state and helpers directly.
-It is a wrapper around the Form API and provides a simple way to use such things like form validation or controlled form items.
-
-Controlling form items is easy with the hook. Simply pass the value to the `setValue()` function and the Form will update the value.
-It will automatically update the form validation state when the form is submitted. You can easily use the hook's validation state to render error messages automatically.
+Hook that provides a high-level interface to work with Forms, and more particularly, with Form validations. It incorporates all the good practices to provide a great User Experience for your Forms.
 
 ## Signature
 
@@ -15,24 +11,7 @@ function useForm<T extends Form.Values>(props: {
   validation?: {
     [id in keyof T]?: ((value: T[id]) => string | undefined | null) | FormValidation;
   };
-}): FormProps<T>;
-```
-
-### Arguments
-
-- `onSubmit` - is a callback that will be called when the form is submitted and all validations pass.
-
-With a few options:
-
-- `initialValues` - initial values of the form.
-- `validation` - validation rules for the form.
-
-### Return
-
-Form state and methods that will be returned to the consumer of the `useHook`.
-
-```tsx
-interface FormProps<T extends Form.Values> {
+}): {
   handleSubmit: (values: T) => void | boolean | Promise<void | boolean>;
   setValidationError: (id: keyof T, error: ValidationError) => void;
   setValue: <K extends keyof T>(id: K, value: T[K]) => void;
@@ -42,14 +21,30 @@ interface FormProps<T extends Form.Values> {
       id: string;
     };
   };
-}
+};
 ```
 
-- `handleSubmit` - function that will be called when the form is submitted. Use it to pass into the `onSubmit` prop of the `<Action.SubmitForm>` element.
-- `setValidationError` - function that you should use to configure the validation error for a specific field.
-- `setValue` - function that you should use to set the value for a specific field.
-- `values` - the current values of the form.
-- `itemProps` - the props that will be passed to the `<Form.Item>` element.
+### Arguments
+
+- `onSubmit` is a callback that will be called when the form is submitted and all validations pass.
+
+With a few options:
+
+- `initialValues` are the initial values to set when the Form is first rendered.
+- `validation` are the validation rules for the Form. A validation for a Form item is a function that takes the current value of the item as an argument and must return a string when the validation is failing. We also provide some shorthands for common cases, see [FormValidation](#formvalidation).
+
+### Return
+
+Returns an object which contains the necessary methods and props to provide a good User Experience in your Form.
+
+- `handleSubmit` is a function to pass to the `onSubmit` prop of the `<Action.SubmitForm>` element. It wraps the initial `onSubmit` argument with some goodies related to the validation.
+- `itemProps` are the props that must be passed to the `<Form.Item>` elements to handle the validations.
+
+It also contains some additions for easy manipulation of the Form's data.
+
+- `values` is the current values of the Form.
+- `setValue` is a function that can be used to programmatically set the value of a specific field.
+- `setValidationError` is a function that can be used to programmatically set the validation of a specific field.
 
 ## Example
 
