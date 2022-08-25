@@ -9,6 +9,7 @@
   "scripts": {
     "lint": "eslint src/",
     "build": "tsc",
+    "dev": "tsc --watch",
     "test": "npm run lint",
     "prepublishOnly": "npm run build && npm test",
     "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
