@@ -33,7 +33,7 @@
     "media-typer": "^1.1.0",
     "object-hash": "^3.0.0",
     "signal-exit": "^3.0.7",
-    "undici": "^5.8.0"
+    "undici": "^5.10.0"
   },
   "devDependencies": {
     "@raycast/api": "^1.39.0",
