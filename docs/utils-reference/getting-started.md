@@ -18,7 +18,7 @@ npm install --save @raycast/utils
 
 ### v1.2.0
 
-Added [`useExec`](./react-hooks/useExec.md) hook.
+Added [`useExec`](./react-hooks/useExec.md) and [`useForm`](./react-hooks/useForm.md) hooks.
 
 ### v1.1.0
 
