@@ -50,18 +50,22 @@ type Validation<T extends Form.Values> = { [id in keyof T]?: Validator<T[id]> };
 interface FormProps<T extends Form.Values> {
   /** Function to pass to the `onSubmit` prop of the `<Action.SubmitForm>` element. It wraps the initial `onSubmit` argument with some goodies related to the validation. */
   handleSubmit: (values: T) => void | boolean | Promise<void | boolean>;
-  /** function that can be used to programmatically set the validation of a specific field. */
-  setValidationError: (id: keyof T, error: ValidationError) => void;
-  /** Function that can be used to programmatically set the value of a specific field. */
-  setValue: <K extends keyof T>(id: K, value: T[K]) => void;
-  /** The current values of the form. */
-  values: T;
   /** The props that must be passed to the `<Form.Item>` elements to handle the validations. */
   itemProps: {
     [id in keyof T]: Partial<Form.ItemProps<T[id]>> & {
       id: string;
     };
   };
+  /** Function that can be used to programmatically set the validation of a specific field. */
+  setValidationError: (id: keyof T, error: ValidationError) => void;
+  /** Function that can be used to programmatically set the value of a specific field. */
+  setValue: <K extends keyof T>(id: K, value: T[K]) => void;
+  /** The current values of the form. */
+  values: T;
+  /** Function that can be used to programmatically focus a specific field. */
+  focus: (id: keyof T) => void;
+  /** Function that can be used to reset the values of the Form. */
+  reset: (initialValues?: Partial<T>) => void;
 }
 
 /**
@@ -136,6 +140,13 @@ function useForm<T extends Form.Values>(props: {
   const latestValidation = useLatest<Validation<T>>(validation || {});
   const latestOnSubmit = useLatest(_onSubmit);
 
+  const focus = useCallback(
+    (id: keyof T) => {
+      refs.current[id]?.focus();
+    },
+    [refs]
+  );
+
   const handleSubmit = useCallback(
     async (values: T): Promise<boolean> => {
       let validationErrors: false | { [key in keyof T]?: ValidationError } = false;
@@ -145,7 +156,7 @@ function useForm<T extends Form.Values>(props: {
           if (!validationErrors) {
             validationErrors = {};
             // we focus the first item that has an error
-            refs.current[id]?.focus();
+            focus(id);
           }
           validationErrors[id as keyof T] = error;
         }
@@ -157,7 +168,7 @@ function useForm<T extends Form.Values>(props: {
       const result = await latestOnSubmit.current(values);
       return typeof result === "boolean" ? result : true;
     },
-    [latestValidation, latestOnSubmit]
+    [latestValidation, latestOnSubmit, focus]
   );
 
   const setValidationError = useCallback(
@@ -211,7 +222,12 @@ function useForm<T extends Form.Values>(props: {
     );
   }, [errors, latestValidation, setValidationError, values, refs, setValue]);
 
-  return { handleSubmit, setValidationError, setValue, values, itemProps };
+  const reset = useCallback((initialValues: Partial<T> = {}) => {
+    setErrors(initialValues);
+    setValues;
+  }, []);
+
+  return { handleSubmit, setValidationError, setValue, values, itemProps, focus, reset };
 }
 
 export { useForm };
