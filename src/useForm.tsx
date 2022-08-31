@@ -222,10 +222,14 @@ function useForm<T extends Form.Values>(props: {
     );
   }, [errors, latestValidation, setValidationError, values, refs, setValue]);
 
-  const reset = useCallback((initialValues: Partial<T> = {}) => {
-    setErrors(initialValues);
-    setValues;
-  }, []);
+  const reset = useCallback(
+    (initialValues: Partial<T> = {}) => {
+      // @ts-expect-error it's fine if we don't specify all the values
+      setValues(initialValues);
+      setErrors({});
+    },
+    [setValues, setErrors]
+  );
 
   return { handleSubmit, setValidationError, setValue, values, itemProps, focus, reset };
 }
