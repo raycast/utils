@@ -4,7 +4,7 @@ export * from "./useCachedPromise";
 
 export * from "./useFetch";
 export * from "./useExec";
-
+export * from "./useSQL";
 export * from "./useForm";
 
 //export * as suspense from "./suspense";

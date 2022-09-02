@@ -155,30 +155,9 @@ function isPermissionError(error: unknown) {
 }
 
 const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
+const preferencesString = macosVenturaAndLater ? "Settings" : "Preferences";
 
 function PermissionErrorScreen(props: { priming?: string }) {
-  if (environment.commandMode === "menu-bar") {
-    return (
-      <MenuBarExtra icon={Icon.Warning} title={environment.commandName}>
-        <MenuBarExtra.Item
-          title="Raycast needs full disk access"
-          tooltip="You can revert this access in preferences whenever you want"
-        />
-        {props.priming ? (
-          <MenuBarExtra.Item
-            title={props.priming}
-            tooltip="You can revert this access in preferences whenever you want"
-          />
-        ) : null}
-        <MenuBarExtra.Separator />
-        <MenuBarExtra.Item
-          title="Open System Preferences - Privacy"
-          onAction={() => open("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")}
-        />
-      </MenuBarExtra>
-    );
-  }
-
   const action = macosVenturaAndLater
     ? {
         title: "Open System Settings -> Privacy",
@@ -188,6 +167,25 @@ function PermissionErrorScreen(props: { priming?: string }) {
         title: "Open System Preferences -> Security",
         target: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
       };
+
+  if (environment.commandMode === "menu-bar") {
+    return (
+      <MenuBarExtra icon={Icon.Warning} title={environment.commandName}>
+        <MenuBarExtra.Item
+          title="Raycast needs full disk access"
+          tooltip={`You can revert this access in ${preferencesString} whenever you want`}
+        />
+        {props.priming ? (
+          <MenuBarExtra.Item
+            title={props.priming}
+            tooltip={`You can revert this access in ${preferencesString} whenever you want`}
+          />
+        ) : null}
+        <MenuBarExtra.Separator />
+        <MenuBarExtra.Item title={action.title} onAction={() => open(action.target)} />
+      </MenuBarExtra>
+    );
+  }
 
   return (
     <List>
@@ -201,7 +199,7 @@ function PermissionErrorScreen(props: { priming?: string }) {
         title="Raycast needs full disk access."
         description={`${
           props.priming ? props.priming + "\n" : ""
-        }You can revert this access in preferences whenever you want.`}
+        }You can revert this access in ${preferencesString} whenever you want.`}
         actions={
           <ActionPanel>
             <Action.Open {...action} />
