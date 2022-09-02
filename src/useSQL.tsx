@@ -12,6 +12,7 @@ import {
 } from "@raycast/api";
 import { readFile } from "fs/promises";
 import { useRef, useState, useEffect, useCallback } from "react";
+import os from "node:os";
 import initSqlJs, { Database, SqlJsStatic } from "sql.js";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
@@ -153,6 +154,8 @@ function isPermissionError(error: unknown) {
   return error instanceof Error && error.name === "PermissionError";
 }
 
+const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
+
 function PermissionErrorScreen(props: { priming?: string }) {
   if (environment.commandMode === "menu-bar") {
     return (
@@ -176,6 +179,16 @@ function PermissionErrorScreen(props: { priming?: string }) {
     );
   }
 
+  const action = macosVenturaAndLater
+    ? {
+        title: "Open System Settings -> Privacy",
+        target: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
+      }
+    : {
+        title: "Open System Preferences -> Security",
+        target: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
+      };
+
   return (
     <List>
       <List.EmptyView
@@ -191,10 +204,7 @@ function PermissionErrorScreen(props: { priming?: string }) {
         }You can revert this access in preferences whenever you want.`}
         actions={
           <ActionPanel>
-            <Action.Open
-              title="Open System Preferences - Privacy"
-              target="x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
-            />
+            <Action.Open {...action} />
           </ActionPanel>
         }
       />
