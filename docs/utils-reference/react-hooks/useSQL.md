@@ -11,13 +11,11 @@ For this hook to work you need to:
 ## Signature
 
 ```ts
-function useSQL<T, U>(
+function useSQL<T>(
   databasePath: string,
   query: string,
   options?: {
     permissionPriming?: string;
-    initialData?: U;
-    keepPreviousData?: boolean;
     execute?: boolean;
     onError?: (error: Error) => void;
     onData?: (data: T) => void;
@@ -39,17 +37,8 @@ With a few options:
 
 - `options.permissionPriming` is a string explaining why the extension needs full disk access. For example, the Apple Notes extension uses `"This is required to search your Apple Notes."`. While it is optional, we recommend setting it to help users understand.
 
-Including the [useCachedPromise](./useCachedPromise.md)'s options:
-
-- `options.keepPreviousData` is a boolean to tell the hook to keep the previous results instead of returning the initial value if there aren't any in the cache for the new arguments. This is particularly useful when used for data for a List to avoid flickering.
-
-Including the [useCachedState](./useCachedState.md)'s options:
-
-- `options.initialData` is the initial value of the state if there aren't any in the Cache yet.
-
 Including the [usePromise](./usePromise.md)'s options:
 
-- `options.abortable` is a reference to an [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) to cancel a previous call when triggering a new one.
 - `options.execute` is a boolean to indicate whether to actually execute the function or not. This is useful for cases where one of the function's arguments depends on something that might not be available right away (for example, depends on some user inputs). Because React requires every hook to be defined on the render, this flag enables you to define the hook right away but wait until you have all the arguments ready to execute the function.
 - `options.onError` is a function called when an execution fails. By default, it will log the error and show a generic failure toast with an action to retry.
 - `options.onData` is a function called when an execution succeeds.
