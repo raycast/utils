@@ -47,6 +47,10 @@ type ExecOptions = {
    * @default "utf8"
    */
   encoding?: BufferEncoding | "buffer";
+  /**
+   * Write some input to the `stdin` of your binary.
+   */
+  input?: string | Buffer;
   /** If timeout is greater than `0`, the parent will send the signal `SIGTERM` if the child runs longer than timeout milliseconds. */
   timeout?: number;
 };
@@ -485,17 +489,23 @@ export function useExec<T, U = undefined>(
   } & ExecOptions &
     Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
 ): UseCachedPromiseReturnType<T, U> {
-  const { initialData, execute, keepPreviousData, onError, parseOutput, ...execOptions } = Array.isArray(optionsOrArgs)
+  const { initialData, execute, keepPreviousData, onError, parseOutput, input, ...execOptions } = Array.isArray(
+    optionsOrArgs
+  )
     ? options || {}
     : optionsOrArgs || {};
 
-  const args = useDeepMemo<[string[], ExecOptions]>([Array.isArray(optionsOrArgs) ? optionsOrArgs : [], execOptions]);
+  const args = useDeepMemo<[string[], ExecOptions, string | Buffer | undefined]>([
+    Array.isArray(optionsOrArgs) ? optionsOrArgs : [],
+    execOptions,
+    input,
+  ]);
 
   const abortable = useRef<AbortController>();
   const parseOutputRef = useLatest(parseOutput || defaultParsing);
 
   const fn = useCallback(
-    async (_command: string, _args: string[], _options?: ExecOptions) => {
+    async (_command: string, _args: string[], _options?: ExecOptions, input?: string | Buffer) => {
       const [file, ...args] = parseCommand(_command, _args);
       const command = [file, ...args].join(" ");
 
@@ -512,6 +522,10 @@ export function useExec<T, U = undefined>(
       const spawnedPromise = getSpawnedPromise(spawned);
       const timedPromise = setupTimeout(spawned, options, spawnedPromise);
       const processDone = setExitHandler(spawned, timedPromise);
+
+      if (input) {
+        spawned.stdin.end(input);
+      }
 
       const [{ error, exitCode, signal, timedOut }, stdoutResult, stderrResult] = await getSpawnedResult(
         spawned,

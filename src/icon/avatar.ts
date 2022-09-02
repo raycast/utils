@@ -140,3 +140,27 @@ export function getAvatarIcon(
   `.replaceAll("\n", "");
   return `data:image/svg+xml,${svg}`;
 }
+
+const cache = new Map<
+  () => Promise<any>,
+  { result: any; inFlight?: undefined } | { inFlight: Promise<any>; result?: undefined }
+>();
+export function singletonPromise<T>(promise: () => Promise<T>): T | Promise<T> {
+  const cached = cache.get(promise);
+  if (cached) {
+    return cached.result || cached.inFlight;
+  }
+
+  const inFlight = promise()
+    .then((result) => {
+      cache.set(promise, { result });
+      return result;
+    })
+    .catch((err) => {
+      cache.delete(promise);
+      throw err;
+    });
+
+  cache.set(promise, { inFlight });
+  return inFlight;
+}
