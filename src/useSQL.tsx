@@ -14,7 +14,7 @@ import { readFile } from "fs/promises";
 import { useRef, useState, useEffect, useCallback } from "react";
 import os from "node:os";
 import initSqlJs, { Database, SqlJsStatic } from "sql.js";
-import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
+import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 
 // @ts-expect-error importing a wasm is tricky :)
@@ -64,15 +64,16 @@ async function loadDatabase(path: string) {
  * };
  * ```
  */
-export function useSQL<T = unknown, U = undefined>(
+export function useSQL<T = unknown>(
   databasePath: string,
   query: string,
   options?: {
     /** A string explaining why the extension needs full disk access. For example, the Apple Notes extension uses `"This is required to search your Apple Notes."`. While it is optional, we recommend setting it to help users understand. */
     permissionPriming?: string;
-  } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+  } & Omit<PromiseOptions<(query: string) => Promise<T[]>>, "abortable">
 ) {
-  const { initialData, execute, keepPreviousData } = options || {};
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { permissionPriming, ...usePromiseOptions } = options || {};
 
   const databaseRef = useRef<Database>();
 
@@ -138,7 +139,7 @@ export function useSQL<T = unknown, U = undefined>(
   }, []);
 
   return {
-    ...useCachedPromise(fn, [query], { initialData, execute, keepPreviousData, onError: handleError }),
+    ...usePromise(fn, [query], { ...usePromiseOptions, onError: handleError }),
     permissionView,
   };
 }

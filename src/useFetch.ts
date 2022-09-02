@@ -89,11 +89,21 @@ async function defaultParsing(response: Response) {
 export function useFetch<T = unknown, U = undefined>(
   url: RequestInfo,
   options?: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
-      CachedPromiseOptions<() => Promise<T>, U>,
+      CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>,
       "abortable"
     >
 ): UseCachedPromiseReturnType<T, U> {
-  const { parseResponse, initialData, execute, keepPreviousData, onError, ...fetchOptions } = options || {};
+  const { parseResponse, initialData, execute, keepPreviousData, onError, onData, onWillExecute, ...fetchOptions } =
+    options || {};
+
+  const useCachedPromiseOptions: CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U> = {
+    initialData,
+    execute,
+    keepPreviousData,
+    onError,
+    onData,
+    onWillExecute,
+  };
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
   const abortable = useRef<AbortController>();
@@ -108,5 +118,5 @@ export function useFetch<T = unknown, U = undefined>(
 
   const args = useDeepMemo<Parameters<typeof fetch>>([url, fetchOptions]);
 
-  return useCachedPromise(fn, args, { initialData, abortable, execute, keepPreviousData, onError });
+  return useCachedPromise(fn, args, { ...useCachedPromiseOptions, abortable });
 }
