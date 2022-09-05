@@ -353,8 +353,6 @@ const makeError = ({
   // @ts-expect-error not on Error
   error.command = command;
   // @ts-expect-error not on Error
-  error.escapedCommand = escapedCommand;
-  // @ts-expect-error not on Error
   error.exitCode = exitCode;
   // @ts-expect-error not on Error
   error.signal = signal;
