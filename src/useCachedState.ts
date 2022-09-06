@@ -22,6 +22,9 @@ function reviver(_key: string, value: unknown) {
   return value;
 }
 
+const rootCache = Symbol("cache without namespace");
+const cacheMap = new Map<string | symbol, Cache>();
+
 /**
  * Returns a stateful value, and a function to update it. The value will be kept between command runs.
  *
@@ -41,7 +44,13 @@ export function useCachedState<T>(
   initialState?: T,
   config?: { cacheNamespace?: string }
 ): [T, Dispatch<SetStateAction<T>>] {
-  const cache = useMemo(() => new Cache({ namespace: config?.cacheNamespace }), [config?.cacheNamespace]);
+  const cacheKey = config?.cacheNamespace || rootCache;
+  const cache =
+    cacheMap.get(cacheKey) || cacheMap.set(cacheKey, new Cache({ namespace: config?.cacheNamespace })).get(cacheKey);
+
+  if (!cache) {
+    throw new Error("Missing cache");
+  }
 
   const keyRef = useLatest(key);
   const initialValueRef = useLatest(initialState);
