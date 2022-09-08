@@ -66,6 +66,9 @@ export function useCachedState<T>(
 
   const state = useMemo(() => {
     if (typeof cachedState !== "undefined") {
+      if (cachedState === "undefined") {
+        return undefined;
+      }
       return JSON.parse(cachedState, reviver);
     } else {
       return initialValueRef.current;
@@ -78,8 +81,12 @@ export function useCachedState<T>(
     (updater: SetStateAction<T>) => {
       // @ts-expect-error TS struggles to infer the types as T could potentially be a function
       const newValue = typeof updater === "function" ? updater(stateRef.current) : updater;
-      const stringifiedValue = JSON.stringify(newValue, replacer);
-      cache.set(keyRef.current, stringifiedValue);
+      if (typeof newValue === "undefined") {
+        cache.set(keyRef.current, "undefined");
+      } else {
+        const stringifiedValue = JSON.stringify(newValue, replacer);
+        cache.set(keyRef.current, stringifiedValue);
+      }
       return newValue;
     },
     [cache, keyRef, stateRef]
