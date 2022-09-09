@@ -104,7 +104,7 @@ export function usePromise<T extends FunctionReturningPromise>(
       set((prevState) => ({ ...prevState, isLoading: true }));
 
       return fnRef.current(...args).then(
-        (data) => {
+        (data: PromiseReturnType<T>) => {
           if (callId === lastCallId.current) {
             if (latestOnData.current) {
               latestOnData.current(data);
@@ -161,7 +161,7 @@ export function usePromise<T extends FunctionReturningPromise>(
   latestCallback.current = callback;
 
   const revalidate = useCallback(() => {
-    callback(...(latestArgs.current || []));
+    return callback(...(latestArgs.current || []));
   }, [callback, latestArgs]);
 
   const mutate = useCallback<MutatePromise<PromiseReturnType<T>, undefined>>(
@@ -188,7 +188,13 @@ export function usePromise<T extends FunctionReturningPromise>(
         throw err;
       } finally {
         if (options?.shouldRevalidateAfter !== false) {
-          revalidate();
+          if (environment.launchType === LaunchType.Background || environment.commandMode === "menu-bar") {
+            // when in the background or in a menu bar, we are going to await the revalidation
+            // to make sure we get the right data at the end of the mutation
+            await revalidate();
+          } else {
+            revalidate();
+          }
         }
       }
     },

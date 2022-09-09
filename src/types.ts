@@ -47,20 +47,20 @@ export type AsyncState<T> =
  * data if the asynchronous update fails. If not specified, the data will be automatically
  * rolled back to its previous value (before the optimistic update).
  */
-export type MutatePromise<T, U = T> = (
-  asyncUpdate?: Promise<any>,
+export type MutatePromise<T, U = T, V = any> = (
+  asyncUpdate?: Promise<V>,
   options?: {
     optimisticUpdate?: (data: T | U) => T;
     rollbackOnError?: boolean | ((data: T | U) => T);
     shouldRevalidateAfter?: boolean;
   }
-) => Promise<any>;
+) => Promise<V>;
 
 export type UsePromiseReturnType<T> = AsyncState<T> & {
   /**
    * Function to manually call the function again
    */
-  revalidate: () => void;
+  revalidate: () => Promise<T>;
   /**
    * Function to wrap an asynchronous update and gives some control about how the
    * hook's data should be updated while the update is going through.
