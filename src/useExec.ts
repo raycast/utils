@@ -405,6 +405,14 @@ function defaultParsing<T extends string | Buffer>({
   return stdout;
 }
 
+type ExecCachedPromiseOptions<T, U> = Omit<
+  CachedPromiseOptions<
+    (_command: string, _args: string[], _options?: ExecOptions, input?: string | Buffer) => Promise<T>,
+    U
+  >,
+  "abortable"
+>;
+
 /**
  * Executes a command and returns the {@link AsyncState} corresponding to the execution of the command. The last value will be kept between command runs.
  *
@@ -436,7 +444,7 @@ export function useExec<T = Buffer, U = undefined>(
     parseOutput?: ParseExecOutputHandler<T, Buffer>;
   } & ExecOptions & {
       encoding: "buffer";
-    } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+    } & ExecCachedPromiseOptions<T, U>
 ): UseCachedPromiseReturnType<T, U>;
 export function useExec<T = string, U = undefined>(
   command: string,
@@ -444,7 +452,7 @@ export function useExec<T = string, U = undefined>(
     parseOutput?: ParseExecOutputHandler<T, string>;
   } & ExecOptions & {
       encoding?: BufferEncoding;
-    } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+    } & ExecCachedPromiseOptions<T, U>
 ): UseCachedPromiseReturnType<T, U>;
 export function useExec<T = Buffer, U = undefined>(
   file: string,
@@ -458,7 +466,7 @@ export function useExec<T = Buffer, U = undefined>(
     parseOutput?: ParseExecOutputHandler<T, Buffer>;
   } & ExecOptions & {
       encoding: "buffer";
-    } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+    } & ExecCachedPromiseOptions<T, U>
 ): UseCachedPromiseReturnType<T, U>;
 export function useExec<T = string, U = undefined>(
   file: string,
@@ -472,7 +480,7 @@ export function useExec<T = string, U = undefined>(
     parseOutput?: ParseExecOutputHandler<T, string>;
   } & ExecOptions & {
       encoding?: BufferEncoding;
-    } & Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+    } & ExecCachedPromiseOptions<T, U>
 ): UseCachedPromiseReturnType<T, U>;
 export function useExec<T, U = undefined>(
   command: string,
@@ -481,17 +489,23 @@ export function useExec<T, U = undefined>(
     | ({
         parseOutput?: ParseExecOutputHandler<T, Buffer> | ParseExecOutputHandler<T, string>;
       } & ExecOptions &
-        Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">),
+        ExecCachedPromiseOptions<T, U>),
   options?: {
     parseOutput?: ParseExecOutputHandler<T, Buffer> | ParseExecOutputHandler<T, string>;
   } & ExecOptions &
-    Omit<CachedPromiseOptions<() => Promise<T>, U>, "abortable">
+    ExecCachedPromiseOptions<T, U>
 ): UseCachedPromiseReturnType<T, U> {
-  const { initialData, execute, keepPreviousData, onError, parseOutput, input, ...execOptions } = Array.isArray(
-    optionsOrArgs
-  )
-    ? options || {}
-    : optionsOrArgs || {};
+  const { parseOutput, input, onData, onWillExecute, initialData, execute, keepPreviousData, onError, ...execOptions } =
+    Array.isArray(optionsOrArgs) ? options || {} : optionsOrArgs || {};
+
+  const useCachedPromiseOptions: ExecCachedPromiseOptions<T, U> = {
+    initialData,
+    execute,
+    keepPreviousData,
+    onError,
+    onData,
+    onWillExecute,
+  };
 
   const args = useDeepMemo<[string[], ExecOptions, string | Buffer | undefined]>([
     Array.isArray(optionsOrArgs) ? optionsOrArgs : [],
@@ -549,5 +563,8 @@ export function useExec<T, U = undefined>(
     [parseOutputRef]
   );
 
-  return useCachedPromise(fn, [command, ...args], { initialData, abortable, execute, keepPreviousData, onError });
+  return useCachedPromise(fn, [command, ...args], {
+    ...useCachedPromiseOptions,
+    abortable,
+  });
 }

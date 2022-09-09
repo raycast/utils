@@ -15,7 +15,7 @@
     "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
   },
   "peerDependencies": {
-    "@raycast/api": ">=1.39.0"
+    "@raycast/api": ">=1.39.2"
   },
   "keywords": [
     "Raycast",
@@ -36,11 +36,12 @@
     "undici": "^5.10.0"
   },
   "devDependencies": {
-    "@raycast/api": "^1.39.0",
+    "@raycast/api": "^1.39.2",
     "@types/content-type": "^1.1.5",
     "@types/media-typer": "^1.1.1",
     "@types/object-hash": "^2.2.1",
     "@types/signal-exit": "^3.0.1",
+    "@types/sql.js": "^1.4.3",
     "@typescript-eslint/eslint-plugin": "5.26.0",
     "@typescript-eslint/parser": "5.26.0",
     "eslint": "8.16.0",
@@ -49,6 +50,10 @@
     "eslint-plugin-jest": "26.2.2",
     "eslint-plugin-prettier": "4.0.0",
     "eslint-plugin-react-hooks": "4.5.0",
+    "sql.js": "^1.7.0",
     "typescript": "4.7.2"
+  },
+  "optionalDependencies": {
+    "sql.js": "^1.7.0"
   }
 }
