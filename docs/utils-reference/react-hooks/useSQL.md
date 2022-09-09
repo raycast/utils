@@ -84,45 +84,6 @@ const Demo = () => {
 };
 ```
 
-## Argument dependent on List search text
-
-By default, when the query passed to the hook changes, it will be executed again and the cache's value for this query will be returned immediately. This means that in the case of new arguments that haven't been used yet, the initial data will be returned.
-
-This behaviour can cause some flickering (initial data -> fetched data -> query change -> initial data -> fetched data, etc.). To avoid that, we can set `keepPreviousData` to `true` and the hook will keep the latest fetched data if the cache is empty for the new arguments (initial data -> fetched data -> query change -> fetched data).
-
-```tsx
-import { useState } from "react";
-import { List, ActionPanel, Action } from "@raycast/api";
-import { useSQL } from "@raycast/utils";
-
-const NOTES_DB = resolve(homedir(), "Library/Group Containers/group.com.apple.notes/NoteStore.sqlite");
-const notesQuery = (searchText: string) => `SELECT id, title WHERE ... FROM ...`;
-type NoteItem = {
-  id: string;
-  title: string;
-};
-
-const Demo = () => {
-  const [searchText, setSearchText] = useState("");
-  const { isLoading, data, permissionView } = useSQL<NoteItem>(NOTES_DB, notesQuery(searchText), {
-    // to make sure the screen isn't flickering when the searchText changes
-    keepPreviousData: true,
-  });
-
-  if (permissionView) {
-    return permissionView;
-  }
-
-  return (
-    <List isLoading={isLoading} searchText={searchText} onSearchTextChange={setSearchText} throttle>
-      {(data || []).map((item) => (
-        <List.Item key={item.id} title={item.title} />
-      ))}
-    </List>
-  );
-};
-```
-
 ## Mutation and Optimistic Updates
 
 In an optimistic update, the UI behaves as though a change was successfully completed before receiving confirmation from the server that it was - it is being optimistic that it will eventually get the confirmation rather than an error. This allows for a more responsive user experience.
