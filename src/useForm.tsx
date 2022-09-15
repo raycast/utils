@@ -194,6 +194,7 @@ function useForm<T extends Form.Values>(props: {
       {
         get(target, id: keyof T) {
           const validation = latestValidation.current[id];
+          const value = values[id];
           return {
             onChange(value) {
               if (errors[id]) {
@@ -212,7 +213,8 @@ function useForm<T extends Form.Values>(props: {
             },
             error: errors[id],
             id,
-            value: values[id],
+            // we shouldn't return `undefined` otherwise it will be an uncontrolled component
+            value: typeof value === "undefined" ? null : value,
             ref: (instance: Form.ItemReference) => {
               refs.current[id] = instance;
             },
