@@ -103,7 +103,7 @@ export function useSQL<T = unknown>(
       throw new Error("The database does not exist");
     }
     return async (query: string) => {
-      const spawned = childProcess.spawn("sqlite3", ["--json", databasePath, query], {
+      const spawned = childProcess.spawn("sqlite3", ["--json", "--readonly", databasePath, query], {
         signal: abortable.current?.signal,
       });
       const spawnedPromise = getSpawnedPromise(spawned);
