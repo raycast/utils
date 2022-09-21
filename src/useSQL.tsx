@@ -117,7 +117,7 @@ export function useSQL<T = unknown>(
         throw new Error(stderrResult);
       }
 
-      return JSON.parse(stdoutResult.trim()) as T[];
+      return JSON.parse(stdoutResult.trim() || "[]") as T[];
     };
   }, [databasePath]);
 
