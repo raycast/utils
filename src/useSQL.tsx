@@ -10,26 +10,13 @@ import {
   Icon,
   open,
 } from "@raycast/api";
-import { readFile } from "fs/promises";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { existsSync } from "fs";
+import { useRef, useState, useCallback, useMemo } from "react";
 import os from "node:os";
-import initSqlJs, { Database, SqlJsStatic } from "sql.js";
+import childProcess from "node:child_process";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
-
-// @ts-expect-error importing a wasm is tricky :)
-// eslint-disable-next-line import/no-unresolved
-import wasmBinary from "sql.js/dist/sql-wasm.wasm";
-
-let SQL: SqlJsStatic;
-
-async function loadDatabase(path: string) {
-  if (!SQL) {
-    SQL = await initSqlJs({ wasmBinary: Buffer.from(wasmBinary as Uint8Array) });
-  }
-  const fileContents = await readFile(path);
-  return new SQL.Database(fileContents);
-}
+import { getSpawnedPromise, getSpawnedResult } from "./exec-utils";
 
 /**
  * Executes a query on a local SQL database and returns the {@link AsyncState} corresponding to the query of the command. The last value will be kept between command runs.
@@ -75,16 +62,15 @@ export function useSQL<T = unknown>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { permissionPriming, ...usePromiseOptions } = options || {};
 
-  const databaseRef = useRef<Database>();
-
   const [permissionView, setPermissionView] = useState<React.ReactNode>();
   const latestOptions = useLatest(options || {});
+  const abortable = useRef<AbortController>();
 
   const handleError = useCallback(
     (_error: Error) => {
       console.error(_error);
       const error =
-        _error instanceof Error && _error.message.includes("operation not permitted")
+        _error instanceof Error && _error.message.includes("authorization denied")
           ? new PermissionError("You do not have permission to access the database.")
           : (_error as Error);
 
@@ -112,31 +98,28 @@ export function useSQL<T = unknown>(
     [latestOptions]
   );
 
-  const fn = useCallback(
-    async (query: string) => {
-      if (!databaseRef.current) {
-        databaseRef.current = await loadDatabase(databasePath);
+  const fn = useMemo(() => {
+    if (!existsSync(databasePath)) {
+      throw new Error("The database does not exist");
+    }
+    return async (query: string) => {
+      const spawned = childProcess.spawn("sqlite3", ["--json", databasePath, query], {
+        signal: abortable.current?.signal,
+      });
+      const spawnedPromise = getSpawnedPromise(spawned);
+      const [{ error, exitCode, signal }, stdoutResult, stderrResult] = await getSpawnedResult<string>(
+        spawned,
+        { encoding: "utf-8" },
+        spawnedPromise
+      );
+
+      if (error || exitCode !== 0 || signal !== null) {
+        throw new Error(stderrResult);
       }
 
-      const newResults: T[] = [];
-      const statement = databaseRef.current.prepare(query);
-      while (statement.step()) {
-        newResults.push(statement.getAsObject() as unknown as T);
-      }
-
-      statement.free();
-
-      return newResults;
-    },
-    [databasePath]
-  );
-
-  useEffect(() => {
-    return () => {
-      databaseRef.current?.close();
-      databaseRef.current = undefined;
+      return JSON.parse(stdoutResult.trim()) as T[];
     };
-  }, []);
+  }, [databasePath]);
 
   return {
     ...usePromise(fn, [query], { ...usePromiseOptions, onError: handleError }),

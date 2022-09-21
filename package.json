@@ -1,6 +1,6 @@
 {
   "name": "@raycast/utils",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com/utils-reference",
@@ -41,7 +41,6 @@
     "@types/media-typer": "^1.1.1",
     "@types/object-hash": "^2.2.1",
     "@types/signal-exit": "^3.0.1",
-    "@types/sql.js": "^1.4.3",
     "@typescript-eslint/eslint-plugin": "5.26.0",
     "@typescript-eslint/parser": "5.26.0",
     "eslint": "8.16.0",
@@ -52,8 +51,5 @@
     "eslint-plugin-react-hooks": "4.5.0",
     "sql.js": "^1.7.0",
     "typescript": "4.7.2"
-  },
-  "optionalDependencies": {
-    "sql.js": "^1.7.0"
   }
 }
