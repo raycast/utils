@@ -52,7 +52,7 @@ interface FormProps<T extends Form.Values> {
   handleSubmit: (values: T) => void | boolean | Promise<void | boolean>;
   /** The props that must be passed to the `<Form.Item>` elements to handle the validations. */
   itemProps: {
-    [id in keyof T]: Partial<Form.ItemProps<T[id]>> & {
+    [id in keyof Required<T>]: Partial<Form.ItemProps<T[id]>> & {
       id: string;
     };
   };
@@ -185,10 +185,10 @@ function useForm<T extends Form.Values>(props: {
     [setValues]
   );
 
-  const itemProps = useMemo<{ [id in keyof T]: Partial<Form.ItemProps<T[id]>> & { id: string } }>(() => {
+  const itemProps = useMemo<{ [id in keyof Required<T>]: Partial<Form.ItemProps<T[id]>> & { id: string } }>(() => {
     // we have to use a proxy because we don't actually have any object to iterate through
     // so instead we dynamically create the props when required
-    return new Proxy<{ [id in keyof T]: Partial<Form.ItemProps<T[id]>> & { id: string } }>(
+    return new Proxy<{ [id in keyof Required<T>]: Partial<Form.ItemProps<T[id]>> & { id: string } }>(
       // @ts-expect-error the whole point of a proxy...
       {},
       {
