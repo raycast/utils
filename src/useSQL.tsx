@@ -9,11 +9,14 @@ import {
   MenuBarExtra,
   Icon,
   open,
+  LaunchType,
 } from "@raycast/api";
-import { existsSync } from "fs";
-import { useRef, useState, useCallback, useMemo } from "react";
+import { existsSync } from "node:fs";
+import { copyFile, mkdtemp, rm, rmdir } from "node:fs/promises";
 import os from "node:os";
 import childProcess from "node:child_process";
+import path from "node:path";
+import { useRef, useState, useCallback, useMemo } from "react";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 import { getSpawnedPromise, getSpawnedResult } from "./exec-utils";
@@ -80,18 +83,21 @@ export function useSQL<T = unknown>(
         if (latestOptions.current.onError) {
           latestOptions.current.onError(error);
         } else {
-          showToast({
-            style: Toast.Style.Failure,
-            title: "Cannot query the data",
-            message: error.message,
-            primaryAction: {
-              title: "Copy Logs",
-              onAction(toast) {
-                toast.hide();
-                Clipboard.copy(error?.stack || error?.message || "");
+          console.error(error);
+          if (environment.launchType !== LaunchType.Background) {
+            showToast({
+              style: Toast.Style.Failure,
+              title: "Cannot query the data",
+              message: error.message,
+              primaryAction: {
+                title: "Copy Logs",
+                onAction(toast) {
+                  toast.hide();
+                  Clipboard.copy(error?.stack || error?.message || "");
+                },
               },
-            },
-          });
+            });
+          }
         }
       }
     },
@@ -107,11 +113,36 @@ export function useSQL<T = unknown>(
         signal: abortable.current?.signal,
       });
       const spawnedPromise = getSpawnedPromise(spawned);
-      const [{ error, exitCode, signal }, stdoutResult, stderrResult] = await getSpawnedResult<string>(
+      let [{ error, exitCode, signal }, stdoutResult, stderrResult] = await getSpawnedResult<string>(
         spawned,
         { encoding: "utf-8" },
         spawnedPromise
       );
+
+      if (stderrResult.match("(5)")) {
+        // That means that the DB is busy because of another app is locking it
+        // This happens when Chrome or Arc is opened: they lock the History db.
+        // As an ugly workaround, we duplicate the file and read that instead
+        // (with vfs unix - none to just not care about locks)
+        const tempFolder = await mkdtemp(path.join(os.tmpdir(), "useSQL-"));
+        const newDbPath = path.join(tempFolder, "db");
+        await copyFile(databasePath, newDbPath);
+        const spawned = childProcess.spawn(
+          "sqlite3",
+          ["--json", "--readonly", "--vfs", "unix-none", databasePath, query],
+          {
+            signal: abortable.current?.signal,
+          }
+        );
+        const spawnedPromise = getSpawnedPromise(spawned);
+        [{ error, exitCode, signal }, stdoutResult, stderrResult] = await getSpawnedResult<string>(
+          spawned,
+          { encoding: "utf-8" },
+          spawnedPromise
+        );
+        await rm(newDbPath);
+        await rmdir(tempFolder);
+      }
 
       if (error || exitCode !== 0 || signal !== null) {
         throw new Error(stderrResult);
