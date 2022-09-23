@@ -12,10 +12,11 @@ import {
   LaunchType,
 } from "@raycast/api";
 import { existsSync } from "node:fs";
-import { copyFile, mkdtemp, rm, rmdir } from "node:fs/promises";
+import { copyFile, mkdir } from "node:fs/promises";
 import os from "node:os";
 import childProcess from "node:child_process";
 import path from "node:path";
+import hash from "object-hash";
 import { useRef, useState, useCallback, useMemo } from "react";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
@@ -108,6 +109,8 @@ export function useSQL<T = unknown>(
     if (!existsSync(databasePath)) {
       throw new Error("The database does not exist");
     }
+    let tempFolder: string | undefined = undefined;
+
     return async (query: string) => {
       const spawned = childProcess.spawn("sqlite3", ["--json", "--readonly", databasePath, query], {
         signal: abortable.current?.signal,
@@ -124,12 +127,15 @@ export function useSQL<T = unknown>(
         // This happens when Chrome or Arc is opened: they lock the History db.
         // As an ugly workaround, we duplicate the file and read that instead
         // (with vfs unix - none to just not care about locks)
-        const tempFolder = await mkdtemp(path.join(os.tmpdir(), "useSQL-"));
+        if (!tempFolder) {
+          tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
+          await mkdir(tempFolder, { recursive: true });
+        }
         const newDbPath = path.join(tempFolder, "db");
         await copyFile(databasePath, newDbPath);
         const spawned = childProcess.spawn(
           "sqlite3",
-          ["--json", "--readonly", "--vfs", "unix-none", databasePath, query],
+          ["--json", "--readonly", "--vfs", "unix-none", newDbPath, query],
           {
             signal: abortable.current?.signal,
           }
@@ -140,8 +146,6 @@ export function useSQL<T = unknown>(
           { encoding: "utf-8" },
           spawnedPromise
         );
-        await rm(newDbPath);
-        await rmdir(tempFolder);
       }
 
       if (error || exitCode !== 0 || signal !== null) {
