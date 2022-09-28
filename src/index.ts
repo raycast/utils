@@ -11,4 +11,4 @@ export * from "./useForm";
 export * from "./icon";
 
 export type { AsyncState, MutatePromise } from "./types";
-export type { Response } from "undici";
+export type { Response } from "cross-fetch";

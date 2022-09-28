@@ -22,7 +22,7 @@ process.emitWarning = (warning, ...args) => {
   return emitWarning(warning, ...args);
 };
 
-import { fetch, RequestInfo, RequestInit, Response } from "undici";
+import { fetch } from "cross-fetch";
 
 function isJSON(contentTypeHeader: string | null | undefined): boolean {
   if (contentTypeHeader) {
@@ -116,7 +116,10 @@ export function useFetch<T = unknown, U = undefined>(
     [parseResponseRef]
   );
 
-  const args = useDeepMemo<Parameters<typeof fetch>>([url, fetchOptions]);
+  const args = useDeepMemo<Parameters<typeof fetch>>([url, fetchOptions]) as [
+    input: RequestInfo,
+    init: RequestInit | undefined
+  ];
 
   return useCachedPromise(fn, args, { ...useCachedPromiseOptions, abortable });
 }
