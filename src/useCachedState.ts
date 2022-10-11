@@ -2,14 +2,16 @@ import { useCallback, Dispatch, SetStateAction, useSyncExternalStore, useMemo } 
 import { Cache } from "@raycast/api";
 import { useLatest } from "./useLatest";
 
-function replacer(_key: string, value: unknown) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function replacer(this: any, key: string, _value: unknown) {
+  const value = this[key];
   if (value instanceof Date) {
     return `__raycast_cached_date__${value.toString()}`;
   }
   if (Buffer.isBuffer(value)) {
     return `__raycast_cached_buffer__${value.toString("base64")}`;
   }
-  return value;
+  return _value;
 }
 
 function reviver(_key: string, value: unknown) {
