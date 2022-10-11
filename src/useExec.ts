@@ -5,7 +5,6 @@
 import childProcess from "node:child_process";
 import { useCallback, useRef } from "react";
 
-import { useDeepMemo } from "./useDeepMemo";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 import { UseCachedPromiseReturnType } from "./types";
@@ -335,12 +334,6 @@ export function useExec<T, U = undefined>(
     onWillExecute,
   };
 
-  const args = useDeepMemo<[string[], ExecOptions, string | Buffer | undefined]>([
-    Array.isArray(optionsOrArgs) ? optionsOrArgs : [],
-    execOptions,
-    input,
-  ]);
-
   const abortable = useRef<AbortController>();
   const parseOutputRef = useLatest(parseOutput || defaultParsing);
 
@@ -388,7 +381,7 @@ export function useExec<T, U = undefined>(
     [parseOutputRef]
   );
 
-  return useCachedPromise(fn, [command, ...args], {
+  return useCachedPromise(fn, [command, Array.isArray(optionsOrArgs) ? optionsOrArgs : [], execOptions, input], {
     ...useCachedPromiseOptions,
     abortable,
   });

@@ -207,7 +207,7 @@ export function usePromise<T extends FunctionReturningPromise>(
       callback(...(args || []));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, useDeepMemo([args, options?.execute, callback]));
+  }, [useDeepMemo([args, options?.execute, callback])]);
 
   // abort request when unmounting
   useEffect(() => {
