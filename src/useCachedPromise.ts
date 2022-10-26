@@ -129,8 +129,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
             // keep track of the data before the optimistic update,
             // but only if we need it (eg. only when we want to automatically rollback after)
-            dataBeforeOptimisticUpdate =
-              typeof latestData.current !== "undefined" ? JSON.parse(JSON.stringify(latestData.current)) : undefined;
+            dataBeforeOptimisticUpdate = structuredClone(latestData.current);
           }
           const data = options.optimisticUpdate(latestData.current);
           lastUpdateFrom.current = "cache";
@@ -146,7 +145,9 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
           mutateCache(data);
         } else if (options?.optimisticUpdate && options?.rollbackOnError !== false) {
           lastUpdateFrom.current = "cache";
+          // @ts-expect-error when undefined, it's expected
           laggyDataRef.current = dataBeforeOptimisticUpdate;
+          // @ts-expect-error when undefined, it's expected
           mutateCache(dataBeforeOptimisticUpdate);
         }
         throw err;

@@ -172,10 +172,7 @@ export function usePromise<T extends FunctionReturningPromise>(
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
             // keep track of the data before the optimistic update,
             // but only if we need it (eg. only when we want to automatically rollback after)
-            dataBeforeOptimisticUpdate =
-              typeof latestValue.current?.value !== "undefined"
-                ? JSON.parse(JSON.stringify(latestValue.current?.value))
-                : undefined;
+            dataBeforeOptimisticUpdate = structuredClone(latestValue.current?.value);
           }
           const update = options.optimisticUpdate;
           set((prevState) => ({ ...prevState, data: update(prevState.data) }));
