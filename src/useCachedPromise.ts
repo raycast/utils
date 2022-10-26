@@ -129,7 +129,8 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
             // keep track of the data before the optimistic update,
             // but only if we need it (eg. only when we want to automatically rollback after)
-            dataBeforeOptimisticUpdate = JSON.parse(JSON.stringify(latestData.current));
+            dataBeforeOptimisticUpdate =
+              typeof latestData.current !== "undefined" ? JSON.parse(JSON.stringify(latestData.current)) : undefined;
           }
           const data = options.optimisticUpdate(latestData.current);
           lastUpdateFrom.current = "cache";

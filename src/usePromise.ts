@@ -172,18 +172,21 @@ export function usePromise<T extends FunctionReturningPromise>(
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
             // keep track of the data before the optimistic update,
             // but only if we need it (eg. only when we want to automatically rollback after)
-            dataBeforeOptimisticUpdate = JSON.parse(JSON.stringify(latestValue.current?.value));
+            dataBeforeOptimisticUpdate =
+              typeof latestValue.current?.value !== "undefined"
+                ? JSON.parse(JSON.stringify(latestValue.current?.value))
+                : undefined;
           }
           const update = options.optimisticUpdate;
-          set((prevState) => ({ ...prevState, value: update(prevState.data) }));
+          set((prevState) => ({ ...prevState, data: update(prevState.data) }));
         }
         return await asyncUpdate;
       } catch (err) {
         if (typeof options?.rollbackOnError === "function") {
           const update = options.rollbackOnError;
-          set((prevState) => ({ ...prevState, value: update(prevState.data) }));
+          set((prevState) => ({ ...prevState, data: update(prevState.data) }));
         } else if (options?.optimisticUpdate && options?.rollbackOnError !== false) {
-          set((prevState) => ({ ...prevState, value: dataBeforeOptimisticUpdate }));
+          set((prevState) => ({ ...prevState, data: dataBeforeOptimisticUpdate }));
         }
         throw err;
       } finally {
