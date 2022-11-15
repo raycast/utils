@@ -28,6 +28,10 @@ export function getFavicon(
      * @default Icon.Link
      */
     fallback?: Image.Fallback;
+    /**
+     * A {@link Image.Mask} to apply to the Favicon.
+     */
+    mask?: Image.Mask;
   }
 ): Image.ImageLike {
   try {
@@ -36,6 +40,7 @@ export function getFavicon(
     return {
       source: `https://www.google.com/s2/favicons?sz=${options?.size ?? 64}&domain=${hostname}`,
       fallback: options?.fallback ?? Icon.Link,
+      mask: options?.mask,
     };
   } catch (e) {
     console.error(e);
