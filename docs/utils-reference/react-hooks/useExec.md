@@ -208,7 +208,7 @@ const Demo = () => {
           title={item.name}
           actions={
             <ActionPanel>
-              <Action title="Append Foo" onAction={() => installFoo()} />
+              <Action title="Install Foo" onAction={() => installFoo()} />
             </ActionPanel>
           }
         />
