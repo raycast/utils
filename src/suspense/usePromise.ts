@@ -1,5 +1,5 @@
 import assert from "assert/strict";
-import { FunctionReturningPromise, PromiseType } from "../types";
+import { FunctionReturningPromise } from "../types";
 
 interface PromiseCache {
   promise?: Promise<void>;
@@ -14,7 +14,7 @@ export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
   lifespan = 0
-): PromiseType<ReturnType<T>> {
+): Awaited<ReturnType<T>> {
   for (const promiseCache of promiseCaches) {
     let found: boolean;
     try {
