@@ -109,11 +109,12 @@ export function useSQL<T = unknown>(
     if (!existsSync(databasePath)) {
       throw new Error("The database does not exist");
     }
-    let tempFolder: string | undefined = undefined;
+    let workaroundCopiedDb: string | undefined = undefined;
 
     return async (query: string) => {
+      const abortSignal = abortable.current?.signal;
       const spawned = childProcess.spawn("sqlite3", ["--json", "--readonly", databasePath, query], {
-        signal: abortable.current?.signal,
+        signal: abortSignal,
       });
       const spawnedPromise = getSpawnedPromise(spawned);
       let [{ error, exitCode, signal }, stdoutResult, stderrResult] = await getSpawnedResult<string>(
@@ -122,22 +123,26 @@ export function useSQL<T = unknown>(
         spawnedPromise
       );
 
-      if (stderrResult.match("(5)")) {
+      checkAborted(abortSignal);
+
+      if (stderrResult.match("(5)") || stderrResult.match("14")) {
         // That means that the DB is busy because of another app is locking it
         // This happens when Chrome or Arc is opened: they lock the History db.
         // As an ugly workaround, we duplicate the file and read that instead
         // (with vfs unix - none to just not care about locks)
-        if (!tempFolder) {
-          tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
+        if (!workaroundCopiedDb) {
+          const tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
           await mkdir(tempFolder, { recursive: true });
+          checkAborted(abortSignal);
+          workaroundCopiedDb = path.join(tempFolder, "db");
+          await copyFile(databasePath, workaroundCopiedDb);
+          checkAborted(abortSignal);
         }
-        const newDbPath = path.join(tempFolder, "db");
-        await copyFile(databasePath, newDbPath);
         const spawned = childProcess.spawn(
           "sqlite3",
-          ["--json", "--readonly", "--vfs", "unix-none", newDbPath, query],
+          ["--json", "--readonly", "--vfs", "unix-none", workaroundCopiedDb, query],
           {
-            signal: abortable.current?.signal,
+            signal: abortSignal,
           }
         );
         const spawnedPromise = getSpawnedPromise(spawned);
@@ -146,6 +151,7 @@ export function useSQL<T = unknown>(
           { encoding: "utf-8" },
           spawnedPromise
         );
+        checkAborted(abortSignal);
       }
 
       if (error || exitCode !== 0 || signal !== null) {
@@ -227,4 +233,12 @@ function PermissionErrorScreen(props: { priming?: string }) {
       />
     </List>
   );
+}
+
+function checkAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    const error = new Error("aborted");
+    error.name = "AbortError";
+    throw error;
+  }
 }
