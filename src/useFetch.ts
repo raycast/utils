@@ -4,23 +4,6 @@ import contentType from "content-type";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 import { UseCachedPromiseReturnType } from "./types";
-
-const { emitWarning } = process;
-
-// to remove when we switch to Node 18
-process.emitWarning = (warning, ...args) => {
-  if (args[0] === "ExperimentalWarning") {
-    return;
-  }
-
-  if (args[0] && typeof args[0] === "object" && args[0].type === "ExperimentalWarning") {
-    return;
-  }
-
-  // @ts-expect-error too many different types but it's ok since we pass what was passed
-  return emitWarning(warning, ...args);
-};
-
 import { fetch } from "cross-fetch";
 
 function isJSON(contentTypeHeader: string | null | undefined): boolean {

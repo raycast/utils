@@ -12,7 +12,7 @@ import {
   LaunchType,
 } from "@raycast/api";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir } from "node:fs/promises";
+import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import childProcess from "node:child_process";
 import path from "node:path";
@@ -125,7 +125,7 @@ export function useSQL<T = unknown>(
 
       checkAborted(abortSignal);
 
-      if (stderrResult.match("(5)") || stderrResult.match("14")) {
+      if (stderrResult.match("(5)") || stderrResult.match("(14)")) {
         // That means that the DB is busy because of another app is locking it
         // This happens when Chrome or Arc is opened: they lock the History db.
         // As an ugly workaround, we duplicate the file and read that instead
@@ -134,8 +134,14 @@ export function useSQL<T = unknown>(
           const tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
           await mkdir(tempFolder, { recursive: true });
           checkAborted(abortSignal);
-          workaroundCopiedDb = path.join(tempFolder, "db");
+
+          workaroundCopiedDb = path.join(tempFolder, "db.db");
           await copyFile(databasePath, workaroundCopiedDb);
+
+          // needed for certain db
+          await writeFile(workaroundCopiedDb + "-shm", "");
+          await writeFile(workaroundCopiedDb + "-wal", "");
+
           checkAborted(abortSignal);
         }
         const spawned = childProcess.spawn(
