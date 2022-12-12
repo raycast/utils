@@ -1,7 +1,7 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
 import { showToast, Toast, Clipboard, environment, LaunchType } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
-import { FunctionReturningPromise, PromiseReturnType, MutatePromise, UsePromiseReturnType, AsyncState } from "./types";
+import { FunctionReturningPromise, MutatePromise, UsePromiseReturnType, AsyncState } from "./types";
 import { useLatest } from "./useLatest";
 
 export type PromiseOptions<T extends FunctionReturningPromise> = {
@@ -25,7 +25,7 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
   /**
    * Called when an execution succeeds.
    */
-  onData?: (data: PromiseReturnType<T>) => void | Promise<void>;
+  onData?: (data: Awaited<ReturnType<T>>) => void | Promise<void>;
   /**
    * Called when an execution will start
    */
@@ -67,19 +67,19 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
  * };
  * ```
  */
-export function usePromise<T extends FunctionReturningPromise<[]>>(fn: T): UsePromiseReturnType<PromiseReturnType<T>>;
+export function usePromise<T extends FunctionReturningPromise<[]>>(fn: T): UsePromiseReturnType<Awaited<ReturnType<T>>>;
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
   options?: PromiseOptions<T>
-): UsePromiseReturnType<PromiseReturnType<T>>;
+): UsePromiseReturnType<Awaited<ReturnType<T>>>;
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args?: Parameters<T>,
   options?: PromiseOptions<T>
-): UsePromiseReturnType<PromiseReturnType<T>> {
+): UsePromiseReturnType<Awaited<ReturnType<T>>> {
   const lastCallId = useRef(0);
-  const [state, set] = useState<AsyncState<PromiseReturnType<T>>>({ isLoading: true });
+  const [state, set] = useState<AsyncState<Awaited<ReturnType<T>>>>({ isLoading: true });
 
   const fnRef = useLatest(fn);
   const latestAbortable = useLatest(options?.abortable);
@@ -104,7 +104,7 @@ export function usePromise<T extends FunctionReturningPromise>(
       set((prevState) => ({ ...prevState, isLoading: true }));
 
       return fnRef.current(...args).then(
-        (data: PromiseReturnType<T>) => {
+        (data: Awaited<ReturnType<T>>) => {
           if (callId === lastCallId.current) {
             if (latestOnData.current) {
               latestOnData.current(data);
@@ -164,9 +164,9 @@ export function usePromise<T extends FunctionReturningPromise>(
     return callback(...(latestArgs.current || []));
   }, [callback, latestArgs]);
 
-  const mutate = useCallback<MutatePromise<PromiseReturnType<T>, undefined>>(
+  const mutate = useCallback<MutatePromise<Awaited<ReturnType<T>>, undefined>>(
     async (asyncUpdate, options) => {
-      let dataBeforeOptimisticUpdate: PromiseReturnType<T> | undefined;
+      let dataBeforeOptimisticUpdate: Awaited<ReturnType<T>> | undefined;
       try {
         if (options?.optimisticUpdate) {
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {

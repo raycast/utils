@@ -381,6 +381,7 @@ export function useExec<T, U = undefined>(
     [parseOutputRef]
   );
 
+  // @ts-expect-error T can't be a Promise so it's actually the same
   return useCachedPromise(fn, [command, Array.isArray(optionsOrArgs) ? optionsOrArgs : [], execOptions, input], {
     ...useCachedPromiseOptions,
     abortable,

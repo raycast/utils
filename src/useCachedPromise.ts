@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import hash from "object-hash";
-import { FunctionReturningPromise, PromiseReturnType, UseCachedPromiseReturnType, MutatePromise } from "./types";
+import { FunctionReturningPromise, UseCachedPromiseReturnType, MutatePromise } from "./types";
 import { useCachedState } from "./useCachedState";
 import { usePromise, PromiseOptions } from "./usePromise";
 
@@ -60,12 +60,12 @@ export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = Promis
  */
 export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
   fn: T
-): UseCachedPromiseReturnType<PromiseReturnType<T>, undefined>;
+): UseCachedPromiseReturnType<Awaited<ReturnType<T>>, undefined>;
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args: Parameters<T>,
   options?: CachedPromiseOptions<T, U>
-): UseCachedPromiseReturnType<PromiseReturnType<T>, U>;
+): UseCachedPromiseReturnType<Awaited<ReturnType<T>>, U>;
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args?: Parameters<T>,
@@ -74,7 +74,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   const { initialData, keepPreviousData, ...usePromiseOptions } = options || {};
   const lastUpdateFrom = useRef<"cache" | "promise">();
 
-  const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (PromiseReturnType<T> | U)>(
+  const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (Awaited<ReturnType<T>> | U)>(
     hash(args || []),
     emptyCache,
     {
@@ -83,7 +83,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   );
 
   // Use a ref to store previous returned data. Use the inital data as its inital value from the cache.
-  const laggyDataRef = useRef<PromiseReturnType<T> | U>(cachedData !== emptyCache ? cachedData : (initialData as U));
+  const laggyDataRef = useRef<Awaited<ReturnType<T>> | U>(cachedData !== emptyCache ? cachedData : (initialData as U));
 
   const {
     mutate: _mutate,
@@ -121,7 +121,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   const latestData = useLatest(returnedData);
 
   // we rewrite the mutate function to update the cache instead
-  const mutate = useCallback<MutatePromise<PromiseReturnType<T> | U>>(
+  const mutate = useCallback<MutatePromise<Awaited<ReturnType<T>> | U>>(
     async (asyncUpdate, options) => {
       let dataBeforeOptimisticUpdate;
       try {
@@ -164,7 +164,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   }, [cachedData]);
 
   return {
-    data: returnedData as PromiseReturnType<T> | U,
+    data: returnedData,
     isLoading: state.isLoading,
     error: state.error,
     mutate,

@@ -1,7 +1,5 @@
 export type FunctionReturningPromise<T extends any[] = any[]> = (...args: T) => Promise<any>;
 
-export type PromiseReturnType<T extends FunctionReturningPromise> = Awaited<ReturnType<T>>;
-
 export type AsyncState<T> =
   | {
       isLoading: boolean;

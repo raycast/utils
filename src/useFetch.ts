@@ -115,5 +115,6 @@ export function useFetch<T = unknown, U = undefined>(
     [parseResponseRef]
   );
 
+  // @ts-expect-error T can't be a Promise so it's actually the same
   return useCachedPromise(fn, [url, fetchOptions], { ...useCachedPromiseOptions, abortable });
 }
