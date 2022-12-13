@@ -133,7 +133,7 @@ export function getAvatarIcon(
         initials
           ? `<text x="50" y="80" font-size="${
               radius - 1
-            }" font-family="Inter, sans-serif" text-anchor="middle" fill="white">${initials}</text>`
+            }" font-family="Inter, sans-serif" text-anchor="middle" fill="white">${initials.toUpperCase()}</text>`
           : ""
       }
     </svg>
