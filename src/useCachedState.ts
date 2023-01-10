@@ -71,7 +71,13 @@ export function useCachedState<T>(
       if (cachedState === "undefined") {
         return undefined;
       }
-      return JSON.parse(cachedState, reviver);
+      try {
+        return JSON.parse(cachedState, reviver);
+      } catch (err) {
+        // the data got corrupted somehow
+        console.warn("The cached data is corrupted", err);
+        return initialValueRef.current;
+      }
     } else {
       return initialValueRef.current;
     }
