@@ -66,7 +66,7 @@ export function useSQL<T = unknown>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { permissionPriming, ...usePromiseOptions } = options || {};
 
-  const [permissionView, setPermissionView] = useState<React.ReactNode>();
+  const [permissionView, setPermissionView] = useState<JSX.Element>();
   const latestOptions = useLatest(options || {});
   const abortable = useRef<AbortController>();
 
