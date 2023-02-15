@@ -1,8 +1,9 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
-import { showToast, Toast, Clipboard, environment, LaunchType } from "@raycast/api";
+import { showToast, Toast, environment, LaunchType } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
 import { FunctionReturningPromise, MutatePromise, UsePromiseReturnType, AsyncState } from "./types";
 import { useLatest } from "./useLatest";
+import { handleErrorToastAction } from "./handle-error-toast-action";
 
 export type PromiseOptions<T extends FunctionReturningPromise> = {
   /**
@@ -137,13 +138,7 @@ export function usePromise<T extends FunctionReturningPromise>(
                       latestCallback.current?.(...(latestArgs.current || []));
                     },
                   },
-                  secondaryAction: {
-                    title: "Copy Logs",
-                    onAction(toast) {
-                      toast.hide();
-                      Clipboard.copy(error?.stack || error?.message || "");
-                    },
-                  },
+                  secondaryAction: handleErrorToastAction(error),
                 });
               }
             }

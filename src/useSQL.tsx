@@ -4,7 +4,6 @@ import {
   List,
   ActionPanel,
   Action,
-  Clipboard,
   environment,
   MenuBarExtra,
   Icon,
@@ -21,6 +20,7 @@ import { useRef, useState, useCallback, useMemo } from "react";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 import { getSpawnedPromise, getSpawnedResult } from "./exec-utils";
+import { handleErrorToastAction } from "./handle-error-toast-action";
 
 /**
  * Executes a query on a local SQL database and returns the {@link AsyncState} corresponding to the query of the command. The last value will be kept between command runs.
@@ -90,13 +90,7 @@ export function useSQL<T = unknown>(
               style: Toast.Style.Failure,
               title: "Cannot query the data",
               message: error.message,
-              primaryAction: {
-                title: "Copy Logs",
-                onAction(toast) {
-                  toast.hide();
-                  Clipboard.copy(error?.stack || error?.message || "");
-                },
-              },
+              primaryAction: handleErrorToastAction(error),
             });
           }
         }
