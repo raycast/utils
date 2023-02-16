@@ -1,5 +1,5 @@
 import { Form } from "@raycast/api";
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, Dispatch, SetStateAction } from "react";
 import { useLatest } from "./useLatest";
 
 /**
@@ -59,7 +59,7 @@ interface FormProps<T extends Form.Values> {
   /** Function that can be used to programmatically set the validation of a specific field. */
   setValidationError: (id: keyof T, error: ValidationError) => void;
   /** Function that can be used to programmatically set the value of a specific field. */
-  setValue: <K extends keyof T>(id: K, value: T[K]) => void;
+  setValue: <K extends keyof T>(id: K, value: SetStateAction<T[K]>) => void;
   /** The current values of the form. */
   values: T;
   /** Function that can be used to programmatically focus a specific field. */
@@ -179,8 +179,9 @@ function useForm<T extends Form.Values>(props: {
   );
 
   const setValue = useCallback(
-    function <K extends keyof T>(id: K, value: T[K]) {
-      setValues((values) => ({ ...values, [id]: value }));
+    function <K extends keyof T>(id: K, value: SetStateAction<T[K]>) {
+      // @ts-expect-error TS is always confused about SetStateAction, but it's fine here
+      setValues((values) => ({ ...values, [id]: typeof value === "function" ? value(values[id]) : value }));
     },
     [setValues]
   );
