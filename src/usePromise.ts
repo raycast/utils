@@ -200,9 +200,14 @@ export function usePromise<T extends FunctionReturningPromise>(
   useEffect(() => {
     if (options?.execute !== false) {
       callback(...(args || []));
+    } else {
+      // cancel the previous request if we don't want to execute anymore
+      if (latestAbortable.current) {
+        latestAbortable.current.current?.abort();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [useDeepMemo([args, options?.execute, callback])]);
+  }, [useDeepMemo([args, options?.execute, callback]), latestAbortable]);
 
   // abort request when unmounting
   useEffect(() => {
@@ -214,5 +219,11 @@ export function usePromise<T extends FunctionReturningPromise>(
     };
   }, [latestAbortable]);
 
-  return { ...state, revalidate, mutate };
+  // we only want to show the loading indicator if the promise is executing
+  const isLoading = options?.execute !== false ? state.isLoading : false;
+
+  // @ts-expect-error loading is has some fixed value in the enum which
+  const stateWithLoadingFixed: AsyncState<Awaited<ReturnType<T>>> = { ...state, isLoading };
+
+  return { ...stateWithLoadingFixed, revalidate, mutate };
 }
