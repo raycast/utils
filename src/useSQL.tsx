@@ -61,7 +61,7 @@ export function useSQL<T = unknown>(
   options?: {
     /** A string explaining why the extension needs full disk access. For example, the Apple Notes extension uses `"This is required to search your Apple Notes."`. While it is optional, we recommend setting it to help users understand. */
     permissionPriming?: string;
-  } & Omit<PromiseOptions<(query: string) => Promise<T[]>>, "abortable">
+  } & Omit<PromiseOptions<(database: string, query: string) => Promise<T[]>>, "abortable">
 ) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { permissionPriming, ...usePromiseOptions } = options || {};
@@ -105,7 +105,7 @@ export function useSQL<T = unknown>(
     }
     let workaroundCopiedDb: string | undefined = undefined;
 
-    return async (query: string) => {
+    return async (databasePath: string, query: string) => {
       const abortSignal = abortable.current?.signal;
       const spawned = childProcess.spawn("sqlite3", ["--json", "--readonly", databasePath, query], {
         signal: abortSignal,
@@ -163,7 +163,7 @@ export function useSQL<T = unknown>(
   }, [databasePath]);
 
   return {
-    ...usePromise(fn, [query], { ...usePromiseOptions, onError: handleError }),
+    ...usePromise(fn, [databasePath, query], { ...usePromiseOptions, onError: handleError }),
     permissionView,
   };
 }
