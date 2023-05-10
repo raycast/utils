@@ -6,6 +6,7 @@ export * from "./useFetch";
 export * from "./useExec";
 export * from "./useSQL";
 export * from "./useForm";
+export * from "./useAI";
 
 //export * as suspense from "./suspense";
 export * from "./icon";
