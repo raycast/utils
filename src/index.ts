@@ -8,7 +8,6 @@ export * from "./useSQL";
 export * from "./useForm";
 export * from "./useAI";
 
-//export * as suspense from "./suspense";
 export * from "./icon";
 
 export type { AsyncState, MutatePromise } from "./types";
