@@ -104,7 +104,7 @@ export function usePromise<T extends FunctionReturningPromise>(
 
       set((prevState) => ({ ...prevState, isLoading: true }));
 
-      return fnRef.current(...args).then(
+      return bindPromiseIfNeeded(fnRef.current)(...args).then(
         (data: Awaited<ReturnType<T>>) => {
           if (callId === lastCallId.current) {
             if (latestOnData.current) {
@@ -226,4 +226,25 @@ export function usePromise<T extends FunctionReturningPromise>(
   const stateWithLoadingFixed: AsyncState<Awaited<ReturnType<T>>> = { ...state, isLoading };
 
   return { ...stateWithLoadingFixed, revalidate, mutate };
+}
+
+/** Bind the fn if it's a Promise method */
+function bindPromiseIfNeeded<T>(fn: T): T {
+  if (fn === Promise.all) {
+    // @ts-expect-error this is fine
+    return fn.bind(Promise);
+  }
+  if (fn === Promise.race) {
+    // @ts-expect-error this is fine
+    return fn.bind(Promise);
+  }
+  if (fn === Promise.resolve) {
+    // @ts-expect-error this is fine
+    return fn.bind(Promise);
+  }
+  if (fn === Promise.reject) {
+    // @ts-expect-error this is fine
+    return fn.bind(Promise);
+  }
+  return fn;
 }
