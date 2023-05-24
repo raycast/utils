@@ -1,4 +1,4 @@
-import { environment } from "@raycast/api";
+import { environment, Color } from "@raycast/api";
 import type { Image } from "@raycast/api";
 
 function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
@@ -25,7 +25,7 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
  * Icon to represent the progress of _something_.
  *
  * @param progress Number between 0 and 1.
- * @param color Hex color (default `"#FF6363"`).
+ * @param color Hex color (default `"#FF6363"`) or Color.
  *
  * @returns an Image that can be used where Raycast expects them.
  *
@@ -36,7 +36,7 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
  */
 export function getProgressIcon(
   progress: number,
-  color = "#FF6363",
+  color: Color | string = Color.Red,
   options?: { background?: string; backgroundOpacity?: number }
 ): Image.Asset {
   const background = options?.background || (environment.appearance === "light" ? "black" : "white");
