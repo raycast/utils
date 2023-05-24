@@ -230,19 +230,19 @@ export function usePromise<T extends FunctionReturningPromise>(
 
 /** Bind the fn if it's a Promise method */
 function bindPromiseIfNeeded<T>(fn: T): T {
-  if (fn === Promise.all) {
+  if (fn === (Promise.all as any)) {
     // @ts-expect-error this is fine
     return fn.bind(Promise);
   }
-  if (fn === Promise.race) {
+  if (fn === (Promise.race as any)) {
     // @ts-expect-error this is fine
     return fn.bind(Promise);
   }
-  if (fn === Promise.resolve) {
+  if (fn === (Promise.resolve as any)) {
     // @ts-expect-error this is fine
-    return fn.bind(Promise);
+    return fn.bind(Promise as any);
   }
-  if (fn === Promise.reject) {
+  if (fn === (Promise.reject as any)) {
     // @ts-expect-error this is fine
     return fn.bind(Promise);
   }
