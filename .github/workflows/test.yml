@@ -24,10 +24,11 @@ jobs:
     steps:
       - name: Checkout
         uses: raycast/github-actions/git-checkout@v1.13.0
-      - name: Run Ray CLI
-        id: ray_cli
-        uses: raycast/github-actions/ray@v1.13.0
-        with:
-          command: "build"
-          paths: "tests"
-          cli_version: "${{ github.event.inputs.cli_version }}"
+      - name: Setup node
+        uses: raycast/github-actions/setup-node@v1.13.0
+      - name: Npm Install
+        run: npm ci
+        working-directory: ./tests
+      - name: Build tests
+        run: npm run build
+        working-directory: ./tests
