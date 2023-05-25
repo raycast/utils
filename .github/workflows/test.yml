@@ -19,7 +19,7 @@ on:
 
 jobs:
   tests:
-    if: github.repository == 'raycast/extensions'
+    if: github.repository == 'raycast/utils'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
