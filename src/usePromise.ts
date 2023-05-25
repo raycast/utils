@@ -178,7 +178,7 @@ export function usePromise<T extends FunctionReturningPromise>(
           const update = options.rollbackOnError;
           set((prevState) => ({ ...prevState, data: update(prevState.data) }));
         } else if (options?.optimisticUpdate && options?.rollbackOnError !== false) {
-          set((prevState) => ({ ...prevState, data: dataBeforeOptimisticUpdate }));
+          set((prevState) => ({ ...prevState, data: dataBeforeOptimisticUpdate as Awaited<ReturnType<T>> }));
         }
         throw err;
       } finally {
