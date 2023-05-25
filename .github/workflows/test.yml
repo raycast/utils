@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      cli_version:
+        description: 'CLI Version (optional, eg. "1.0.0")'
+        required: false
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+    branches: [main, master]
+  push:
+    paths:
+      - "src/**"
+      - "tests/**"
+    branches: [main, master]
+
+jobs:
+  tests:
+    if: github.repository == 'raycast/extensions'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: raycast/github-actions/git-checkout@v1.13.0
+      - name: Run Ray CLI
+        id: ray_cli
+        uses: raycast/github-actions/ray@v1.13.0
+        with:
+          command: "build"
+          paths: "tests"
+          cli_version: "${{ github.event.inputs.cli_version }}"
