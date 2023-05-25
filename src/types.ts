@@ -2,7 +2,7 @@ export type FunctionReturningPromise<T extends any[] = any[]> = (...args: T) => 
 
 export type AsyncState<T> =
   | {
-      isLoading: boolean;
+      isLoading: string;
       error?: undefined;
       data?: undefined;
     }
