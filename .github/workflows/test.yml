@@ -2,10 +2,6 @@ name: Test
 
 on:
   workflow_dispatch:
-    inputs:
-      cli_version:
-        description: 'CLI Version (optional, eg. "1.0.0")'
-        required: false
   pull_request:
     paths:
       - "src/**"
@@ -27,6 +23,10 @@ jobs:
       - name: Setup node
         uses: raycast/github-actions/setup-node@v1.13.0
       - name: Npm Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Npm Install Tests
         run: npm ci
         working-directory: ./tests
       - name: Build tests
