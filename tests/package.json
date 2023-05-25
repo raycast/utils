@@ -27,6 +27,70 @@
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
       "mode": "view"
+    },
+    {
+      "name": "ai",
+      "title": "useAI",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "prompt",
+          "placeholder": "prompt",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "cached-promise",
+      "title": "useCachedPromise",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
+      "name": "cached-state",
+      "title": "useCachedState",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
+      "name": "exec",
+      "title": "useExec",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
+      "name": "fetch",
+      "title": "useFetch",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
+      "name": "form",
+      "title": "useForm",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
+      "name": "promise",
+      "title": "usePromise",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
+      "name": "sql",
+      "title": "useSQL",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
     }
   ],
   "dependencies": {
