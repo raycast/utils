@@ -1,5 +1,5 @@
 import { Form } from "@raycast/api";
-import { useState, useCallback, useMemo, useRef, Dispatch, SetStateAction } from "react";
+import { useState, useCallback, useMemo, useRef, SetStateAction } from "react";
 import { useLatest } from "./useLatest";
 
 /**
