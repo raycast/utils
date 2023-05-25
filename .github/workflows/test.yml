@@ -24,6 +24,8 @@ jobs:
         uses: raycast/github-actions/setup-node@v1.13.0
       - name: Npm Install
         run: npm ci
+      - name: Npm Lint
+        run: npm run test
       - name: Build
         run: npm run build
       - name: Npm Install Tests
