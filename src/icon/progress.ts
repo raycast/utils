@@ -37,7 +37,7 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
 export function getProgressIcon(
   progress: number,
   color: Color | string = Color.Red,
-  options?: { background?: string; backgroundOpacity?: number }
+  options?: { background?: Color | string; backgroundOpacity?: number }
 ): Image.Asset {
   const background = options?.background || (environment.appearance === "light" ? "black" : "white");
   const backgroundOpacity = options?.backgroundOpacity || 0.1;
