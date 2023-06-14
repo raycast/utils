@@ -91,6 +91,13 @@
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
       "mode": "view"
+    },
+    {
+      "name": "applescript",
+      "title": "runAppleScript",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "no-view"
     }
   ],
   "dependencies": {
