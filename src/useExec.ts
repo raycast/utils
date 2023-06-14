@@ -8,7 +8,13 @@ import { useCallback, useRef } from "react";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 import { UseCachedPromiseReturnType } from "./types";
-import { getSpawnedPromise, getSpawnedResult } from "./exec-utils";
+import {
+  getSpawnedPromise,
+  getSpawnedResult,
+  handleOutput,
+  defaultParsing,
+  ParseExecOutputHandler,
+} from "./exec-utils";
 
 type ExecOptions = {
   /**
@@ -47,30 +53,12 @@ type ExecOptions = {
    * Write some input to the `stdin` of your binary.
    */
   input?: string | Buffer;
-  /** If timeout is greater than `0`, the parent will send the signal `SIGTERM` if the child runs longer than timeout milliseconds. */
+  /** If timeout is greater than `0`, the parent will send the signal `SIGTERM` if the child runs longer than timeout milliseconds.
+   *
+   * @default 10000
+   */
   timeout?: number;
 };
-
-export type ParseExecOutputHandler<T, DecodedOutput extends string | Buffer = string | Buffer> = (args: {
-  /** The output of the process on stdout. */
-  stdout: DecodedOutput;
-  /** The output of the process on stderr. */
-  stderr: DecodedOutput;
-  error?: Error;
-  /** The numeric exit code of the process that was run. */
-  exitCode: number | null;
-  /**
-   * The name of the signal that was used to terminate the process. For example, SIGFPE.
-   *
-   * If a signal terminated the process, this property is defined. Otherwise it is null.
-   */
-  signal: NodeJS.Signals | null;
-  /** Whether the process timed out. */
-  timedOut: boolean;
-  /** The command that was run, for logging purposes. */
-  command: string;
-  options?: ExecOptions;
-}) => T;
 
 const SPACES_REGEXP = / +/g;
 function parseCommand(command: string, args?: string[]) {
@@ -90,146 +78,6 @@ function parseCommand(command: string, args?: string[]) {
   }
 
   return tokens;
-}
-
-function stripFinalNewline<T extends string | Buffer>(input: T) {
-  const LF = typeof input === "string" ? "\n" : "\n".charCodeAt(0);
-  const CR = typeof input === "string" ? "\r" : "\r".charCodeAt(0);
-
-  if (input[input.length - 1] === LF) {
-    // @ts-expect-error we are doing some nasty stuff here
-    input = input.slice(0, -1);
-  }
-
-  if (input[input.length - 1] === CR) {
-    // @ts-expect-error we are doing some nasty stuff here
-    input = input.slice(0, -1);
-  }
-
-  return input;
-}
-
-function handleOutput<T extends string | Buffer>(options: { stripFinalNewline?: boolean }, value: T) {
-  if (options.stripFinalNewline) {
-    return stripFinalNewline(value);
-  }
-
-  return value;
-}
-
-const getErrorPrefix = ({
-  timedOut,
-  timeout,
-  signal,
-  exitCode,
-}: {
-  exitCode: number | null;
-  signal: NodeJS.Signals | null;
-  timedOut: boolean;
-  timeout?: number;
-}) => {
-  if (timedOut) {
-    return `timed out after ${timeout} milliseconds`;
-  }
-
-  if (signal !== undefined) {
-    return `was killed with ${signal}`;
-  }
-
-  if (exitCode !== undefined) {
-    return `failed with exit code ${exitCode}`;
-  }
-
-  return "failed";
-};
-
-const makeError = ({
-  stdout,
-  stderr,
-  error,
-  signal,
-  exitCode,
-  command,
-  timedOut,
-  options,
-}: {
-  stdout: string | Buffer;
-  stderr: string | Buffer;
-  error?: Error;
-  exitCode: number | null;
-  signal: NodeJS.Signals | null;
-  timedOut: boolean;
-  command: string;
-  options?: { timeout?: number };
-}) => {
-  const prefix = getErrorPrefix({ timedOut, timeout: options?.timeout, signal, exitCode });
-  const execaMessage = `Command ${prefix}: ${command}`;
-  const shortMessage = error ? `${execaMessage}\n${error.message}` : execaMessage;
-  const message = [shortMessage, stderr, stdout].filter(Boolean).join("\n");
-
-  if (error) {
-    // @ts-expect-error not on Error
-    error.originalMessage = error.message;
-    error.message = message;
-  } else {
-    error = new Error(message);
-  }
-
-  // @ts-expect-error not on Error
-  error.shortMessage = shortMessage;
-  // @ts-expect-error not on Error
-  error.command = command;
-  // @ts-expect-error not on Error
-  error.exitCode = exitCode;
-  // @ts-expect-error not on Error
-  error.signal = signal;
-  // @ts-expect-error not on Error
-  error.stdout = stdout;
-  // @ts-expect-error not on Error
-  error.stderr = stderr;
-
-  if ("bufferedData" in error) {
-    delete error["bufferedData"];
-  }
-
-  return error;
-};
-
-function defaultParsing<T extends string | Buffer>({
-  stdout,
-  stderr,
-  error,
-  exitCode,
-  signal,
-  timedOut,
-  command,
-  options,
-}: {
-  stdout: T;
-  stderr: T;
-  error?: Error;
-  exitCode: number | null;
-  signal: NodeJS.Signals | null;
-  timedOut: boolean;
-  command: string;
-  options?: ExecOptions;
-}) {
-  if (error || exitCode !== 0 || signal !== null) {
-    const returnedError = makeError({
-      error,
-      exitCode,
-      signal,
-      stdout,
-      stderr,
-      command,
-      timedOut,
-      options,
-    });
-
-    throw returnedError;
-  }
-
-  return stdout;
 }
 
 type ExecCachedPromiseOptions<T, U> = Omit<
@@ -268,7 +116,7 @@ type ExecCachedPromiseOptions<T, U> = Omit<
 export function useExec<T = Buffer, U = undefined>(
   command: string,
   options: {
-    parseOutput?: ParseExecOutputHandler<T, Buffer>;
+    parseOutput?: ParseExecOutputHandler<T, Buffer, ExecOptions>;
   } & ExecOptions & {
       encoding: "buffer";
     } & ExecCachedPromiseOptions<T, U>
@@ -276,7 +124,7 @@ export function useExec<T = Buffer, U = undefined>(
 export function useExec<T = string, U = undefined>(
   command: string,
   options?: {
-    parseOutput?: ParseExecOutputHandler<T, string>;
+    parseOutput?: ParseExecOutputHandler<T, string, ExecOptions>;
   } & ExecOptions & {
       encoding?: BufferEncoding;
     } & ExecCachedPromiseOptions<T, U>
@@ -290,7 +138,7 @@ export function useExec<T = Buffer, U = undefined>(
    */
   args: string[],
   options: {
-    parseOutput?: ParseExecOutputHandler<T, Buffer>;
+    parseOutput?: ParseExecOutputHandler<T, Buffer, ExecOptions>;
   } & ExecOptions & {
       encoding: "buffer";
     } & ExecCachedPromiseOptions<T, U>
@@ -304,7 +152,7 @@ export function useExec<T = string, U = undefined>(
    */
   args: string[],
   options?: {
-    parseOutput?: ParseExecOutputHandler<T, string>;
+    parseOutput?: ParseExecOutputHandler<T, string, ExecOptions>;
   } & ExecOptions & {
       encoding?: BufferEncoding;
     } & ExecCachedPromiseOptions<T, U>
@@ -314,11 +162,11 @@ export function useExec<T, U = undefined>(
   optionsOrArgs?:
     | string[]
     | ({
-        parseOutput?: ParseExecOutputHandler<T, Buffer> | ParseExecOutputHandler<T, string>;
+        parseOutput?: ParseExecOutputHandler<T, Buffer, ExecOptions> | ParseExecOutputHandler<T, string, ExecOptions>;
       } & ExecOptions &
         ExecCachedPromiseOptions<T, U>),
   options?: {
-    parseOutput?: ParseExecOutputHandler<T, Buffer> | ParseExecOutputHandler<T, string>;
+    parseOutput?: ParseExecOutputHandler<T, Buffer, ExecOptions> | ParseExecOutputHandler<T, string, ExecOptions>;
   } & ExecOptions &
     ExecCachedPromiseOptions<T, U>
 ): UseCachedPromiseReturnType<T, U> {
@@ -345,9 +193,10 @@ export function useExec<T, U = undefined>(
       const options = {
         stripFinalNewline: true,
         ..._options,
+        timeout: _options?.timeout || 10000,
         signal: abortable.current?.signal,
         encoding: _options?.encoding === null ? "buffer" : _options?.encoding || "utf8",
-        env: { ...process.env, ..._options?.env },
+        env: { PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", ...process.env, ..._options?.env },
       };
 
       const spawned = childProcess.spawn(file, args, options);
@@ -376,6 +225,7 @@ export function useExec<T, U = undefined>(
         timedOut,
         command,
         options,
+        parentError: new Error(),
       }) as T;
     },
     [parseOutputRef]

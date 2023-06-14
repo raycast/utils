@@ -89,7 +89,7 @@ With a few options:
 - `options.env` is a key-value pairs to set as the environment of the child process. It will extend automatically from `process.env`.
 - `options.encoding` is a string to specify the character encoding used to decode the `stdout` and `stderr` output. If set to `"buffer"`, then `stdout` and `stderr` will be a `Buffer` instead of a string.
 - `options.input` is a string or a Buffer to write to the `stdin` of the file.
-- `options.timeout` is a number. If greater than `0`, the parent will send the signal `SIGTERM` if the child runs longer than timeout milliseconds.
+- `options.timeout` is a number. If greater than `0`, the parent will send the signal `SIGTERM` if the child runs longer than timeout milliseconds. By default, the execution will timeout after 10000ms (eg. 10s).
 - `options.parseOutput` is a function that accepts the output of the child process as an argument and returns the data the hooks will return - see [ParseExecOutputHandler](#parseexecoutputhandler). By default, the hook will return `stdout`.
 
 Including the [useCachedPromise](./useCachedPromise.md)'s options:

@@ -163,3 +163,174 @@ export async function getSpawnedResult<T extends string | Buffer>(
     ]);
   }
 }
+
+function stripFinalNewline<T extends string | Buffer>(input: T) {
+  const LF = typeof input === "string" ? "\n" : "\n".charCodeAt(0);
+  const CR = typeof input === "string" ? "\r" : "\r".charCodeAt(0);
+
+  if (input[input.length - 1] === LF) {
+    // @ts-expect-error we are doing some nasty stuff here
+    input = input.slice(0, -1);
+  }
+
+  if (input[input.length - 1] === CR) {
+    // @ts-expect-error we are doing some nasty stuff here
+    input = input.slice(0, -1);
+  }
+
+  return input;
+}
+
+export function handleOutput<T extends string | Buffer>(options: { stripFinalNewline?: boolean }, value: T) {
+  if (options.stripFinalNewline) {
+    return stripFinalNewline(value);
+  }
+
+  return value;
+}
+
+const getErrorPrefix = ({
+  timedOut,
+  timeout,
+  signal,
+  exitCode,
+}: {
+  exitCode: number | null;
+  signal: NodeJS.Signals | null;
+  timedOut: boolean;
+  timeout?: number;
+}) => {
+  if (timedOut) {
+    return `timed out after ${timeout} milliseconds`;
+  }
+
+  if (signal !== undefined && signal !== null) {
+    return `was killed with ${signal}`;
+  }
+
+  if (exitCode !== undefined && exitCode !== null) {
+    return `failed with exit code ${exitCode}`;
+  }
+
+  return "failed";
+};
+
+const makeError = ({
+  stdout,
+  stderr,
+  error,
+  signal,
+  exitCode,
+  command,
+  timedOut,
+  options,
+  parentError,
+}: {
+  stdout: string | Buffer;
+  stderr: string | Buffer;
+  error?: Error;
+  exitCode: number | null;
+  signal: NodeJS.Signals | null;
+  timedOut: boolean;
+  command: string;
+  options?: { timeout?: number };
+  parentError: Error;
+}) => {
+  const prefix = getErrorPrefix({ timedOut, timeout: options?.timeout, signal, exitCode });
+  const execaMessage = `Command ${prefix}: ${command}`;
+  const shortMessage = error ? `${execaMessage}\n${error.message}` : execaMessage;
+  const message = [shortMessage, stderr, stdout].filter(Boolean).join("\n");
+
+  if (error) {
+    // @ts-expect-error not on Error
+    error.originalMessage = error.message;
+  } else {
+    error = parentError;
+  }
+
+  error.message = message;
+
+  // @ts-expect-error not on Error
+  error.shortMessage = shortMessage;
+  // @ts-expect-error not on Error
+  error.command = command;
+  // @ts-expect-error not on Error
+  error.exitCode = exitCode;
+  // @ts-expect-error not on Error
+  error.signal = signal;
+  // @ts-expect-error not on Error
+  error.stdout = stdout;
+  // @ts-expect-error not on Error
+  error.stderr = stderr;
+
+  if ("bufferedData" in error) {
+    delete error["bufferedData"];
+  }
+
+  return error;
+};
+
+export type ParseExecOutputHandler<
+  T,
+  DecodedOutput extends string | Buffer = string | Buffer,
+  Options = unknown
+> = (args: {
+  /** The output of the process on stdout. */
+  stdout: DecodedOutput;
+  /** The output of the process on stderr. */
+  stderr: DecodedOutput;
+  error?: Error;
+  /** The numeric exit code of the process that was run. */
+  exitCode: number | null;
+  /**
+   * The name of the signal that was used to terminate the process. For example, SIGFPE.
+   *
+   * If a signal terminated the process, this property is defined. Otherwise it is null.
+   */
+  signal: NodeJS.Signals | null;
+  /** Whether the process timed out. */
+  timedOut: boolean;
+  /** The command that was run, for logging purposes. */
+  command: string;
+  options?: Options;
+}) => T;
+
+export function defaultParsing<T extends string | Buffer>({
+  stdout,
+  stderr,
+  error,
+  exitCode,
+  signal,
+  timedOut,
+  command,
+  options,
+  parentError,
+}: {
+  stdout: T;
+  stderr: T;
+  error?: Error;
+  exitCode: number | null;
+  signal: NodeJS.Signals | null;
+  timedOut: boolean;
+  command: string;
+  options?: { timeout?: number };
+  parentError: Error;
+}) {
+  if (error || exitCode !== 0 || signal !== null) {
+    const returnedError = makeError({
+      error,
+      exitCode,
+      signal,
+      stdout,
+      stderr,
+      command,
+      timedOut,
+      options,
+      parentError,
+    });
+
+    throw returnedError;
+  }
+
+  return stdout;
+}
