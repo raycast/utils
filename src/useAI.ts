@@ -4,7 +4,6 @@ import { PromiseOptions, usePromise } from "./usePromise";
 import { FunctionReturningPromise } from "./types";
 
 /**
- *
  * Stream a prompt completion.
  *
  * @example

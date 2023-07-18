@@ -51,7 +51,7 @@ async function defaultParsing(response: Response) {
  * ```
  * import { useFetch } from '@raycast/utils';
  *
- * const Demo = () => {
+ * export default function Command() {
  *   const { isLoading, data, revalidate } = useFetch('https://api.example');
  *
  *   return (

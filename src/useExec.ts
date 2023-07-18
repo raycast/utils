@@ -99,7 +99,7 @@ type ExecCachedPromiseOptions<T, U> = Omit<
  * ```
  * import { useExec } from '@raycast/utils';
  *
- * const Demo = () => {
+ * export default function Command() {
  *   const { isLoading, data, revalidate } = useExec("brew", ["info", "--json=v2", "--installed"]);
  *   const results = useMemo<{}[]>(() => JSON.parse(data || "[]"), [data]);
  *

@@ -42,7 +42,7 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
  * ```
  * import { usePromise } from '@raycast/utils';
  *
- * const Demo = () => {
+ * export default function Command() {
  *   const abortable = useRef<AbortController>();
  *   const { isLoading, data, revalidate } = usePromise(async (url: string) => {
  *     const response = await fetch(url, { signal: abortable.current?.signal });

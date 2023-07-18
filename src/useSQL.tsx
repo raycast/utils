@@ -38,7 +38,7 @@ import { handleErrorToastAction } from "./handle-error-toast-action";
  *   title: string;
  * };
  *
- * const Demo = () => {
+ * export default function Command() {
  *   const { isLoading, data, permissionView } = useSQL<NoteItem>(NOTES_DB, notesQuery);
  *
  *   if (permissionView) {

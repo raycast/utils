@@ -32,7 +32,7 @@ export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = Promis
  * ```
  * import { useCachedPromise } from '@raycast/utils';
  *
- * const Demo = () => {
+ * export default function Command() {
  *   const abortable = useRef<AbortController>();
  *   const { isLoading, data, revalidate } = useCachedPromise(async (url: string) => {
  *     const response = await fetch(url, { signal: abortable.current?.signal });

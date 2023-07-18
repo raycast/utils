@@ -83,7 +83,7 @@ interface FormProps<T extends Form.Values> {
  *   password: string;
  * }
  *
- * export default function Main() {
+ * export default function Command() {
  *   const { handleSubmit, itemProps } = useForm<SignUpFormValues>({
  *     onSubmit(values) {
  *       showToast(Toast.Style.Success, "Yay!", `${values.nickname} account created`);
