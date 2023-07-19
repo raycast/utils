@@ -83,7 +83,7 @@ const defaultKey = (item: any): string => {
  */
 export function useFrecencySorting<T extends { id: string }>(
   data?: T[],
-  options?: { namespace?: string; key?: (item: T) => string }
+  options?: { namespace?: string; key?: (item: T) => string; sortUnvisited?: (a: T, b: T) => number }
 ): {
   data: T[];
   visitItem: (item: T) => Promise<void>;
@@ -91,7 +91,7 @@ export function useFrecencySorting<T extends { id: string }>(
 };
 export function useFrecencySorting<T>(
   data: T[] | undefined,
-  options: { namespace?: string; key: (item: T) => string }
+  options: { namespace?: string; key: (item: T) => string; sortUnvisited?: (a: T, b: T) => number }
 ): {
   data: T[];
   visitItem: (item: T) => Promise<void>;
@@ -99,13 +99,14 @@ export function useFrecencySorting<T>(
 };
 export function useFrecencySorting<T>(
   data?: T[],
-  options?: { namespace?: string; key?: (item: T) => string }
+  options?: { namespace?: string; key?: (item: T) => string; sortUnvisited?: (a: T, b: T) => number }
 ): {
   data: T[];
   visitItem: (item: T) => Promise<void>;
   resetRanking: (item: T) => Promise<void>;
 } {
   const keyRef = useLatest(options?.key || defaultKey);
+  const sortUnvisitedRef = useLatest(options?.sortUnvisited);
 
   const [storedFrecencies, setStoredFrecencies] = useCachedState<Record<string, Frecency | undefined>>(
     `raycast_frecency_${options?.namespace}`,
@@ -168,9 +169,9 @@ export function useFrecencySorting<T>(
       }
 
       // If both frecencies are undefined, keep the original order
-      return 0;
+      return sortUnvisitedRef.current ? sortUnvisitedRef.current(a, b) : 0;
     });
-  }, [storedFrecencies, data, keyRef]);
+  }, [storedFrecencies, data, keyRef, sortUnvisitedRef]);
 
   return { data: sortedData, visitItem, resetRanking };
 }
