@@ -98,6 +98,13 @@
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
       "mode": "no-view"
+    },
+    {
+      "name": "frecency",
+      "title": "useFrecencySorting",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
     }
   ],
   "dependencies": {
