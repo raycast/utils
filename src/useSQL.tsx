@@ -20,7 +20,7 @@ import { useRef, useState, useCallback, useMemo } from "react";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 import { getSpawnedPromise, getSpawnedResult } from "./exec-utils";
-import { handleErrorToastAction } from "./handle-error-toast-action";
+import { showFailureToast } from "./showFailureToast";
 
 /**
  * Executes a query on a local SQL database and returns the {@link AsyncState} corresponding to the query of the command. The last value will be kept between command runs.
@@ -84,13 +84,9 @@ export function useSQL<T = unknown>(
         if (latestOptions.current.onError) {
           latestOptions.current.onError(error);
         } else {
-          console.error(error);
           if (environment.launchType !== LaunchType.Background) {
-            showToast({
-              style: Toast.Style.Failure,
+            showFailureToast(error, {
               title: "Cannot query the data",
-              message: error.message,
-              primaryAction: handleErrorToastAction(error),
             });
           }
         }

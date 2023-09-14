@@ -1,9 +1,9 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
-import { showToast, Toast, environment, LaunchType } from "@raycast/api";
+import { environment, LaunchType } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
 import { FunctionReturningPromise, MutatePromise, UsePromiseReturnType, AsyncState } from "./types";
 import { useLatest } from "./useLatest";
-import { handleErrorToastAction } from "./handle-error-toast-action";
+import { showFailureToast } from "./showFailureToast";
 
 export type PromiseOptions<T extends FunctionReturningPromise> = {
   /**
@@ -127,10 +127,8 @@ export function usePromise<T extends FunctionReturningPromise>(
             } else {
               console.error(error);
               if (environment.launchType !== LaunchType.Background) {
-                showToast({
-                  style: Toast.Style.Failure,
+                showFailureToast(error, {
                   title: "Failed to fetch latest data",
-                  message: error.message,
                   primaryAction: {
                     title: "Retry",
                     onAction(toast) {
@@ -138,7 +136,6 @@ export function usePromise<T extends FunctionReturningPromise>(
                       latestCallback.current?.(...(latestArgs.current || []));
                     },
                   },
-                  secondaryAction: handleErrorToastAction(error),
                 });
               }
             }

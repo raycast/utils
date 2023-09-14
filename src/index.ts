@@ -11,6 +11,7 @@ export * from "./useFrecencySorting";
 export * from "./icon";
 
 export * from "./run-applescript";
+export * from "./showFailureToast";
 
 export type { AsyncState, MutatePromise } from "./types";
 export type { Response } from "cross-fetch";

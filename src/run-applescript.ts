@@ -31,6 +31,31 @@ type AppleScriptOptions = {
   timeout?: number;
 };
 
+/**
+ * Executes an AppleScript script.
+ *
+ * @example
+ * ```typescript
+ * import { showHUD } from "@raycast/api";
+ * import { runAppleScript, showFailureToast } from "@raycast/utils";
+ *
+ * export default async function () {
+ *   try {
+ *     const res = await runAppleScript(
+ *       `
+ *       on run argv
+ *         return "hello, " & item 1 of argv & "."
+ *       end run
+ *       `,
+ *       ["world"]
+ *     );
+ *     await showHUD(res);
+ *   } catch (error) {
+ *     showFailureToast(error, { title: "Could not run AppleScript" });
+ *   }
+ * }
+ * ```
+ */
 export async function runAppleScript<T = string>(
   script: string,
   options?: AppleScriptOptions & {

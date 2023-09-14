@@ -1,8 +1,44 @@
 import * as fs from "fs";
 import * as path from "path";
-import { Clipboard, environment, open, Toast } from "@raycast/api";
+import { Clipboard, environment, open, Toast, showToast } from "@raycast/api";
 
-export const handleErrorToastAction = (error: unknown): Toast.ActionOptions => {
+/**
+ * Shows a failure Toast for a given Error.
+ *
+ * @example
+ * ```typescript
+ * import { showHUD } from "@raycast/api";
+ * import { runAppleScript, showFailureToast } from "@raycast/utils";
+ *
+ * export default async function () {
+ *   try {
+ *     const res = await runAppleScript(
+ *       `
+ *       on run argv
+ *         return "hello, " & item 1 of argv & "."
+ *       end run
+ *       `,
+ *       ["world"]
+ *     );
+ *     await showHUD(res);
+ *   } catch (error) {
+ *     showFailureToast(error, { title: "Could not run AppleScript" });
+ *   }
+ * }
+ * ```
+ */
+export function showFailureToast(error: unknown, options?: { title?: string; primaryAction?: Toast.ActionOptions }) {
+  const message = error instanceof Error ? error.message : String(error);
+  return showToast({
+    style: Toast.Style.Failure,
+    title: options?.title ?? "Something went wrong",
+    message: message,
+    primaryAction: options?.primaryAction ?? handleErrorToastAction(error),
+    secondaryAction: options?.primaryAction ? handleErrorToastAction(error) : undefined,
+  });
+}
+
+const handleErrorToastAction = (error: unknown): Toast.ActionOptions => {
   let privateExtension = true;
   let title = "[Extension Name]...";
   let extensionURL = "";
