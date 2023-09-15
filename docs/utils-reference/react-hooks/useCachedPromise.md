@@ -1,6 +1,10 @@
 # `useCachedPromise`
 
-Hook which wraps an asynchronous function or a function that returns a Promise and returns the [AsyncState](#asyncstate) corresponding to the execution of the function. The last value will be kept between command runs.
+Hook which wraps an asynchronous function or a function that returns a Promise and returns the [AsyncState](#asyncstate) corresponding to the execution of the function.
+
+It follows the `stale-while-revalidate` cache invalidation strategy popularized by [HTTP RFC 5861](https://tools.ietf.org/html/rfc5861). `useCachedPromise` first returns the data from cache (stale), then executes the promise (revalidate), and finally comes with the up-to-date data again.
+
+The last value will be kept between command runs.
 
 {% hint style="info" %}
 The value needs to be JSON serializable.

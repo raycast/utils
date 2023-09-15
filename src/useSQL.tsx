@@ -1,15 +1,4 @@
-import {
-  showToast,
-  Toast,
-  List,
-  ActionPanel,
-  Action,
-  environment,
-  MenuBarExtra,
-  Icon,
-  open,
-  LaunchType,
-} from "@raycast/api";
+import { List, ActionPanel, Action, environment, MenuBarExtra, Icon, open, LaunchType } from "@raycast/api";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
