@@ -72,12 +72,12 @@ export function usePromise<T extends FunctionReturningPromise<[]>>(fn: T): UsePr
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
-  options?: PromiseOptions<T>
+  options?: PromiseOptions<T>,
 ): UsePromiseReturnType<Awaited<ReturnType<T>>>;
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args?: Parameters<T>,
-  options?: PromiseOptions<T>
+  options?: PromiseOptions<T>,
 ): UsePromiseReturnType<Awaited<ReturnType<T>>> {
   const lastCallId = useRef(0);
   const [state, set] = useState<AsyncState<Awaited<ReturnType<T>>>>({ isLoading: true });
@@ -143,10 +143,10 @@ export function usePromise<T extends FunctionReturningPromise>(
           }
 
           return error;
-        }
+        },
       ) as ReturnType<T>;
     },
-    [latestAbortable, latestOnData, latestOnError, latestArgs, fnRef, set, latestCallback, latestOnWillExecute]
+    [latestAbortable, latestOnData, latestOnError, latestArgs, fnRef, set, latestCallback, latestOnWillExecute],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) as any as T;
 
@@ -190,7 +190,7 @@ export function usePromise<T extends FunctionReturningPromise>(
         }
       }
     },
-    [revalidate, latestValue, set]
+    [revalidate, latestValue, set],
   );
 
   // revalidate when the args change

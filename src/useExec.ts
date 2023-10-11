@@ -119,7 +119,7 @@ export function useExec<T = Buffer, U = undefined>(
     parseOutput?: ParseExecOutputHandler<T, Buffer, ExecOptions>;
   } & ExecOptions & {
       encoding: "buffer";
-    } & ExecCachedPromiseOptions<T, U>
+    } & ExecCachedPromiseOptions<T, U>,
 ): UseCachedPromiseReturnType<T, U>;
 export function useExec<T = string, U = undefined>(
   command: string,
@@ -127,7 +127,7 @@ export function useExec<T = string, U = undefined>(
     parseOutput?: ParseExecOutputHandler<T, string, ExecOptions>;
   } & ExecOptions & {
       encoding?: BufferEncoding;
-    } & ExecCachedPromiseOptions<T, U>
+    } & ExecCachedPromiseOptions<T, U>,
 ): UseCachedPromiseReturnType<T, U>;
 export function useExec<T = Buffer, U = undefined>(
   file: string,
@@ -141,7 +141,7 @@ export function useExec<T = Buffer, U = undefined>(
     parseOutput?: ParseExecOutputHandler<T, Buffer, ExecOptions>;
   } & ExecOptions & {
       encoding: "buffer";
-    } & ExecCachedPromiseOptions<T, U>
+    } & ExecCachedPromiseOptions<T, U>,
 ): UseCachedPromiseReturnType<T, U>;
 export function useExec<T = string, U = undefined>(
   file: string,
@@ -155,7 +155,7 @@ export function useExec<T = string, U = undefined>(
     parseOutput?: ParseExecOutputHandler<T, string, ExecOptions>;
   } & ExecOptions & {
       encoding?: BufferEncoding;
-    } & ExecCachedPromiseOptions<T, U>
+    } & ExecCachedPromiseOptions<T, U>,
 ): UseCachedPromiseReturnType<T, U>;
 export function useExec<T, U = undefined>(
   command: string,
@@ -168,7 +168,7 @@ export function useExec<T, U = undefined>(
   options?: {
     parseOutput?: ParseExecOutputHandler<T, Buffer, ExecOptions> | ParseExecOutputHandler<T, string, ExecOptions>;
   } & ExecOptions &
-    ExecCachedPromiseOptions<T, U>
+    ExecCachedPromiseOptions<T, U>,
 ): UseCachedPromiseReturnType<T, U> {
   const { parseOutput, input, onData, onWillExecute, initialData, execute, keepPreviousData, onError, ...execOptions } =
     Array.isArray(optionsOrArgs) ? options || {} : optionsOrArgs || {};
@@ -209,7 +209,7 @@ export function useExec<T, U = undefined>(
       const [{ error, exitCode, signal, timedOut }, stdoutResult, stderrResult] = await getSpawnedResult(
         spawned,
         options,
-        spawnedPromise
+        spawnedPromise,
       );
       const stdout = handleOutput(options, stdoutResult);
       const stderr = handleOutput(options, stderrResult);
@@ -228,7 +228,7 @@ export function useExec<T, U = undefined>(
         parentError: new Error(),
       }) as T;
     },
-    [parseOutputRef]
+    [parseOutputRef],
   );
 
   // @ts-expect-error T can't be a Promise so it's actually the same

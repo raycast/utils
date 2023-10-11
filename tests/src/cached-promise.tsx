@@ -13,7 +13,7 @@ export default function Command() {
     {
       initialData: "Shown before any data is loaded",
       keepPreviousData: true,
-    }
+    },
   );
 
   return (

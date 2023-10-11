@@ -68,14 +68,14 @@ const handleErrorToastAction = (error: unknown): Toast.ActionOptions => {
       } else {
         open(
           `https://github.com/raycast/extensions/issues/new?&labels=extension%2Cbug&template=extension_bug_report.yml&title=${encodeURIComponent(
-            title
+            title,
           )}&extension-url=${encodeURI(extensionURL)}&description=${encodeURIComponent(
             `#### Error:
 \`\`\`
 ${stack}
 \`\`\`
-`
-          )}`
+`,
+          )}`,
         );
       }
     },

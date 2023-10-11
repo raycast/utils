@@ -38,13 +38,13 @@ const cacheMap = new Map<string | symbol, Cache>();
 export function useCachedState<T>(
   key: string,
   initialState: T,
-  config?: { cacheNamespace?: string }
+  config?: { cacheNamespace?: string },
 ): [T, Dispatch<SetStateAction<T>>];
 export function useCachedState<T = undefined>(key: string): [T | undefined, Dispatch<SetStateAction<T | undefined>>];
 export function useCachedState<T>(
   key: string,
   initialState?: T,
-  config?: { cacheNamespace?: string }
+  config?: { cacheNamespace?: string },
 ): [T, Dispatch<SetStateAction<T>>] {
   const cacheKey = config?.cacheNamespace || rootCache;
   const cache =
@@ -97,7 +97,7 @@ export function useCachedState<T>(
       }
       return newValue;
     },
-    [cache, keyRef, stateRef]
+    [cache, keyRef, stateRef],
   );
 
   return [state, setStateAndCache];

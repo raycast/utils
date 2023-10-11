@@ -37,7 +37,7 @@ function describeArc(x: number, y: number, radius: number, startAngle: number, e
 export function getProgressIcon(
   progress: number,
   color: Color | string = Color.Red,
-  options?: { background?: Color | string; backgroundOpacity?: number }
+  options?: { background?: Color | string; backgroundOpacity?: number },
 ): Image.Asset {
   const background = options?.background || (environment.appearance === "light" ? "black" : "white");
   const backgroundOpacity = options?.backgroundOpacity || 0.1;
@@ -48,8 +48,8 @@ export function getProgressIcon(
 
   const svg = `<svg width="100px" height="100px">
       <circle cx="50" cy="50" r="${radius}" stroke-width="${stroke}" stroke="${
-    progress < 1 ? background : color
-  }" opacity="${progress < 1 ? backgroundOpacity : "1"}" fill="none" />
+        progress < 1 ? background : color
+      }" opacity="${progress < 1 ? backgroundOpacity : "1"}" fill="none" />
       ${
         progress > 0 && progress < 1
           ? `<path d="${describeArc(
@@ -57,7 +57,7 @@ export function getProgressIcon(
               50,
               radius,
               0,
-              progress * 360
+              progress * 360,
             )}" stroke="${color}" stroke-width="${stroke}" fill="none" />`
           : ""
       }

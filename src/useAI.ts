@@ -34,7 +34,7 @@ export function useAI(
      * Whether to stream the answer or only update the data when the entire answer has been received.
      */
     stream?: boolean;
-  } & Omit<PromiseOptions<FunctionReturningPromise>, "abortable"> = {}
+  } & Omit<PromiseOptions<FunctionReturningPromise>, "abortable"> = {},
 ) {
   const { creativity, stream, model, ...usePromiseOptions } = options;
   const [data, setData] = useState("");
@@ -53,7 +53,7 @@ export function useAI(
       }
     },
     [prompt, creativity, stream],
-    { ...usePromiseOptions, abortable }
+    { ...usePromiseOptions, abortable },
   );
 
   return { isLoading, data, error, revalidate };

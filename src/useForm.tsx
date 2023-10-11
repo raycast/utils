@@ -15,7 +15,7 @@ type Validator<ValueType> = ((value: ValueType | undefined) => ValidationError) 
 
 function validationError<ValueType>(
   validation: Validator<ValueType> | undefined,
-  value: ValueType | undefined
+  value: ValueType | undefined,
 ): ValidationError {
   if (validation) {
     if (typeof validation === "function") {
@@ -144,7 +144,7 @@ function useForm<T extends Form.Values>(props: {
     (id: keyof T) => {
       refs.current[id]?.focus();
     },
-    [refs]
+    [refs],
   );
 
   const handleSubmit = useCallback(
@@ -168,14 +168,14 @@ function useForm<T extends Form.Values>(props: {
       const result = await latestOnSubmit.current(values);
       return typeof result === "boolean" ? result : true;
     },
-    [latestValidation, latestOnSubmit, focus]
+    [latestValidation, latestOnSubmit, focus],
   );
 
   const setValidationError = useCallback(
     (id: keyof T, error: ValidationError) => {
       setErrors((errors) => ({ ...errors, [id]: error }));
     },
-    [setErrors]
+    [setErrors],
   );
 
   const setValue = useCallback(
@@ -183,7 +183,7 @@ function useForm<T extends Form.Values>(props: {
       // @ts-expect-error TS is always confused about SetStateAction, but it's fine here
       setValues((values) => ({ ...values, [id]: typeof value === "function" ? value(values[id]) : value }));
     },
-    [setValues]
+    [setValues],
   );
 
   const itemProps = useMemo<{ [id in keyof Required<T>]: Partial<Form.ItemProps<T[id]>> & { id: string } }>(() => {
@@ -221,7 +221,7 @@ function useForm<T extends Form.Values>(props: {
             },
           } as Partial<Form.ItemProps<T[keyof T]>> & { id: string };
         },
-      }
+      },
     );
   }, [errors, latestValidation, setValidationError, values, refs, setValue]);
 
@@ -236,7 +236,7 @@ function useForm<T extends Form.Values>(props: {
         setValues(values);
       }
     },
-    [setValues, setErrors, refs]
+    [setValues, setErrors, refs],
   );
 
   return { handleSubmit, setValidationError, setValue, values, itemProps, focus, reset };

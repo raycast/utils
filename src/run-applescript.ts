@@ -60,7 +60,7 @@ export async function runAppleScript<T = string>(
   script: string,
   options?: AppleScriptOptions & {
     parseOutput?: ParseExecOutputHandler<T, string, AppleScriptOptions>;
-  }
+  },
 ): Promise<string>;
 export async function runAppleScript<T = string>(
   script: string,
@@ -70,7 +70,7 @@ export async function runAppleScript<T = string>(
   args: string[],
   options?: AppleScriptOptions & {
     parseOutput?: ParseExecOutputHandler<T, string, AppleScriptOptions>;
-  }
+  },
 ): Promise<string>;
 export async function runAppleScript<T = string>(
   script: string,
@@ -81,7 +81,7 @@ export async function runAppleScript<T = string>(
       }),
   options?: AppleScriptOptions & {
     parseOutput?: ParseExecOutputHandler<T, string, AppleScriptOptions>;
-  }
+  },
 ): Promise<string> {
   const { humanReadableOutput, language, timeout, ...execOptions } = Array.isArray(optionsOrArgs)
     ? options || {}
@@ -106,7 +106,7 @@ export async function runAppleScript<T = string>(
   const [{ error, exitCode, signal, timedOut }, stdoutResult, stderrResult] = await getSpawnedResult<string>(
     spawned,
     { encoding: "utf8" },
-    spawnedPromise
+    spawnedPromise,
   );
   const stdout = handleOutput({ stripFinalNewline: true }, stdoutResult);
   const stderr = handleOutput({ stripFinalNewline: true }, stderrResult);

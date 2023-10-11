@@ -50,7 +50,7 @@ export function useSQL<T = unknown>(
   options?: {
     /** A string explaining why the extension needs full disk access. For example, the Apple Notes extension uses `"This is required to search your Apple Notes."`. While it is optional, we recommend setting it to help users understand. */
     permissionPriming?: string;
-  } & Omit<PromiseOptions<(database: string, query: string) => Promise<T[]>>, "abortable">
+  } & Omit<PromiseOptions<(database: string, query: string) => Promise<T[]>>, "abortable">,
 ) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { permissionPriming, ...usePromiseOptions } = options || {};
@@ -81,7 +81,7 @@ export function useSQL<T = unknown>(
         }
       }
     },
-    [latestOptions]
+    [latestOptions],
   );
 
   const fn = useMemo(() => {
@@ -99,7 +99,7 @@ export function useSQL<T = unknown>(
       let [{ error, exitCode, signal }, stdoutResult, stderrResult] = await getSpawnedResult<string>(
         spawned,
         { encoding: "utf-8" },
-        spawnedPromise
+        spawnedPromise,
       );
 
       checkAborted(abortSignal);
@@ -128,13 +128,13 @@ export function useSQL<T = unknown>(
           ["--json", "--readonly", "--vfs", "unix-none", workaroundCopiedDb, query],
           {
             signal: abortSignal,
-          }
+          },
         );
         const spawnedPromise = getSpawnedPromise(spawned);
         [{ error, exitCode, signal }, stdoutResult, stderrResult] = await getSpawnedResult<string>(
           spawned,
           { encoding: "utf-8" },
-          spawnedPromise
+          spawnedPromise,
         );
         checkAborted(abortSignal);
       }

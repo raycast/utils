@@ -59,17 +59,17 @@ export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = Promis
  * ```
  */
 export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
-  fn: T
+  fn: T,
 ): UseCachedPromiseReturnType<Awaited<ReturnType<T>>, undefined>;
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args: Parameters<T>,
-  options?: CachedPromiseOptions<T, U>
+  options?: CachedPromiseOptions<T, U>,
 ): UseCachedPromiseReturnType<Awaited<ReturnType<T>>, U>;
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args?: Parameters<T>,
-  options?: CachedPromiseOptions<T, U>
+  options?: CachedPromiseOptions<T, U>,
 ) {
   const { initialData, keepPreviousData, ...usePromiseOptions } = options || {};
   const lastUpdateFrom = useRef<"cache" | "promise">();
@@ -79,7 +79,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
     emptyCache,
     {
       cacheNamespace: hash(fn),
-    }
+    },
   );
 
   // Use a ref to store previous returned data. Use the inital data as its inital value from the cache.
@@ -153,7 +153,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
         throw err;
       }
     },
-    [mutateCache, _mutate, latestData, laggyDataRef, lastUpdateFrom]
+    [mutateCache, _mutate, latestData, laggyDataRef, lastUpdateFrom],
   );
 
   useEffect(() => {

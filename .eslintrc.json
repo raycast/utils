@@ -18,7 +18,8 @@
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
     "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-    "import/no-unresolved": [2, { "ignore": ["@raycast/api"] }]
+    "import/no-unresolved": [2, { "ignore": ["@raycast/api"] }],
+    "@typescript-eslint/no-explicit-any": "warn"
   },
   "overrides": [
     {

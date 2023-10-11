@@ -49,7 +49,7 @@ export type MutatePromise<T, U = T, V = any> = (
     optimisticUpdate?: (data: T | U) => T;
     rollbackOnError?: boolean | ((data: T | U) => T);
     shouldRevalidateAfter?: boolean;
-  }
+  },
 ) => Promise<V>;
 
 export type UsePromiseReturnType<T> = AsyncState<T> & {

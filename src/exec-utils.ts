@@ -13,7 +13,7 @@ export type SpawnedPromise = Promise<{
 
 export function getSpawnedPromise(
   spawned: childProcess.ChildProcessWithoutNullStreams,
-  { timeout }: { timeout?: number } = {}
+  { timeout }: { timeout?: number } = {},
 ): SpawnedPromise {
   const spawnedPromise: SpawnedPromise = new Promise((resolve, reject) => {
     spawned.on("exit", (exitCode, signal) => {
@@ -95,7 +95,7 @@ function bufferStream<T extends string | Buffer>(options: { encoding: BufferEnco
 
 async function getStream<T extends string | Buffer>(
   inputStream: Stream.Readable,
-  options: { encoding: BufferEncoding | "buffer" }
+  options: { encoding: BufferEncoding | "buffer" },
 ) {
   const stream = bufferStream<T>(options);
 
@@ -143,7 +143,7 @@ async function getBufferedData<T extends string | Buffer>(stream: Stream.Readabl
 export async function getSpawnedResult<T extends string | Buffer>(
   { stdout, stderr }: childProcess.ChildProcessWithoutNullStreams,
   { encoding }: { encoding: BufferEncoding | "buffer" },
-  processDone: SpawnedPromise
+  processDone: SpawnedPromise,
 ) {
   const stdoutPromise = getStream<T>(stdout, { encoding });
   const stderrPromise = getStream<T>(stderr, { encoding });
@@ -273,7 +273,7 @@ const makeError = ({
 export type ParseExecOutputHandler<
   T,
   DecodedOutput extends string | Buffer = string | Buffer,
-  Options = unknown
+  Options = unknown,
 > = (args: {
   /** The output of the process on stdout. */
   stdout: DecodedOutput;

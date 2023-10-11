@@ -32,7 +32,7 @@ export function getFavicon(
      * A {@link Image.Mask} to apply to the Favicon.
      */
     mask?: Image.Mask;
-  }
+  },
 ): Image.ImageLike {
   try {
     const urlObj = typeof url === "string" ? new URL(url) : url;

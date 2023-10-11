@@ -81,7 +81,7 @@ export function getAvatarIcon(
      * @default true
      */
     gradient?: boolean;
-  }
+  },
 ): Image.Asset {
   const words = name.trim().split(" ");
   let initials: string;
@@ -127,8 +127,8 @@ export function getAvatarIcon(
       : ""
   }
       <circle cx="50" cy="50" r="${radius}" fill="${
-    options?.gradient !== false ? "url(#Gradient)" : backgroundColor
-  }" />
+        options?.gradient !== false ? "url(#Gradient)" : backgroundColor
+      }" />
       ${
         initials
           ? `<text x="50" y="80" font-size="${

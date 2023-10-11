@@ -73,7 +73,7 @@ export function useFetch<T = unknown, U = undefined>(
   options?: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
       CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>,
       "abortable"
-    >
+    >,
 ): UseCachedPromiseReturnType<T, U> {
   const { parseResponse, initialData, execute, keepPreviousData, onError, onData, onWillExecute, ...fetchOptions } =
     options || {};
@@ -95,7 +95,7 @@ export function useFetch<T = unknown, U = undefined>(
       const res = await fetch(url, { signal: abortable.current?.signal, ...options });
       return (await parseResponseRef.current(res)) as T;
     },
-    [parseResponseRef]
+    [parseResponseRef],
   );
 
   // @ts-expect-error T can't be a Promise so it's actually the same

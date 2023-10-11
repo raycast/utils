@@ -9,7 +9,7 @@ export default function Command() {
       await sleep(300);
       return `result: ${text}`;
     },
-    [searchText]
+    [searchText],
   );
 
   return (
