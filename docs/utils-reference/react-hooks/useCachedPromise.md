@@ -73,14 +73,15 @@ export default function Command() {
   const abortable = useRef<AbortController>();
   const { isLoading, data, revalidate } = useCachedPromise(
     async (url: string) => {
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: abortable.current?.signal });
       const result = await response.text();
       return result;
     },
     ["https://api.example"],
     {
       initialData: "Some Text",
-    }
+      abortable,
+    },
   );
 
   return (
@@ -120,7 +121,7 @@ export default function Command() {
     {
       // to make sure the screen isn't flickering when the searchText changes
       keepPreviousData: true,
-    }
+    },
   );
 
   return (
@@ -152,7 +153,7 @@ export default function Command() {
       const result = await response.text();
       return result;
     },
-    ["https://api.example"]
+    ["https://api.example"],
   );
 
   const appendFoo = async () => {
@@ -167,7 +168,7 @@ export default function Command() {
           optimisticUpdate(data) {
             return data + "foo";
           },
-        }
+        },
       );
       // yay, the API call worked!
       toast.style = Toast.Style.Success;
@@ -242,6 +243,6 @@ export type MutatePromise<T> = (
     optimisticUpdate?: (data: T) => T;
     rollbackOnError?: boolean | ((data: T) => T);
     shouldRevalidateAfter?: boolean;
-  }
+  },
 ) => Promise<any>;
 ```
