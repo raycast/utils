@@ -228,8 +228,10 @@ function useForm<T extends Form.Values>(props: {
   const reset = useCallback(
     (values?: Partial<T>) => {
       setErrors({});
-      Object.values(refs.current).forEach((ref) => {
-        ref?.reset();
+      Object.entries(refs.current).forEach(([id, ref]) => {
+        if (!values?.[id]) {
+          ref?.reset();
+        }
       });
       if (values) {
         // @ts-expect-error it's fine if we don't specify all the values
