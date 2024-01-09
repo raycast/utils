@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Detail, environment, MenuBarExtra } from "@raycast/api";
+import { environment } from "@raycast/api";
 
 let token: string | null = null;
 let type: "oauth" | "personal" | null = null;
