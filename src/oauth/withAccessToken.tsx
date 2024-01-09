@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useRef } from "react";
 import { Detail, environment, MenuBarExtra } from "@raycast/api";
 
 let token: string | null = null;
 let type: "oauth" | "personal" | null = null;
+let authorize: { read(): string } | null = null;
 
 type WithAccessTokenParameters = {
   authorize: () => Promise<string>;
@@ -56,29 +57,24 @@ export function withAccessToken<T>(options: WithAccessTokenParameters) {
 
   return (Component: React.ComponentType<T>) => {
     const WrappedComponent: React.ComponentType<T> = (props) => {
-      const [, forceRerender] = useState(0);
+      const didMount = useRef(false);
 
-      // we use a `useMemo` instead of `useEffect` to avoid a render
-      useMemo(() => {
-        (async function () {
-          token = options.personalAccessToken ?? (await options.authorize());
-          type = options.personalAccessToken ? "personal" : "oauth";
-          if (options.onAuthorize && token) {
-            return Promise.resolve(options.onAuthorize({ token, type })).then(() => forceRerender((x) => x + 1));
-          }
-          forceRerender((x) => x + 1);
-        })();
-      }, []);
-
-      if (!token) {
-        if (environment.commandMode === "view") {
-          // Using the <List /> component makes the placeholder buggy
-          return <Detail isLoading />;
-        } else if (environment.commandMode === "menu-bar") {
-          return <MenuBarExtra isLoading />;
-        } else {
-          throw new Error("Unknown command mode");
+      if (options.personalAccessToken) {
+        token = options.personalAccessToken;
+        type = "personal";
+      } else {
+        if (!authorize) {
+          authorize = wrappedAuthorize(options.authorize());
         }
+        token = authorize.read();
+        type = "oauth";
+      }
+
+      if (!didMount.current) {
+        if (options.onAuthorize && token) {
+          options.onAuthorize({ token, type });
+        }
+        didMount.current = true;
       }
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -106,4 +102,33 @@ export function getAccessToken() {
   }
 
   return { token, type };
+}
+
+function wrappedAuthorize(promise: Promise<string>): { read(): string } {
+  let status = "pending";
+  let response: string;
+
+  const suspender = promise.then(
+    (res) => {
+      status = "success";
+      response = res;
+    },
+    (err) => {
+      status = "error";
+      response = err;
+    },
+  );
+
+  const read = () => {
+    switch (status) {
+      case "pending":
+        throw suspender;
+      case "error":
+        throw response;
+      default:
+        return response;
+    }
+  };
+
+  return { read };
 }
