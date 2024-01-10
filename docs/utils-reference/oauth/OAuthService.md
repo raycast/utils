@@ -190,18 +190,18 @@ tokenUrl: "https://github.oauth.raycast.com/token",
 
 You can subclass `OAuthService` to create a tailored service for other OAuth providers by setting predefined defaults.
 
-Here's an example where `LinearOAuthService` subclasses `OAuthService`:
+Here's an example:
 
 ```ts
-export class LinearOAuthService extends OAuthService {
+export class CustomOAuthService extends OAuthService {
 constructor(options: ClientConstructor) {
   super({
     client: new OAuth.PKCEClient({
       redirectMethod: OAuth.RedirectMethod.Web,
-      providerName: "Linear",
-      providerIcon: "linear.png",
-      providerId: "linear",
-      description: "Connect your Linear account",
+      providerName: "PROVIDER_NAME",
+      providerIcon: "provider.png",
+      providerId: "PROVIDER-ID",
+      description: "Connect your {PROVIDER_NAME} account",
     }),
     clientId: "YOUR_CLIENT_ID",
     authorizeUrl: "YOUR_AUTHORIZE_URL",

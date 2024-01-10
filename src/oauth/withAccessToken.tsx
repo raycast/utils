@@ -21,7 +21,7 @@ type WithAccessTokenParameters = {
 };
 
 /**
- * High-order React component to wrap a given component and set an access token in a shared global variable.
+ * Higher-order component to wrap a given component or function and set an access token in a shared global variable.
  *
  * The function intercepts the component rendering process to either fetch an OAuth token asynchronously
  * or use a provided personal access token. A global variable will be then set with the received token

@@ -100,18 +100,6 @@ export const googleService = (options: ProviderOptions) =>
     onAuthorize: options.onAuthorize,
   });
 
-/**
- * Class to use Jira OAuth with Raycast.
- *
- * @example
- * ```typescript
- * const jira = new JiraOAuthService({
- *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
- *   scope: 'read:jira-user read:jira-work', // Specify the scopes your application requires
- *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API using a personal token
- * });
- * ```
- */
 export const jiraService = (options: ProviderOptions) =>
   new OAuthService({
     client: new OAuth.PKCEClient({
@@ -130,18 +118,6 @@ export const jiraService = (options: ProviderOptions) =>
     onAuthorize: options.onAuthorize,
   });
 
-/**
- * Class to use Linear OAuth with Raycast.
- *
- * @example
- * ```typescript
- * const linear = new LinearOAuthService({
- *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
- *   scope: 'read', // Specify the scopes your application requires
- *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API using a personal token
- * });
- * ```
- */
 export const linearService = (options: ProviderOptions) =>
   new OAuthService({
     client: new OAuth.PKCEClient({
@@ -161,18 +137,6 @@ export const linearService = (options: ProviderOptions) =>
     onAuthorize: options.onAuthorize,
   });
 
-/**
- * Class to use Slack OAuth with Raycast.
- *
- * @example
- * ```typescript
- * const slack = new SlackOAuthService({
- *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
- *   scope: 'emoji:read', // Specify the scopes your application requires
- *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API using a personal token
- * });
- * ```
- */
 export const slackService = (options: ProviderOptions) =>
   new OAuthService({
     client: new OAuth.PKCEClient({
@@ -194,18 +158,6 @@ export const slackService = (options: ProviderOptions) =>
     onAuthorize: options.onAuthorize,
   });
 
-/**
- * Class to use Zoom OAuth with Raycast.
- *
- * @example
- * ```typescript
- * const zoom = new ZoomOAuthService({
- *    clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
- *    scope: '', // Specify the scopes your application requires
- *    personalAccessToken: 'personal-access-token', // Optional: For accessing the API using a personal token
- * });
- * ```
- */
 export const zoomService = (options: ProviderOptions) =>
   new OAuthService({
     client: new OAuth.PKCEClient({

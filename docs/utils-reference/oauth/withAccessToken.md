@@ -1,6 +1,6 @@
 # `withAccessToken`
 
-Higher-order component fetching an authorization token to then access it. This makes it easier to handle OAuth in your different commands/components. This function will work for all Raycast commands, whether it's `view`, `no-view`, `menu-bar`.
+Higher-order component fetching an authorization token to then access it. This makes it easier to handle OAuth in your different commands/components. This function will work for all Raycast commands, whether they're `view` commands, `no-view` commands, or `menu-bar` commands.
 
 ## Signature
 

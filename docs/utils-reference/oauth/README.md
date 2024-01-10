@@ -2,7 +2,7 @@
 
 Authenticating with OAuth in Raycast extensions is tedious. So we've built a set of utilities to make that task way easier. There's two part to our utilities:
 
-1. Authenticating with the service using [OAuthService](utils-reference/oauth/OAuthService.md) and providers we provide out of the box (e.g GitHub with `OAuthService.github`)
+1. Authenticating with the service using [OAuthService](utils-reference/oauth/OAuthService.md) and some third-party providers (e.g GitHub with `OAuthService.github`)
 2. Bringing authentication to React components using [withAccessToken](utils-reference/oauth/withAccessToken.md) and [`getAccessToken`](utils-reference/oauth/withAccessToken.md#getAccessToken)
 
 Here are two different use-cases where you can use the utilities.
@@ -59,4 +59,4 @@ export default withAccessToken({ authorize: provider.authorize })(AuthorizedComp
 
 ## Additional information
 
-If you need more information, please take a look at the subpages: [OAuthService](utils-reference/oauth/OAuthService.md) and [withAccessToken](utils-reference/oauth/withAccessToken.md)
+If you need more information, please take a look at the subpages: [OAuthService](utils-reference/oauth/OAuthService.md), [withAccessToken](utils-reference/oauth/withAccessToken.md) and [getAccessToken](utils-reference/oauth/getAccessToken.md)
