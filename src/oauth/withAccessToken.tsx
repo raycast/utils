@@ -14,9 +14,27 @@ let type: OAuthType | null = null;
 let authorize: { read(): string } | null = null;
 
 type WithAccessTokenParameters = {
+  /**
+   * An optional instance of a PKCE Client that you can create using Raycast API.
+   * This client is used to return the `idToken` as part of the `onAuthorize` callback.
+   */
   client?: OAuth.PKCEClient;
+  /**
+   * A function that initiates the OAuth token retrieval process
+   * @returns a promise that resolves to an access token.
+   */
   authorize: () => Promise<string>;
+  /**
+   * An optional string that represents an already obtained personal access token
+   */
   personalAccessToken?: string;
+  /**
+   * An optional callback function that is called once the user has been properly logged in through OAuth.
+   * @param {object} params - Parameters of the callback
+   * @param {string} options.token - The retrieved access token
+   * @param {string} options.type - The access token's type (either `oauth` or `personal`)
+   * @param {string} options.idToken - The optional id token. The `idToken` is returned if `options.client` is provided and if it's returned in the initial token set.
+   */
   onAuthorize?: (params: OnAuthorizeParams) => void;
 };
 
@@ -42,9 +60,9 @@ type WithAccessTokenParameters = {
  * export default withAccessToken(github)(AuthorizedComponent);
  * ```
  *
- * @param {object} options - Configuration options for the token acquisition.
+ * @param {object} options - Configuration options for the token retrieval.
  * @param {() => Promise<string>} options.authorize - A function to retrieve an OAuth token.
- * @param {string} [options.personalAccessToken] - An optional personal access token.
+ * @param {string} options.personalAccessToken - An optional personal access token.
  * @returns {React.ComponentType<T>} The wrapped component.
  */
 export function withAccessToken<T>(

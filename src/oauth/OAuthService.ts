@@ -15,12 +15,12 @@ export interface OAuthServiceOptions {
   client: OAuth.PKCEClient;
   clientId: string;
   scope: string;
-  personalAccessToken?: string;
-  bodyEncoding?: "json" | "url-encoded";
-  extraParameters?: Record<string, string>;
   authorizeUrl: string;
   tokenUrl: string;
   refreshTokenUrl?: string;
+  personalAccessToken?: string;
+  bodyEncoding?: "json" | "url-encoded";
+  extraParameters?: Record<string, string>;
   onAuthorize?: (params: OnAuthorizeParams) => void;
 }
 

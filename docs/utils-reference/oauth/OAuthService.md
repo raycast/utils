@@ -50,25 +50,19 @@ const accessToken = await oauthService.authorize();
 
 ### Built-in Services
 
-Some 3rd-party providers are exposed by default to make it easy to authenticate with them. Here's the full list:
+Some services are exposed by default to make it easy to authenticate with them. Here's the full list:
 
-- Asana
-- GitHub
-- Google
-- Jira
-- Linear
-- Slack
-- Zoom
+- [Asana](#asana)
+- [GitHub](#github)
+- [Google](#google)
+- [Jira](#jira)
+- [Linear](#linear)
+- [Slack](#slack)
+- [Zoom](#zoom)
+
+These services are all instances of `OAuthService` with the default options being set. However, you're free to configure your own client ID, and URLs for a specific service.
 
 #### Asana
-
-##### Signature
-
-```ts
-const asana: OAuthService
-```
-
-##### Example
 
 ```tsx
 const asana = OAuthService.asana({
@@ -80,14 +74,6 @@ const asana = OAuthService.asana({
 
 #### GitHub
 
-##### Signature
-
-```ts
-const github: OAuthService
-```
-
-##### Example
-
 ```tsx
 const github = OAuthService.github({
   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
@@ -97,14 +83,6 @@ const github = OAuthService.github({
 ```
 
 #### Google
-
-##### Signature
-
-```ts
-const google: OAuthService
-```
-
-##### Example
 
 ```tsx
 const google = OAuthService.google({
@@ -116,14 +94,6 @@ const google = OAuthService.google({
 
 #### Jira
 
-##### Signature
-
-```ts
-const jira: OAuthService
-```
-
-##### Example
-
 ```tsx
 const jira = OAuthService.jira({
   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
@@ -133,14 +103,6 @@ const jira = OAuthService.jira({
 ```
 
 #### Linear
-
-##### Signature
-
-```ts
-const linear: OAuthService
-```
-
-##### Example
 
 ```tsx
 const linear = OAuthService.linear({
@@ -152,14 +114,6 @@ const linear = OAuthService.linear({
 
 #### Slack
 
-##### Signature
-
-```ts
-const slack: OAuthService
-```
-
-##### Example
-
 ```tsx
 const slack = OAuthService.slack({
   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
@@ -169,14 +123,6 @@ const slack = OAuthService.slack({
 ```
 
 #### Zoom
-
-##### Signature
-
-```ts
-const zoom: OAuthService
-```
-
-##### Example
 
 ```tsx
 const zoom = OAuthService.zoom({
@@ -222,12 +168,12 @@ Here's an updated markdown table with a "Type" column:
 
 | Property Name | Description | Type |
 |---------------|-------------|------|
-| `client` | The PKCE Client defined using `OAuth.PKCEClient` from `@raycast/api` | `OAuth.PKCEClient` |
-| `clientId` | The app's client ID | `string` |
-| `scope` | The scope of the access requested from the provider | `string` |
-| `authorizeUrl` | The URL to start the OAuth flow | `string` |
-| `tokenUrl` | The URL to exchange the authorization code for an access token | `string` |
-| `refreshTokenUrl` | (Optional) The URL to refresh the access token if applicable | `string` |
-| `personalAccessToken` |  (Optional) A personal token if the provider supports it | `string` |
-| `extraParameters` | (Optional) The extra parameters you may need for the authorization request | `Record<string, string>` |
-| `bodyEncoding` | (Optional) Specifies the format for sending the body of the request. | `json` \| `url-encoded`  |
+| client<mark style="color:red;">*</mark> | The PKCE Client defined using `OAuth.PKCEClient` from `@raycast/api` | `OAuth.PKCEClient` |
+| clientId<mark style="color:red;">*</mark> | The app's client ID | `string` |
+| scope<mark style="color:red;">*</mark> | The scope of the access requested from the provider | `string` |
+| authorizeUrl<mark style="color:red;">*</mark> | The URL to start the OAuth flow | `string` |
+| tokenUrl<mark style="color:red;">*</mark> | The URL to exchange the authorization code for an access token | `string` |
+| refreshTokenUrl | The URL to refresh the access token if applicable | `string` |
+| personalAccessToken | A personal token if the provider supports it | `string` |
+| extraParameters | The extra parameters you may need for the authorization request | `Record<string, string>` |
+| bodyEncoding | Specifies the format for sending the body of the request. | `json` \| `url-encoded`  |
