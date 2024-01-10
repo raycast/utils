@@ -4,6 +4,26 @@ The `OAuthService` class is designed to abstract the OAuth authorization process
 
 Use [OAuthServiceOptions](#OAuthServiceOptions) to configure the `OAuthService` class.
 
+## Example
+
+```ts
+const client = new OAuth.PKCEClient({
+redirectMethod: OAuth.RedirectMethod.Web,
+providerName: "GitHub",
+providerIcon: "extension_icon.png",
+providerId: "github",
+description: "Connect your GitHub account",
+});
+
+const github = new OAuthService({
+client,
+clientId: "7235fe8d42157f1f38c0",
+scopes: "notifications repo read:org read:user read:project",
+authorizeUrl: "https://github.oauth.raycast.com/authorize",
+tokenUrl: "https://github.oauth.raycast.com/token",
+});
+```
+
 ## Signature
 
 ```ts
@@ -28,7 +48,7 @@ authorize(): Promise<string>;
 const accessToken = await oauthService.authorize();
 ```
 
-### Properties
+### Built-in Services
 
 Some 3rd-party providers are exposed by default to make it easy to authenticate with them. Here's the full list:
 
@@ -163,26 +183,6 @@ const zoom = OAuthService.zoom({
   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
   scope: '', // Specify the scopes your application requires
   personalAccessToken: 'personal-access-token', // Optional: For accessing the API directly
-});
-```
-
-## Example
-
-```ts
-const client = new OAuth.PKCEClient({
-redirectMethod: OAuth.RedirectMethod.Web,
-providerName: "GitHub",
-providerIcon: "extension_icon.png",
-providerId: "github",
-description: "Connect your GitHub account",
-});
-
-const github = new OAuthService({
-client,
-clientId: "7235fe8d42157f1f38c0",
-scopes: "notifications repo read:org read:user read:project",
-authorizeUrl: "https://github.oauth.raycast.com/authorize",
-tokenUrl: "https://github.oauth.raycast.com/token",
 });
 ```
 
