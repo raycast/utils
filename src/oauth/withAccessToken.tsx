@@ -12,6 +12,7 @@ type OAuthType = "oauth" | "personal";
 let token: string | null = null;
 let type: OAuthType | null = null;
 let authorize: { read(): string } | null = null;
+let getIdToken: { read(): string | undefined } | null = null;
 
 type WithAccessTokenParameters = {
   /**
@@ -103,12 +104,13 @@ export function withAccessToken<T>(options: WithAccessTokenParameters) {
 
       if (!didAuthorized.current) {
         const { client, onAuthorize } = options;
-        if (client) {
-          client.getTokens().then((tokenSet) => {
-            if (onAuthorize && token && type) {
-              onAuthorize({ token, type, idToken: tokenSet?.idToken });
-            }
-          });
+        if (client && onAuthorize && token && type) {
+          if (!getIdToken) {
+            getIdToken = wrappedGetIdToken(client.getTokens());
+          }
+          const idToken = getIdToken.read();
+
+          onAuthorize({ token, type, idToken });
         } else if (onAuthorize && token) {
           onAuthorize({ token, type });
         }
@@ -150,6 +152,35 @@ function wrappedAuthorize(promise: Promise<string>): { read(): string } {
     (res) => {
       status = "success";
       response = res;
+    },
+    (err) => {
+      status = "error";
+      response = err;
+    },
+  );
+
+  const read = () => {
+    switch (status) {
+      case "pending":
+        throw suspender;
+      case "error":
+        throw response;
+      default:
+        return response;
+    }
+  };
+
+  return { read };
+}
+
+function wrappedGetIdToken(promise: Promise<OAuth.TokenSet | undefined>): { read(): string | undefined } {
+  let status = "pending";
+  let response: string | undefined;
+
+  const suspender = promise.then(
+    (res) => {
+      status = "success";
+      response = res?.idToken;
     },
     (err) => {
       status = "error";

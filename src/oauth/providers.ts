@@ -50,7 +50,7 @@ export const asanaService = (options: ProviderOptions) =>
     client: new OAuth.PKCEClient({
       redirectMethod: OAuth.RedirectMethod.Web,
       providerName: "Asana",
-      providerIcon: { source: getIcon(PROVIDERS_CONFIG.asana.icon), tintColor: Color.PrimaryText },
+      providerIcon: getIcon(PROVIDERS_CONFIG.asana.icon),
       providerId: "asana",
       description: "Connect your Asana account",
     }),
