@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { environment, OAuth } from "@raycast/api";
 
 export type OnAuthorizeParams = {
@@ -12,7 +12,8 @@ type OAuthType = "oauth" | "personal";
 let token: string | null = null;
 let type: OAuthType | null = null;
 let authorize: { read(): string } | null = null;
-let getIdToken: { read(): string | undefined } | null = null;
+let getIdToken: { read(): OAuth.TokenSet | undefined } | null = null;
+let onAuthorize: { read(): void } | null = null;
 
 type WithAccessTokenParameters = {
   /**
@@ -80,7 +81,7 @@ export function withAccessToken<T>(options: WithAccessTokenParameters) {
         const idToken = (await options.client?.getTokens())?.idToken;
 
         if (options.onAuthorize) {
-          options.onAuthorize({ token, type, idToken });
+          await Promise.resolve(options.onAuthorize({ token, type, idToken }));
         }
       }
       return fn();
@@ -89,33 +90,29 @@ export function withAccessToken<T>(options: WithAccessTokenParameters) {
 
   return (Component: React.ComponentType<T>) => {
     const WrappedComponent: React.ComponentType<T> = (props) => {
-      const didAuthorized = useRef(false);
-
       if (options.personalAccessToken) {
         token = options.personalAccessToken;
         type = "personal";
       } else {
         if (!authorize) {
-          authorize = wrappedAuthorize(options.authorize());
+          authorize = wrapPromise(options.authorize());
         }
         token = authorize.read();
         type = "oauth";
       }
 
-      if (!didAuthorized.current) {
-        const { client, onAuthorize } = options;
-        if (client && onAuthorize && token && type) {
-          if (!getIdToken) {
-            getIdToken = wrappedGetIdToken(client.getTokens());
-          }
-          const idToken = getIdToken.read();
-
-          onAuthorize({ token, type, idToken });
-        } else if (onAuthorize && token) {
-          onAuthorize({ token, type });
+      let idToken: string | undefined;
+      if (options.client) {
+        if (!getIdToken) {
+          getIdToken = wrapPromise(options.client.getTokens());
         }
-        didAuthorized.current = true;
+        idToken = getIdToken.read()?.idToken;
       }
+
+      if (!onAuthorize && options.onAuthorize) {
+        onAuthorize = wrapPromise(Promise.resolve(options.onAuthorize({ token, type, idToken })));
+      }
+      onAuthorize?.read();
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore too complicated for TS
@@ -144,43 +141,14 @@ export function getAccessToken() {
   return { token, type };
 }
 
-function wrappedAuthorize(promise: Promise<string>): { read(): string } {
+function wrapPromise<T>(promise: Promise<T>): { read(): T } {
   let status = "pending";
-  let response: string;
+  let response: T;
 
   const suspender = promise.then(
     (res) => {
       status = "success";
       response = res;
-    },
-    (err) => {
-      status = "error";
-      response = err;
-    },
-  );
-
-  const read = () => {
-    switch (status) {
-      case "pending":
-        throw suspender;
-      case "error":
-        throw response;
-      default:
-        return response;
-    }
-  };
-
-  return { read };
-}
-
-function wrappedGetIdToken(promise: Promise<OAuth.TokenSet | undefined>): { read(): string | undefined } {
-  let status = "pending";
-  let response: string | undefined;
-
-  const suspender = promise.then(
-    (res) => {
-      status = "success";
-      response = res?.idToken;
     },
     (err) => {
       status = "error";
