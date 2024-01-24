@@ -84,7 +84,7 @@ export const githubService = (options: ProviderOptions) =>
 export const googleService = (options: ProviderOptions) =>
   new OAuthService({
     client: new OAuth.PKCEClient({
-      redirectMethod: OAuth.RedirectMethod.Web,
+      redirectMethod: OAuth.RedirectMethod.AppURI,
       providerName: "Google",
       providerIcon: getIcon(PROVIDERS_CONFIG.google.icon),
       providerId: "google",
