@@ -10,6 +10,8 @@ export * from "./useFrecencySorting";
 
 export * from "./icon";
 
+export * from "./oauth";
+
 export * from "./run-applescript";
 export * from "./showFailureToast";
 
