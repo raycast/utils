@@ -40,6 +40,8 @@ type WithAccessTokenParameters = {
   onAuthorize?: (params: OnAuthorizeParams) => void;
 };
 
+export type WithAccessTokenComponentOrFn<T = any> = ((params: T) => Promise<void> | void) | React.ComponentType<T>;
+
 /**
  * Higher-order component to wrap a given component or function and set an access token in a shared global variable.
  *
@@ -67,24 +69,29 @@ type WithAccessTokenParameters = {
  * @param {string} options.personalAccessToken - An optional personal access token.
  * @returns {React.ComponentType<T>} The wrapped component.
  */
-export function withAccessToken<T>(
+export function withAccessToken<T = any>(
   options: WithAccessTokenParameters,
-): <U extends (() => Promise<void> | void) | React.ComponentType<T>>(
+): <U extends WithAccessTokenComponentOrFn<T>>(
   fnOrComponent: U,
-) => U extends () => Promise<void> | void ? Promise<void> : React.FunctionComponent<T>;
+) => U extends (props: T) => Promise<void> | void ? Promise<void> : React.FunctionComponent<T>;
 export function withAccessToken<T>(options: WithAccessTokenParameters) {
   if (environment.commandMode === "no-view") {
-    return async (fn: () => Promise<void> | (() => void)) => {
-      if (!token) {
-        token = options.personalAccessToken ?? (await options.authorize());
-        type = options.personalAccessToken ? "personal" : "oauth";
-        const idToken = (await options.client?.getTokens())?.idToken;
+    return (fn: (props: T) => Promise<void> | (() => void)) => {
+      const noViewFn = async (props: T) => {
+        if (!token) {
+          token = options.personalAccessToken ?? (await options.authorize());
+          type = options.personalAccessToken ? "personal" : "oauth";
+          const idToken = (await options.client?.getTokens())?.idToken;
 
-        if (options.onAuthorize) {
-          await Promise.resolve(options.onAuthorize({ token, type, idToken }));
+          if (options.onAuthorize) {
+            await Promise.resolve(options.onAuthorize({ token, type, idToken }));
+          }
         }
-      }
-      return fn();
+
+        return fn(props);
+      };
+
+      return noViewFn;
     };
   }
 
