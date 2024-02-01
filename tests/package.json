@@ -114,11 +114,49 @@
       "mode": "view"
     },
     {
+      "name": "oauth-with-props",
+      "title": "OAuth with Props",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "text",
+          "placeholder": "Text",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "oauth-no-view",
       "title": "OAuth No View",
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
-      "mode": "no-view"
+      "mode": "no-view",
+      "arguments": [
+        {
+          "name": "comment",
+          "placeholder": "Comment",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "oauth-no-view-with-props",
+      "title": "OAuth No View with Props",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "no-view",
+      "arguments": [
+        {
+          "name": "text",
+          "placeholder": "Text",
+          "type": "text",
+          "required": true
+        }
+      ]
     }
   ],
   "dependencies": {
