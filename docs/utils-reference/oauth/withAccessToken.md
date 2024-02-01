@@ -63,6 +63,30 @@ export default withAccessToken({ authorize })(AuthorizedCommand);
 ```
 
 {% endtab %}
+
+{% tab title="onAuthorize.tsx" %}
+
+```tsx
+import { OAuthService } from "@raycast/utils";
+import { LinearClient, LinearGraphQLClient } from "@linear/sdk";
+
+let linearClient: LinearClient | null = null;
+
+const linear = OAuthService.linear({
+  scope: "read write",
+  onAuthorize({ token }) {
+    linearClient = new LinearClient({ accessToken: token });
+  },
+});
+
+function MyIssues() {
+  return // ...
+}
+
+export default withAccessToken(linear)(View);
+```
+
+{% endtab %}
 {% endtabs %}
 
 ## Types
