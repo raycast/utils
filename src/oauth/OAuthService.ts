@@ -82,11 +82,7 @@ export class OAuthService implements OAuthServiceOptions {
    *
    * @example
    * ```typescript
-   * const asana = OAuthService.asana({
-   *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
-   *   scope: 'default', // Specify the scopes your application requires
-   *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API directly
-   * });
+   * const asana = OAuthService.asana({ scope: 'default' })
    * ```
    */
   public static asana = asanaService;
@@ -96,11 +92,7 @@ export class OAuthService implements OAuthServiceOptions {
    *
    * @example
    * ```typescript
-   * const github = OAuthService.github({
-   *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
-   *   scope: 'repo user', // Specify the scopes your application requires
-   *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API directly
-   * });
+   * const github = OAuthService.github({ scope: 'repo user' })
    * ```
    */
   public static github = githubService;
@@ -111,9 +103,10 @@ export class OAuthService implements OAuthServiceOptions {
    * @example
    * ```typescript
    * const google = OAuthService.google({
-   *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
-   *   scope: 'https://www.googleapis.com/auth/drive.readonly', // Specify the scopes your application requires
-   *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API directly
+   *   clientId: 'custom-client-id',
+   *   authorizeUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+   *   tokenUrl: 'https://oauth2.googleapis.com/token',
+   *   scope: 'https://www.googleapis.com/auth/drive.readonly',
    * });
    * ```
    */
@@ -125,9 +118,10 @@ export class OAuthService implements OAuthServiceOptions {
    * @example
    * ```typescript
    * const jira = OAuthService.jira({
-   *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
-   *   scope: 'read:jira-user read:jira-work', // Specify the scopes your application requires
-   *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API using a personal token
+   *   clientId: 'custom-client-id',
+   *   authorizeUrl: 'https://auth.atlassian.com/authorize',
+   *   tokenUrl: 'https://api.atlassian.com/oauth/token',
+   *   scope: 'read:jira-user read:jira-work offline_access'
    * });
    * ```
    */
@@ -138,11 +132,7 @@ export class OAuthService implements OAuthServiceOptions {
    *
    * @example
    * ```typescript
-   * const linear = OAuthService.linear({
-   *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
-   *   scope: 'read write', // Specify the scopes your application requires
-   *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API using a personal token
-   * });
+   * const linear = OAuthService.linear({ scope: 'read write' })
    * ```
    */
   public static linear = linearService;
@@ -152,11 +142,7 @@ export class OAuthService implements OAuthServiceOptions {
    *
    * @example
    * ```typescript
-   * const slack = OAuthService.slack({
-   *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
-   *   scope: 'emoji:read', // Specify the scopes your application requires
-   *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API using a personal token
-   * });
+   * const slack = OAuthService.slack({ scope: 'emoji:read' })
    * ```
    */
   public static slack = slackService;
@@ -167,9 +153,11 @@ export class OAuthService implements OAuthServiceOptions {
    * @example
    * ```typescript
    * const zoom = OAuthService.zoom({
-   *   clientId: 'custom-client-id', // Optional: If omitted, defaults to a pre-configured client ID
-   *   scope: '', // Specify the scopes your application requires
-   *   personalAccessToken: 'personal-access-token', // Optional: For accessing the API using a personal token
+   *   clientId: 'custom-client-id',
+   *   authorizeUrl: 'https://zoom.us/oauth/authorize',
+   *   tokenUrl: 'https://zoom.us/oauth/token',
+   *   scope: 'meeting:write',
+   *   personalAccessToken: 'personal-access-token',
    * });
    * ```
    */

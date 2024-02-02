@@ -40,6 +40,9 @@ type WithAccessTokenParameters = {
   onAuthorize?: (params: OnAuthorizeParams) => void;
 };
 
+/**
+ * The component (for a view/menu-bar commands) or function (for a no-view command) that is passed to withAccessToken.
+ */
 export type WithAccessTokenComponentOrFn<T = any> = ((params: T) => Promise<void> | void) | React.ComponentType<T>;
 
 /**
