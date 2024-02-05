@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v1.12.2
+
+- Fixed types for `OAuthService.slack`.
+
 ### v1.12.1
 
 - Fixed the refresh flow of `OAuthService` that would return outdated tokens.

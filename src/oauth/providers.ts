@@ -141,7 +141,7 @@ export const linearService = (options: ProviderWithDefaultClientOptions) =>
     onAuthorize: options.onAuthorize,
   });
 
-export const slackService = (options: ProviderOptions) =>
+export const slackService = (options: ProviderWithDefaultClientOptions) =>
   new OAuthService({
     client: new OAuth.PKCEClient({
       redirectMethod: OAuth.RedirectMethod.Web,
