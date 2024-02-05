@@ -174,13 +174,13 @@ export class OAuthService implements OAuthServiceOptions {
     const currentTokenSet = await this.client.getTokens();
     if (currentTokenSet?.accessToken) {
       if (currentTokenSet.refreshToken && currentTokenSet.isExpired()) {
-        await this.client.setTokens(
-          await this.refreshTokens({
-            token: currentTokenSet.refreshToken,
-            clientId: this.clientId,
-            tokenUrl: this.refreshTokenUrl ?? this.tokenUrl,
-          }),
-        );
+        const tokens = await this.refreshTokens({
+          token: currentTokenSet.refreshToken,
+          clientId: this.clientId,
+          tokenUrl: this.refreshTokenUrl ?? this.tokenUrl,
+        })
+        await this.client.setTokens(tokens);
+        return tokens.access_token;
       }
       return currentTokenSet.accessToken;
     }
