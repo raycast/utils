@@ -206,8 +206,6 @@ export class OAuthService implements OAuthServiceOptions {
       tokenUrl: this.tokenUrl,
     });
 
-    console.log(tokens)
-
     await this.client.setTokens(tokens);
 
     return tokens.access_token;
