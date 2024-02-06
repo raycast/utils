@@ -22,6 +22,8 @@ export interface OAuthServiceOptions {
   bodyEncoding?: "json" | "url-encoded";
   extraParameters?: Record<string, string>;
   onAuthorize?: (params: OnAuthorizeParams) => void;
+  tokenResponseParser?: (response: unknown) => OAuth.TokenResponse;
+  tokenRefreshResponseParser?: (response: unknown) => OAuth.TokenResponse;
 }
 
 type FetchTokensArgs = { authRequest: OAuth.AuthorizationRequest; authorizationCode: string } & Pick<
@@ -62,6 +64,8 @@ export class OAuthService implements OAuthServiceOptions {
   public bodyEncoding?: "json" | "url-encoded";
   public personalAccessToken?: string;
   onAuthorize?: (params: OnAuthorizeParams) => void;
+  tokenResponseParser: (response: unknown) => OAuth.TokenResponse;
+  tokenRefreshResponseParser: (response: unknown) => OAuth.TokenResponse;
 
   constructor(options: OAuthServiceOptions) {
     this.clientId = options.clientId;
@@ -74,6 +78,8 @@ export class OAuthService implements OAuthServiceOptions {
     this.tokenUrl = options.tokenUrl;
     this.refreshTokenUrl = options.refreshTokenUrl;
     this.onAuthorize = options.onAuthorize;
+    this.tokenResponseParser = options.tokenResponseParser ?? ((x) => x as OAuth.TokenResponse);
+    this.tokenRefreshResponseParser = options.tokenRefreshResponseParser ?? ((x) => x as OAuth.TokenResponse);
     this.authorize = this.authorize.bind(this);
   }
 
@@ -200,6 +206,8 @@ export class OAuthService implements OAuthServiceOptions {
       tokenUrl: this.tokenUrl,
     });
 
+    console.log(tokens)
+
     await this.client.setTokens(tokens);
 
     return tokens.access_token;
@@ -235,7 +243,7 @@ export class OAuthService implements OAuthServiceOptions {
       console.error("fetch tokens error:", responseText);
       throw new Error(`Error while fetching tokens: ${response.status} (${response.statusText})\n${responseText}`);
     }
-    const tokens = (await response.json()) as OAuth.TokenResponse;
+    const tokens = this.tokenResponseParser(await response.json());
 
     // Some clients such as Linear can return a scope array instead of a string
     return Array.isArray(tokens.scope) ? { ...tokens, scope: tokens.scope.join(" ") } : tokens;
@@ -267,7 +275,7 @@ export class OAuthService implements OAuthServiceOptions {
       console.error("refresh tokens error:", responseText);
       throw new Error(`Error while refreshing tokens: ${response.status} (${response.statusText})\n${responseText}`);
     }
-    const tokenResponse = (await response.json()) as OAuth.TokenResponse;
+    const tokenResponse = this.tokenRefreshResponseParser(await response.json());
     tokenResponse.refresh_token = tokenResponse.refresh_token ?? token;
     return tokenResponse;
   }

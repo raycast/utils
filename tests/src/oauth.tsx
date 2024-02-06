@@ -1,12 +1,13 @@
-import { Detail } from "@raycast/api";
-import { getAccessToken, withAccessToken, OAuthService } from "@raycast/utils";
+import { Detail, LaunchProps } from "@raycast/api";
+import { withAccessToken, OAuthService, getAccessToken } from "@raycast/utils";
 
-const github = OAuthService.github({
-  scope: "notifications repo read:org read:user read:project",
+const slack = OAuthService.slack({
+  scope: 'users.profile:write, dnd:write', // Specify the scopes your application requires
 });
 
-function AuthorizedComponent() {
-  return <Detail markdown={`Access token: ${getAccessToken().token}`} />;
+function AuthorizedComponent(props: LaunchProps) {
+  const { token } = getAccessToken();
+  return <Detail markdown={`Access token: ${token}`} />;
 }
 
-export default withAccessToken(github)(AuthorizedComponent);
+export default withAccessToken(slack)(AuthorizedComponent);

@@ -14,6 +14,8 @@ type BaseProviderOptions = {
   refreshTokenUrl?: string;
   onAuthorize?: (params: OnAuthorizeParams) => void;
   bodyEncoding?: "json" | "url-encoded";
+  tokenResponseParser?: (response: unknown) => OAuth.TokenResponse;
+  tokenRefreshResponseParser?: (response: unknown) => OAuth.TokenResponse;
 };
 
 export type ProviderWithDefaultClientOptions = BaseProviderOptions & Partial<ClientOptions>;
@@ -66,7 +68,9 @@ export const asanaService = (options: ProviderWithDefaultClientOptions) =>
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
     onAuthorize: options.onAuthorize,
-    bodyEncoding: options.bodyEncoding
+    bodyEncoding: options.bodyEncoding,
+    tokenRefreshResponseParser: options.tokenRefreshResponseParser,
+    tokenResponseParser: options.tokenResponseParser,
   });
 
 export const githubService = (options: ProviderWithDefaultClientOptions) =>
@@ -85,7 +89,9 @@ export const githubService = (options: ProviderWithDefaultClientOptions) =>
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
     onAuthorize: options.onAuthorize,
-    bodyEncoding: options.bodyEncoding
+    bodyEncoding: options.bodyEncoding,
+    tokenRefreshResponseParser: options.tokenRefreshResponseParser,
+    tokenResponseParser: options.tokenResponseParser,
   });
 
 export const googleService = (options: ProviderOptions) =>
@@ -105,6 +111,8 @@ export const googleService = (options: ProviderOptions) =>
     personalAccessToken: options.personalAccessToken,
     bodyEncoding: options.bodyEncoding ?? "url-encoded",
     onAuthorize: options.onAuthorize,
+    tokenRefreshResponseParser: options.tokenRefreshResponseParser,
+    tokenResponseParser: options.tokenResponseParser,
   });
 
 export const jiraService = (options: ProviderOptions) =>
@@ -123,7 +131,9 @@ export const jiraService = (options: ProviderOptions) =>
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
     onAuthorize: options.onAuthorize,
-    bodyEncoding: options.bodyEncoding
+    bodyEncoding: options.bodyEncoding,
+    tokenRefreshResponseParser: options.tokenRefreshResponseParser,
+    tokenResponseParser: options.tokenResponseParser,
   });
 
 export const linearService = (options: ProviderWithDefaultClientOptions) =>
@@ -144,7 +154,9 @@ export const linearService = (options: ProviderWithDefaultClientOptions) =>
       actor: "user",
     },
     onAuthorize: options.onAuthorize,
-    bodyEncoding: options.bodyEncoding
+    bodyEncoding: options.bodyEncoding,
+    tokenRefreshResponseParser: options.tokenRefreshResponseParser,
+    tokenResponseParser: options.tokenResponseParser,
   });
 
 export const slackService = (options: ProviderWithDefaultClientOptions) =>
@@ -167,6 +179,14 @@ export const slackService = (options: ProviderWithDefaultClientOptions) =>
     personalAccessToken: options.personalAccessToken,
     bodyEncoding: options.tokenUrl ? options.bodyEncoding ?? "url-encoded" : "json",
     onAuthorize: options.onAuthorize,
+    tokenRefreshResponseParser: options.tokenRefreshResponseParser,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tokenResponseParser: options.tokenResponseParser ?? ((response: any) => {
+      return {
+        access_token: response.authed_user.access_token,
+        scope: response.authed_user.scope,
+      }
+    })
   });
 
 export const zoomService = (options: ProviderOptions) =>
@@ -186,4 +206,6 @@ export const zoomService = (options: ProviderOptions) =>
     personalAccessToken: options.personalAccessToken,
     bodyEncoding: options.bodyEncoding ?? "url-encoded",
     onAuthorize: options.onAuthorize,
+    tokenRefreshResponseParser: options.tokenRefreshResponseParser,
+    tokenResponseParser: options.tokenResponseParser,
   });
