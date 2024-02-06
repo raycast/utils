@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v1.12.3
+
+- Fixed bodyEncoding for some built-in OAuthServices.
+
 ### v1.12.2
 
 - Fixed types for `OAuthService.slack`.

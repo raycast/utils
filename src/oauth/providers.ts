@@ -13,6 +13,7 @@ type BaseProviderOptions = {
   personalAccessToken?: string;
   refreshTokenUrl?: string;
   onAuthorize?: (params: OnAuthorizeParams) => void;
+  bodyEncoding?: "json" | "url-encoded";
 };
 
 export type ProviderWithDefaultClientOptions = BaseProviderOptions & Partial<ClientOptions>;
@@ -61,10 +62,11 @@ export const asanaService = (options: ProviderWithDefaultClientOptions) =>
     clientId: options.clientId ?? PROVIDERS_CONFIG.asana.clientId,
     authorizeUrl: options.authorizeUrl ?? "https://asana.oauth.raycast.com/authorize",
     tokenUrl: options.tokenUrl ?? "https://asana.oauth.raycast.com/token",
-    refreshTokenUrl: options.refreshTokenUrl,
+    refreshTokenUrl: options.refreshTokenUrl ?? "https://asana.oauth.raycast.com/refresh-token",
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
     onAuthorize: options.onAuthorize,
+    bodyEncoding: options.bodyEncoding
   });
 
 export const githubService = (options: ProviderWithDefaultClientOptions) =>
@@ -79,10 +81,11 @@ export const githubService = (options: ProviderWithDefaultClientOptions) =>
     clientId: options.clientId ?? PROVIDERS_CONFIG.github.clientId,
     authorizeUrl: options.authorizeUrl ?? "https://github.oauth.raycast.com/authorize",
     tokenUrl: options.tokenUrl ?? "https://github.oauth.raycast.com/token",
-    refreshTokenUrl: options.refreshTokenUrl,
+    refreshTokenUrl: options.refreshTokenUrl ?? "https://github.oauth.raycast.com/refresh-token",
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
     onAuthorize: options.onAuthorize,
+    bodyEncoding: options.bodyEncoding
   });
 
 export const googleService = (options: ProviderOptions) =>
@@ -100,7 +103,7 @@ export const googleService = (options: ProviderOptions) =>
     refreshTokenUrl: options.tokenUrl,
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
-    bodyEncoding: "url-encoded",
+    bodyEncoding: options.bodyEncoding ?? "url-encoded",
     onAuthorize: options.onAuthorize,
   });
 
@@ -120,6 +123,7 @@ export const jiraService = (options: ProviderOptions) =>
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
     onAuthorize: options.onAuthorize,
+    bodyEncoding: options.bodyEncoding
   });
 
 export const linearService = (options: ProviderWithDefaultClientOptions) =>
@@ -134,11 +138,13 @@ export const linearService = (options: ProviderWithDefaultClientOptions) =>
     clientId: options.clientId ?? PROVIDERS_CONFIG.linear.clientId,
     authorizeUrl: options.authorizeUrl ?? "https://linear.oauth.raycast.com/authorize",
     tokenUrl: options.tokenUrl ?? "https://linear.oauth.raycast.com/token",
+    refreshTokenUrl: options.refreshTokenUrl ?? "https://linear.oauth.raycast.com/refresh-token",
     scope: options.scope,
     extraParameters: {
       actor: "user",
     },
     onAuthorize: options.onAuthorize,
+    bodyEncoding: options.bodyEncoding
   });
 
 export const slackService = (options: ProviderWithDefaultClientOptions) =>
@@ -153,12 +159,13 @@ export const slackService = (options: ProviderWithDefaultClientOptions) =>
     clientId: options.clientId ?? PROVIDERS_CONFIG.slack.clientId,
     authorizeUrl: options.authorizeUrl ?? "https://slack.oauth.raycast.com/authorize",
     tokenUrl: options.tokenUrl ?? "https://slack.oauth.raycast.com/token",
+    refreshTokenUrl: options.tokenUrl ?? "https://slack.oauth.raycast.com/refresh-token",
     scope: "",
     extraParameters: {
       user_scope: options.scope,
     },
     personalAccessToken: options.personalAccessToken,
-    bodyEncoding: "url-encoded",
+    bodyEncoding: options.tokenUrl ? options.bodyEncoding ?? "url-encoded" : "json",
     onAuthorize: options.onAuthorize,
   });
 
@@ -177,6 +184,6 @@ export const zoomService = (options: ProviderOptions) =>
     refreshTokenUrl: options.refreshTokenUrl,
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
-    bodyEncoding: "url-encoded",
+    bodyEncoding: options.bodyEncoding ?? "url-encoded",
     onAuthorize: options.onAuthorize,
   });
