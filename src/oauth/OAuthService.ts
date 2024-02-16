@@ -14,7 +14,7 @@ import {
 export interface OAuthServiceOptions {
   client: OAuth.PKCEClient;
   clientId: string;
-  scope: string;
+  scope: string | string[];
   authorizeUrl: string;
   tokenUrl: string;
   refreshTokenUrl?: string;
@@ -55,7 +55,7 @@ type RefreshTokensArgs = { token: string } & Pick<OAuthServiceOptions, "clientId
  */
 export class OAuthService implements OAuthServiceOptions {
   public clientId: string;
-  public scope: string;
+  public scope: string | string[];
   public client: OAuth.PKCEClient;
   public extraParameters?: Record<string, string>;
   public authorizeUrl: string;
@@ -190,11 +190,12 @@ export class OAuthService implements OAuthServiceOptions {
       }
       return currentTokenSet.accessToken;
     }
+    const scope = Array.isArray(this.scope) ? this.scope.join(" ") : this.scope;
 
     const authRequest = await this.client.authorizationRequest({
       endpoint: this.authorizeUrl,
       clientId: this.clientId,
-      scope: this.scope,
+      scope: scope,
       extraParameters: this.extraParameters,
     });
 
