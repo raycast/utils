@@ -55,7 +55,7 @@ type RefreshTokensArgs = { token: string } & Pick<OAuthServiceOptions, "clientId
  */
 export class OAuthService implements OAuthServiceOptions {
   public clientId: string;
-  public scope: string | string[];
+  public scope: string;
   public client: OAuth.PKCEClient;
   public extraParameters?: Record<string, string>;
   public authorizeUrl: string;
@@ -69,7 +69,7 @@ export class OAuthService implements OAuthServiceOptions {
 
   constructor(options: OAuthServiceOptions) {
     this.clientId = options.clientId;
-    this.scope = options.scope;
+    this.scope = Array.isArray(options.scope) ? options.scope.join(" ") : options.scope;
     this.personalAccessToken = options.personalAccessToken;
     this.bodyEncoding = options.bodyEncoding;
     this.client = options.client;
@@ -190,12 +190,11 @@ export class OAuthService implements OAuthServiceOptions {
       }
       return currentTokenSet.accessToken;
     }
-    const scope = Array.isArray(this.scope) ? this.scope.join(" ") : this.scope;
 
     const authRequest = await this.client.authorizationRequest({
       endpoint: this.authorizeUrl,
       clientId: this.clientId,
-      scope: scope,
+      scope: this.scope,
       extraParameters: this.extraParameters,
     });
 
