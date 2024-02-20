@@ -65,7 +65,7 @@ export default function Command() {
     ["https://api.example"],
     {
       abortable,
-    }
+    },
   );
 
   return (
@@ -101,7 +101,7 @@ export default function Command() {
       const result = await response.text();
       return result;
     },
-    ["https://api.example"]
+    ["https://api.example"],
   );
 
   const appendFoo = async () => {
@@ -116,7 +116,7 @@ export default function Command() {
           optimisticUpdate(data) {
             return data + "foo";
           },
-        }
+        },
       );
       // yay, the API call worked!
       toast.style = Toast.Style.Success;
@@ -191,6 +191,6 @@ export type MutatePromise<T> = (
     optimisticUpdate?: (data: T) => T;
     rollbackOnError?: boolean | ((data: T) => T);
     shouldRevalidateAfter?: boolean;
-  }
+  },
 ) => Promise<any>;
 ```
