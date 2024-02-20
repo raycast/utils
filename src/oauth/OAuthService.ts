@@ -14,7 +14,7 @@ import {
 export interface OAuthServiceOptions {
   client: OAuth.PKCEClient;
   clientId: string;
-  scope: string;
+  scope: string | string[];
   authorizeUrl: string;
   tokenUrl: string;
   refreshTokenUrl?: string;
@@ -69,7 +69,7 @@ export class OAuthService implements OAuthServiceOptions {
 
   constructor(options: OAuthServiceOptions) {
     this.clientId = options.clientId;
-    this.scope = options.scope;
+    this.scope = Array.isArray(options.scope) ? options.scope.join(" ") : options.scope;
     this.personalAccessToken = options.personalAccessToken;
     this.bodyEncoding = options.bodyEncoding;
     this.client = options.client;
