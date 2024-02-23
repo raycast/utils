@@ -1,11 +1,19 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
 import { environment, LaunchType } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
-import { FunctionReturningPromise, MutatePromise, UsePromiseReturnType, AsyncState } from "./types";
+import {
+  FunctionReturningPromise,
+  MutatePromise,
+  UsePromiseReturnType,
+  AsyncState,
+  FunctionReturningPaginatedPromise,
+  UnwrapReturn,
+  Flatten,
+} from "./types";
 import { useLatest } from "./useLatest";
 import { showFailureToast } from "./showFailureToast";
 
-export type PromiseOptions<T extends FunctionReturningPromise> = {
+export type PromiseOptions<T extends FunctionReturningPromise | FunctionReturningPaginatedPromise> = {
   /**
    * A reference to an `AbortController` to cancel a previous call when triggering a new one
    */
@@ -26,7 +34,10 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
   /**
    * Called when an execution succeeds.
    */
-  onData?: (data: Awaited<ReturnType<T>>) => void | Promise<void>;
+  onData?: (
+    data: UnwrapReturn<T>,
+    pagination?: { page: number; lastItem?: Flatten<UnwrapReturn<T>> },
+  ) => void | Promise<void>;
   /**
    * Called when an execution will start
    */
@@ -68,19 +79,29 @@ export type PromiseOptions<T extends FunctionReturningPromise> = {
  * };
  * ```
  */
-export function usePromise<T extends FunctionReturningPromise<[]>>(fn: T): UsePromiseReturnType<Awaited<ReturnType<T>>>;
+export function usePromise<T extends FunctionReturningPromise<[]>>(fn: T): UsePromiseReturnType<UnwrapReturn<T>>;
 export function usePromise<T extends FunctionReturningPromise>(
   fn: T,
   args: Parameters<T>,
   options?: PromiseOptions<T>,
-): UsePromiseReturnType<Awaited<ReturnType<T>>>;
-export function usePromise<T extends FunctionReturningPromise>(
+): UsePromiseReturnType<UnwrapReturn<T>>;
+
+export function usePromise<T extends FunctionReturningPaginatedPromise<[]>>(
+  fn: T,
+): UsePromiseReturnType<UnwrapReturn<T>>;
+export function usePromise<T extends FunctionReturningPaginatedPromise>(
+  fn: T,
+  args: Parameters<T>,
+  options?: PromiseOptions<T>,
+): UsePromiseReturnType<UnwrapReturn<T>>;
+
+export function usePromise<T extends FunctionReturningPromise | FunctionReturningPaginatedPromise>(
   fn: T,
   args?: Parameters<T>,
   options?: PromiseOptions<T>,
-): UsePromiseReturnType<Awaited<ReturnType<T>>> {
+): UsePromiseReturnType<any> {
   const lastCallId = useRef(0);
-  const [state, set] = useState<AsyncState<Awaited<ReturnType<T>>>>({ isLoading: true });
+  const [state, set] = useState<AsyncState<UnwrapReturn<T>>>({ isLoading: true });
 
   const fnRef = useLatest(fn);
   const latestAbortable = useLatest(options?.abortable);
@@ -89,10 +110,15 @@ export function usePromise<T extends FunctionReturningPromise>(
   const latestOnData = useLatest(options?.onData);
   const latestOnWillExecute = useLatest(options?.onWillExecute);
   const latestValue = useLatest(state.data);
-  const latestCallback = useRef<T>();
+  const latestCallback = useRef<(...args: Parameters<T>) => Promise<UnwrapReturn<T>>>();
+
+  const paginationArgsRef = useRef<{ page: number; lastItem?: any }>({ page: 0 });
+  const usePaginationRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const pageSizeRef = useRef(50);
 
   const callback = useCallback(
-    (...args: Parameters<T>): ReturnType<T> => {
+    (...args: Parameters<T>): Promise<UnwrapReturn<T>> => {
       const callId = ++lastCallId.current;
 
       if (latestAbortable.current) {
@@ -104,56 +130,101 @@ export function usePromise<T extends FunctionReturningPromise>(
 
       set((prevState) => ({ ...prevState, isLoading: true }));
 
-      return bindPromiseIfNeeded(fnRef.current)(...args).then(
-        (data: Awaited<ReturnType<T>>) => {
-          if (callId === lastCallId.current) {
-            if (latestOnData.current) {
-              latestOnData.current(data);
-            }
-            set({ data, isLoading: false });
-          }
+      const promiseOrPaginatedPromise = bindPromiseIfNeeded(fnRef.current)(...args);
 
-          return data;
-        },
-        (error) => {
-          if (error.name == "AbortError") {
-            return error;
-          }
-
-          if (callId === lastCallId.current) {
-            // handle errors
-            if (latestOnError.current) {
-              latestOnError.current(error);
-            } else {
-              console.error(error);
-              if (environment.launchType !== LaunchType.Background) {
-                showFailureToast(error, {
-                  title: "Failed to fetch latest data",
-                  primaryAction: {
-                    title: "Retry",
-                    onAction(toast) {
-                      toast.hide();
-                      latestCallback.current?.(...(latestArgs.current || []));
-                    },
-                  },
-                });
-              }
-            }
-            set({ error, isLoading: false });
-          }
-
+      function handleError(error: any) {
+        if (error.name == "AbortError") {
           return error;
-        },
-      ) as ReturnType<T>;
+        }
+
+        if (callId === lastCallId.current) {
+          // handle errors
+          if (latestOnError.current) {
+            latestOnError.current(error);
+          } else {
+            if (environment.launchType !== LaunchType.Background) {
+              showFailureToast(error, {
+                title: "Failed to fetch latest data",
+                primaryAction: {
+                  title: "Retry",
+                  onAction(toast) {
+                    toast.hide();
+                    latestCallback.current?.(...((latestArgs.current || []) as Parameters<T>));
+                  },
+                },
+              });
+            }
+          }
+          set({ error, isLoading: false });
+        }
+
+        return error;
+      }
+
+      if (typeof promiseOrPaginatedPromise === "function") {
+        usePaginationRef.current = true;
+        return promiseOrPaginatedPromise(paginationArgsRef.current).then(
+          // @ts-expect-error too complicated for TS
+          ({ data, hasMore }: { data: UnwrapReturn<T>; hasMore: boolean }) => {
+            if (callId === lastCallId.current) {
+              if (latestOnData.current) {
+                latestOnData.current(data, paginationArgsRef.current);
+              }
+
+              if (hasMore) {
+                pageSizeRef.current = data.length;
+              }
+              hasMoreRef.current = hasMore;
+
+              set((previousData) => {
+                if (paginationArgsRef.current.page === 0) {
+                  return { data, isLoading: false };
+                }
+                // @ts-expect-error we know it's an array here
+                return { data: (previousData.data || [])?.concat(data), isLoading: false };
+              });
+            }
+
+            return data;
+          },
+          handleError,
+        ) as Promise<UnwrapReturn<T>>;
+      }
+
+      usePaginationRef.current = false;
+      return promiseOrPaginatedPromise.then((data: UnwrapReturn<T>) => {
+        if (callId === lastCallId.current) {
+          if (latestOnData.current) {
+            latestOnData.current(data);
+          }
+          set({ data, isLoading: false });
+        }
+
+        return data;
+      }, handleError) as Promise<UnwrapReturn<T>>;
     },
-    [latestAbortable, latestOnData, latestOnError, latestArgs, fnRef, set, latestCallback, latestOnWillExecute],
+    [
+      latestAbortable,
+      latestOnData,
+      latestOnError,
+      latestArgs,
+      fnRef,
+      set,
+      latestCallback,
+      latestOnWillExecute,
+      paginationArgsRef,
+    ],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) as any as T;
+  );
 
   latestCallback.current = callback;
 
   const revalidate = useCallback(() => {
-    return callback(...(latestArgs.current || []));
+    // reset the pagination
+    paginationArgsRef.current = { page: 0 };
+
+    const args = (latestArgs.current || []) as Parameters<T>;
+    return callback(...args);
   }, [callback, latestArgs]);
 
   const mutate = useCallback<MutatePromise<Awaited<ReturnType<T>>, undefined>>(
@@ -193,10 +264,22 @@ export function usePromise<T extends FunctionReturningPromise>(
     [revalidate, latestValue, set],
   );
 
+  const onLoadMore = useCallback(() => {
+    paginationArgsRef.current = {
+      page: paginationArgsRef.current.page + 1,
+      lastItem: latestValue.current?.[latestValue.current.length - 1],
+    };
+    const args = (latestArgs.current || []) as Parameters<T>;
+    callback(...args);
+  }, [paginationArgsRef, latestValue, latestArgs, callback]);
+
   // revalidate when the args change
   useEffect(() => {
+    // reset the pagination
+    paginationArgsRef.current = { page: 0 };
+
     if (options?.execute !== false) {
-      callback(...(args || []));
+      callback(...((args || []) as Parameters<T>));
     } else {
       // cancel the previous request if we don't want to execute anymore
       if (latestAbortable.current) {
@@ -204,7 +287,7 @@ export function usePromise<T extends FunctionReturningPromise>(
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [useDeepMemo([args, options?.execute, callback]), latestAbortable]);
+  }, [useDeepMemo([args, options?.execute, callback]), latestAbortable, paginationArgsRef]);
 
   // abort request when unmounting
   useEffect(() => {
@@ -222,7 +305,15 @@ export function usePromise<T extends FunctionReturningPromise>(
   // @ts-expect-error loading is has some fixed value in the enum which
   const stateWithLoadingFixed: AsyncState<Awaited<ReturnType<T>>> = { ...state, isLoading };
 
-  return { ...stateWithLoadingFixed, revalidate, mutate };
+  const pagination = usePaginationRef.current
+    ? {
+        pageSize: pageSizeRef.current,
+        hasMore: hasMoreRef.current,
+        onLoadMore,
+      }
+    : undefined;
+
+  return { ...stateWithLoadingFixed, revalidate, mutate, pagination };
 }
 
 /** Bind the fn if it's a Promise method */

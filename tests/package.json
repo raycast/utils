@@ -51,6 +51,13 @@
       "mode": "view"
     },
     {
+      "name": "cached-promise-paginated",
+      "title": "useCachedPromise - paginated",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
       "name": "cached-state",
       "title": "useCachedState",
       "subtitle": "Utils Smoke Tests",
@@ -72,6 +79,13 @@
       "mode": "view"
     },
     {
+      "name": "fetch-paginated",
+      "title": "useFetch - paginated",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
       "name": "form",
       "title": "useForm",
       "subtitle": "Utils Smoke Tests",
@@ -81,6 +95,13 @@
     {
       "name": "promise",
       "title": "usePromise",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
+      "name": "promise-paginated",
+      "title": "usePromise - paginated",
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
       "mode": "view"
@@ -160,17 +181,16 @@
     }
   ],
   "dependencies": {
-    "@raycast/api": "^1.51.3",
+    "@raycast/api": "^1.68.0",
     "@raycast/utils": "file:../",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@raycast/eslint-config": "1.0.6",
-    "@types/node": "18.8.3",
-    "@types/react": "18.0.9",
+    "@raycast/eslint-config": "^1.0.6",
+    "@types/node": "20.8.10",
+    "@types/react": "18.2.27",
     "eslint": "^8.51.0",
-    "prettier": "^3.0.3",
-    "typescript": "^5.2.2"
+    "prettier": "^3.0.3"
   },
   "scripts": {
     "build": "ray build -e dist",

@@ -1,9 +1,9 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import mediaTyper from "media-typer";
 import contentType from "content-type";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
-import { UseCachedPromiseReturnType } from "./types";
+import { FunctionReturningPaginatedPromise, FunctionReturningPromise, UseCachedPromiseReturnType } from "./types";
 import { fetch } from "cross-fetch";
 
 function isJSON(contentTypeHeader: string | null | undefined): boolean {
@@ -44,6 +44,10 @@ async function defaultParsing(response: Response) {
   return await response.text();
 }
 
+function defaultMapping<V, T extends unknown[]>(result: V): { data: T; hasMore: boolean } {
+  return { data: result as unknown as T, hasMore: false };
+}
+
 /**
  * Fetch the URL and returns the {@link AsyncState} corresponding to the execution of the fetch. The last value will be kept between command runs.
  *
@@ -68,15 +72,41 @@ async function defaultParsing(response: Response) {
  * };
  * ```
  */
-export function useFetch<T = unknown, U = undefined>(
+type PaginatedRequestInfo = (pagination: { page: number; lastItem?: any }) => RequestInfo;
+
+export function useFetch<V = unknown, U = undefined, T = V>(
   url: RequestInfo,
-  options?: RequestInit & { parseResponse?: (response: Response) => Promise<T> } & Omit<
-      CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>,
-      "abortable"
-    >,
+  options?: RequestInit & {
+    parseResponse?: (response: Response) => Promise<T>;
+  } & Omit<CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>, "abortable">,
+): UseCachedPromiseReturnType<T, U> & { pagination?: undefined };
+
+export function useFetch<V = unknown, U = undefined, T extends unknown[] = unknown[]>(
+  url: PaginatedRequestInfo,
+  options: RequestInit & {
+    mapResult: (result: V) => { data: T; hasMore: boolean };
+    parseResponse?: (response: Response) => Promise<V>;
+  } & Omit<CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>, "abortable">,
+): UseCachedPromiseReturnType<T, U>;
+
+export function useFetch<V = unknown, U = undefined, T extends unknown[] = unknown[]>(
+  url: RequestInfo | PaginatedRequestInfo,
+  options?: RequestInit & {
+    mapResult?: (result: V) => { data: T; hasMore: boolean };
+    parseResponse?: (response: Response) => Promise<V>;
+  } & Omit<CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>, "abortable">,
 ): UseCachedPromiseReturnType<T, U> {
-  const { parseResponse, initialData, execute, keepPreviousData, onError, onData, onWillExecute, ...fetchOptions } =
-    options || {};
+  const {
+    parseResponse,
+    mapResult,
+    initialData,
+    execute,
+    keepPreviousData,
+    onError,
+    onData,
+    onWillExecute,
+    ...fetchOptions
+  } = options || {};
 
   const useCachedPromiseOptions: CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U> = {
     initialData,
@@ -88,9 +118,25 @@ export function useFetch<T = unknown, U = undefined>(
   };
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
+  const mapResultRef = useLatest(mapResult || defaultMapping);
+  const urlRef = useRef<RequestInfo | PaginatedRequestInfo>();
+  const firstPageUrlRef = useRef<RequestInfo | undefined>();
+  const firstPageUrl = typeof url === "function" ? url({ page: 0 }) : undefined;
+  if (!urlRef.current || firstPageUrlRef.current !== firstPageUrl) {
+    urlRef.current = url;
+  }
+  firstPageUrlRef.current = firstPageUrl;
   const abortable = useRef<AbortController>();
 
-  const fn = useCallback(
+  const paginatedFn: FunctionReturningPaginatedPromise<[PaginatedRequestInfo, typeof fetchOptions], T> = useCallback(
+    (url: PaginatedRequestInfo, options?: RequestInit) => async (pagination: { page: number }) => {
+      const res = await fetch(url(pagination), { signal: abortable.current?.signal, ...options });
+      const parsed = (await parseResponseRef.current(res)) as V;
+      return mapResultRef.current?.(parsed);
+    },
+    [parseResponseRef, mapResultRef],
+  );
+  const fn: FunctionReturningPromise<[RequestInfo, RequestInit?], T> = useCallback(
     async (url: RequestInfo, options?: RequestInit) => {
       const res = await fetch(url, { signal: abortable.current?.signal, ...options });
       return (await parseResponseRef.current(res)) as T;
@@ -98,6 +144,17 @@ export function useFetch<T = unknown, U = undefined>(
     [parseResponseRef],
   );
 
-  // @ts-expect-error T can't be a Promise so it's actually the same
-  return useCachedPromise(fn, [url, fetchOptions], { ...useCachedPromiseOptions, abortable });
+  const promise = useMemo(() => {
+    if (firstPageUrlRef.current) {
+      return paginatedFn;
+    }
+    return fn;
+  }, [firstPageUrlRef, fn, paginatedFn]);
+
+  // @ts-expect-error lastItem can't be inferred properly
+  return useCachedPromise(promise, [urlRef.current as PaginatedRequestInfo, fetchOptions], {
+    ...useCachedPromiseOptions,
+    cacheKeySuffix: firstPageUrlRef.current,
+    abortable,
+  });
 }
