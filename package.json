@@ -10,22 +10,16 @@
     "lint": "eslint src/",
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "npm run lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "prepublishOnly": "npm run build && npm test",
     "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
   },
   "peerDependencies": {
     "@raycast/api": ">=1.52.0"
   },
-  "keywords": [
-    "Raycast",
-    "utilities",
-    "extensions"
-  ],
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "keywords": ["Raycast", "utilities", "extensions"],
+  "files": ["dist", "README.md"],
   "license": "MIT",
   "dependencies": {
     "content-type": "^1.0.5",
@@ -37,7 +31,9 @@
   },
   "devDependencies": {
     "@raycast/api": "1.52.0",
+    "@testing-library/react-hooks": "^8.0.1",
     "@types/content-type": "^1.1.6",
+    "@types/jest": "^29.5.12",
     "@types/media-typer": "^1.1.1",
     "@types/object-hash": "^3.0.4",
     "@types/signal-exit": "^3.0.2",
@@ -49,6 +45,10 @@
     "eslint-plugin-jest": "27.4.2",
     "eslint-plugin-prettier": "5.0.0",
     "eslint-plugin-react-hooks": "4.6.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^24.0.0",
+    "ts-jest": "^29.1.2",
     "typescript": "5.2.2"
   }
 }
