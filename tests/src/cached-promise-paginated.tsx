@@ -30,7 +30,9 @@ export default function Command() {
         </ActionPanel>
       }
     >
-      {data?.map((item) => <List.Item key={item} title={item} />)}
+      {data.map((item) => (
+        <List.Item key={item} title={item} />
+      ))}
     </List>
   );
 }
