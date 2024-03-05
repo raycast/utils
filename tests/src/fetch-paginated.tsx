@@ -56,7 +56,7 @@ export default function Command() {
 
   return (
     <List isLoading={isLoading} pagination={pagination} onSearchTextChange={setSearchText}>
-      {data?.map((company) => (
+      {data.map((company) => (
         <List.Item
           key={company.id}
           icon={{ source: company.smallLogoUrl ?? Icon.MinusCircle, mask: Image.Mask.RoundedRectangle }}

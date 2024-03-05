@@ -30,11 +30,6 @@ export type CachedPromiseOptions<
    * This is particularly useful when used for data for a List to avoid flickering.
    */
   keepPreviousData?: boolean;
-  /**
-   * The hook generates a cache key from the promise & its arguments. Sometimes that's not enough to guarantee,
-   * uniqueness, and in those cases you can pass a `cacheKeySuffix`.
-   */
-  cacheKeySuffix?: string;
 };
 
 export function useCachedPromise<T extends FunctionReturningPaginatedPromise<[]>>(
@@ -96,11 +91,23 @@ export function useCachedPromise<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   U extends any[] | undefined = undefined,
 >(fn: T, args?: Parameters<T>, options?: CachedPromiseOptions<T, U>) {
-  const { initialData, keepPreviousData, cacheKeySuffix, ...usePromiseOptions } = options || {};
+  /**
+   * The hook generates a cache key from the promise it receives & its arguments.
+   * Sometimes that's not enough to guarantee uniqueness, so hooks that build on top of `useCachedPromise` can
+   * use an `internal_cacheKeySuffix` to help it.
+   *
+   * @remark For internal use only.
+   */
+  const {
+    initialData,
+    keepPreviousData,
+    internal_cacheKeySuffix,
+    ...usePromiseOptions
+  }: CachedPromiseOptions<T, U> & { internal_cacheKeySuffix?: string } = options || {};
   const lastUpdateFrom = useRef<"cache" | "promise">();
 
   const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (UnwrapReturn<T> | U)>(
-    hash(args || []) + cacheKeySuffix ?? "",
+    hash(args || []) + internal_cacheKeySuffix ?? "",
     emptyCache,
     {
       cacheNamespace: hash(fn),

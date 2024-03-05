@@ -154,7 +154,7 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
   // @ts-expect-error lastItem can't be inferred properly
   return useCachedPromise(promise, [urlRef.current as PaginatedRequestInfo, fetchOptions], {
     ...useCachedPromiseOptions,
-    cacheKeySuffix: firstPageUrlRef.current,
+    internal_cacheKeySuffix: firstPageUrlRef.current,
     abortable,
   });
 }
