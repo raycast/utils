@@ -7,7 +7,7 @@ export default function Command() {
   const [searchText, setSearchText] = useState<string>("");
 
   const { isLoading, data, pagination, revalidate } = useCachedPromise(
-    (text: string) => async (options: { page: number; lastItem?: string }) => {
+    (text: string) => async (options) => {
       await setTimeout(500);
       const data = items(text, options.page);
       return { data, hasMore: options.page < 20 };

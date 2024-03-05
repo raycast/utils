@@ -48,6 +48,15 @@ function defaultMapping<V, T extends unknown[]>(result: V): { data: T; hasMore: 
   return { data: result as unknown as T, hasMore: false };
 }
 
+type PaginatedRequestInfo = (pagination: { page: number; lastItem?: any }) => RequestInfo;
+
+export function useFetch<V = unknown, U = undefined, T extends unknown[] = unknown[]>(
+  url: PaginatedRequestInfo,
+  options: RequestInit & {
+    mapResult: (result: V) => { data: T; hasMore: boolean };
+    parseResponse?: (response: Response) => Promise<V>;
+  } & Omit<CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>, "abortable">,
+): UseCachedPromiseReturnType<T, U>;
 /**
  * Fetch the URL and returns the {@link AsyncState} corresponding to the execution of the fetch. The last value will be kept between command runs.
  *
@@ -72,7 +81,6 @@ function defaultMapping<V, T extends unknown[]>(result: V): { data: T; hasMore: 
  * };
  * ```
  */
-type PaginatedRequestInfo = (pagination: { page: number; lastItem?: any }) => RequestInfo;
 
 export function useFetch<V = unknown, U = undefined, T = V>(
   url: RequestInfo,
@@ -80,14 +88,6 @@ export function useFetch<V = unknown, U = undefined, T = V>(
     parseResponse?: (response: Response) => Promise<T>;
   } & Omit<CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>, "abortable">,
 ): UseCachedPromiseReturnType<T, U> & { pagination?: undefined };
-
-export function useFetch<V = unknown, U = undefined, T extends unknown[] = unknown[]>(
-  url: PaginatedRequestInfo,
-  options: RequestInit & {
-    mapResult: (result: V) => { data: T; hasMore: boolean };
-    parseResponse?: (response: Response) => Promise<V>;
-  } & Omit<CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>, "abortable">,
-): UseCachedPromiseReturnType<T, U>;
 
 export function useFetch<V = unknown, U = undefined, T extends unknown[] = unknown[]>(
   url: RequestInfo | PaginatedRequestInfo,

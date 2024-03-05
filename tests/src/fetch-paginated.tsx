@@ -40,7 +40,7 @@ export default function Command() {
   const [searchText, setSearchText] = useState("");
 
   const { isLoading, pagination, data, revalidate } = useFetch(
-    (pagination): RequestInfo =>
+    (pagination) =>
       "https://api.ycombinator.com/v0.1/companies?" + getSearchParams(searchText, pagination.page + 1).toString(),
     {
       mapResult(result: SearchResult) {

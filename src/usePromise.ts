@@ -9,6 +9,7 @@ import {
   FunctionReturningPaginatedPromise,
   UnwrapReturn,
   Flatten,
+  PaginationOptions,
 } from "./types";
 import { useLatest } from "./useLatest";
 import { showFailureToast } from "./showFailureToast";
@@ -34,15 +35,21 @@ export type PromiseOptions<T extends FunctionReturningPromise | FunctionReturnin
   /**
    * Called when an execution succeeds.
    */
-  onData?: (
-    data: UnwrapReturn<T>,
-    pagination?: { page: number; lastItem?: Flatten<UnwrapReturn<T>> },
-  ) => void | Promise<void>;
+  onData?: (data: UnwrapReturn<T>, pagination?: PaginationOptions<UnwrapReturn<T>>) => void | Promise<void>;
   /**
    * Called when an execution will start
    */
   onWillExecute?: (parameters: Parameters<T>) => void;
 };
+
+export function usePromise<T extends FunctionReturningPaginatedPromise<[]>>(
+  fn: T,
+): UsePromiseReturnType<UnwrapReturn<T>>;
+export function usePromise<T extends FunctionReturningPaginatedPromise>(
+  fn: T,
+  args: Parameters<T>,
+  options?: PromiseOptions<T>,
+): UsePromiseReturnType<UnwrapReturn<T>>;
 
 /**
  * Wraps an asynchronous function or a function that returns a Promise and returns the {@link AsyncState} corresponding to the execution of the function.
@@ -86,15 +93,6 @@ export function usePromise<T extends FunctionReturningPromise>(
   options?: PromiseOptions<T>,
 ): UsePromiseReturnType<UnwrapReturn<T>>;
 
-export function usePromise<T extends FunctionReturningPaginatedPromise<[]>>(
-  fn: T,
-): UsePromiseReturnType<UnwrapReturn<T>>;
-export function usePromise<T extends FunctionReturningPaginatedPromise>(
-  fn: T,
-  args: Parameters<T>,
-  options?: PromiseOptions<T>,
-): UsePromiseReturnType<UnwrapReturn<T>>;
-
 export function usePromise<T extends FunctionReturningPromise | FunctionReturningPaginatedPromise>(
   fn: T,
   args?: Parameters<T>,
@@ -112,7 +110,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
   const latestValue = useLatest(state.data);
   const latestCallback = useRef<(...args: Parameters<T>) => Promise<UnwrapReturn<T>>>();
 
-  const paginationArgsRef = useRef<{ page: number; lastItem?: any }>({ page: 0 });
+  const paginationArgsRef = useRef<PaginationOptions>({ page: 0 });
   const usePaginationRef = useRef(false);
   const hasMoreRef = useRef(true);
   const pageSizeRef = useRef(50);

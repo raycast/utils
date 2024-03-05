@@ -1,7 +1,11 @@
+export type PaginationOptions<T = any> = {
+  page: number;
+  lastItem?: Flatten<T>;
+};
 export type FunctionReturningPromise<T extends any[] = any[], U = any> = (...args: T) => Promise<U>;
 export type FunctionReturningPaginatedPromise<T extends any[] = any[], U extends any[] = any[]> = (
   ...args: T
-) => (pagination: { page: number; lastItem?: Flatten<U> }) => Promise<{ data: U; hasMore: boolean }>;
+) => (pagination: PaginationOptions<U>) => Promise<{ data: U; hasMore: boolean }>;
 export type UnwrapReturn<T extends FunctionReturningPromise | FunctionReturningPaginatedPromise> =
   T extends FunctionReturningPromise
     ? Awaited<ReturnType<T>>

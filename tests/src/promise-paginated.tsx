@@ -6,7 +6,7 @@ export default function Command() {
   const [searchText, setSearchText] = useState<string>("");
 
   const { isLoading, data, revalidate, pagination } = usePromise(
-    (text: string) => async (options: { page: number; lastItem?: string }) => {
+    (text: string) => async (options) => {
       await sleep(500);
       const data = items(text, options.page);
       return { data, hasMore: options.page < 20 };

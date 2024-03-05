@@ -6,7 +6,7 @@ import {
   MutatePromise,
   FunctionReturningPaginatedPromise,
   UnwrapReturn,
-  Flatten,
+  PaginationOptions,
 } from "./types";
 import { useCachedState } from "./useCachedState";
 import { usePromise, PromiseOptions } from "./usePromise";
@@ -36,6 +36,15 @@ export type CachedPromiseOptions<
    */
   cacheKeySuffix?: string;
 };
+
+export function useCachedPromise<T extends FunctionReturningPaginatedPromise<[]>>(
+  fn: T,
+): UseCachedPromiseReturnType<UnwrapReturn<T>, undefined>;
+export function useCachedPromise<T extends FunctionReturningPaginatedPromise, U extends any[] = any[]>(
+  fn: T,
+  args: Parameters<T>,
+  options?: CachedPromiseOptions<T, U>,
+): UseCachedPromiseReturnType<UnwrapReturn<T>, U>;
 
 /**
  * Wraps an asynchronous function or a function that returns a Promise and returns the {@link AsyncState} corresponding to the execution of the function. The last value will be kept between command runs.
@@ -82,15 +91,6 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
   options?: CachedPromiseOptions<T, U>,
 ): UseCachedPromiseReturnType<UnwrapReturn<T>, U>;
 
-export function useCachedPromise<T extends FunctionReturningPaginatedPromise<[]>>(
-  fn: T,
-): UseCachedPromiseReturnType<UnwrapReturn<T>, undefined>;
-export function useCachedPromise<T extends FunctionReturningPaginatedPromise, U extends any[] = any[]>(
-  fn: T,
-  args: Parameters<T>,
-  options?: CachedPromiseOptions<T, U>,
-): UseCachedPromiseReturnType<UnwrapReturn<T>, U>;
-
 export function useCachedPromise<
   T extends FunctionReturningPromise | FunctionReturningPaginatedPromise,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,7 +109,7 @@ export function useCachedPromise<
 
   // Use a ref to store previous returned data. Use the inital data as its inital value from the cache.
   const laggyDataRef = useRef<Awaited<ReturnType<T>> | U>(cachedData !== emptyCache ? cachedData : (initialData as U));
-  const paginationArgsRef = useRef<{ page: number; lastItem?: Flatten<UnwrapReturn<T> | U> } | undefined>(undefined);
+  const paginationArgsRef = useRef<PaginationOptions<UnwrapReturn<T> | U> | undefined>(undefined);
 
   const {
     mutate: _mutate,
@@ -138,8 +138,8 @@ export function useCachedPromise<
   const pagination = state.pagination;
   // when paginating, only the first page gets cached, so we return the data we get from `usePromise`, because
   // it will be accumulated.
-  if (paginationArgsRef.current && paginationArgsRef.current.page > 0) {
-    returnedData = state.data;
+  if (paginationArgsRef.current && paginationArgsRef.current.page > 0 && state.data) {
+    returnedData = state.data as UnwrapReturn<T>;
     // if the latest update if from the Promise, we keep it
   } else if (lastUpdateFrom.current === "promise") {
     returnedData = laggyDataRef.current;
