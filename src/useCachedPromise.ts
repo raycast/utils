@@ -32,6 +32,49 @@ export type CachedPromiseOptions<
   keepPreviousData?: boolean;
 };
 
+/**
+ * Wraps an asynchronous function or a function that returns a Promise in another function, and returns the {@link AsyncState} corresponding to the execution of the function. The last value will be kept between command runs.
+ *
+ * @remark This overload should be used when working with paginated data sources.
+ * @remark When paginating, only the first page will be cached.
+ *
+ * @example
+ * ```
+ * import { setTimeout } from "node:timers/promises";
+ * import { useState } from "react";
+ * import { List } from "@raycast/api";
+ * import { useCachedPromise } from "@raycast/utils";
+ *
+ * export default function Command() {
+ *   const [searchText, setSearchText] = useState("");
+ *
+ *   const { isLoading, data, pagination } = useCachedPromise(
+ *     (searchText: string) => async (options: { page: number }) => {
+ *       await setTimeout(200);
+ *       const newData = Array.from({ length: 25 }, (_v, index) => ({
+ *         index,
+ *         page: options.page,
+ *         text: searchText,
+ *       }));
+ *       return { data: newData, hasMore: options.page < 10 };
+ *     },
+ *     [searchText],
+ *   );
+ *
+ *   return (
+ *     <List isLoading={isLoading} onSearchTextChange={setSearchText} pagination={pagination}>
+ *       {data?.map((item) => (
+ *         <List.Item
+ *           key={`${item.page} ${item.index} ${item.text}`}
+ *           title={`Page ${item.page} Item ${item.index}`}
+ *           subtitle={item.text}
+ *         />
+ *       ))}
+ *     </List>
+ *   );
+ * }
+ * ```
+ */
 export function useCachedPromise<T extends FunctionReturningPaginatedPromise<[]>>(
   fn: T,
 ): UseCachedPromiseReturnType<UnwrapReturn<T>, undefined>;

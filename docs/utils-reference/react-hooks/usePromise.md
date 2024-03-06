@@ -193,6 +193,44 @@ Another thing to notice is that the async function receives a [PaginationOptions
 Every time the promise resolves, the hook needs to figure out if it should paginate further, or if it should stop, and it uses `hasMore` for this.
 In addition to this, the hook also needs `data`, and needs it to be an array, because internally it appends it to a list, thus making sure the `data` that the hook _returns_ always contains the data for all of the pages that have been loaded so far.
 
+### Example
+
+```tsx
+import { setTimeout } from "node:timers/promises";
+import { useState } from "react";
+import { List } from "@raycast/api";
+import { usePromise } from "@raycast/utils";
+
+export default function Command() {
+  const [searchText, setSearchText] = useState("");
+
+  const { isLoading, data, pagination } = usePromise(
+    (searchText: string) => async (options: { page: number }) => {
+      await setTimeout(200);
+      const newData = Array.from({ length: 25 }, (_v, index) => ({
+        index,
+        page: options.page,
+        text: searchText,
+      }));
+      return { data: newData, hasMore: options.page < 10 };
+    },
+    [searchText],
+  );
+
+  return (
+    <List isLoading={isLoading} onSearchTextChange={setSearchText} pagination={pagination}>
+      {data?.map((item) => (
+        <List.Item
+          key={`${item.page} ${item.index} ${item.text}`}
+          title={`Page ${item.page} Item ${item.index}`}
+          subtitle={item.text}
+        />
+      ))}
+    </List>
+  );
+}
+```
+
 ## Types
 
 ### AsyncState

@@ -42,9 +42,9 @@ export type PromiseOptions<T extends FunctionReturningPromise | FunctionReturnin
 };
 
 /**
- * Wraps an asynchronous function or a function that returns a Promise in a function, and returns the {@link AsyncState} corresponding to the execution of the function.
+ * Wraps an asynchronous function or a function that returns a Promise in another function, and returns the {@link AsyncState} corresponding to the execution of the function.
  *
- * @remark The function is assumed to be constant (eg. changing it won't trigger a revalidation).
+ * @remark This overload should be used when working with paginated data sources.
  *
  * @example
  * ```
