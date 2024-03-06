@@ -81,14 +81,13 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
  * };
  * ```
  */
-
 export function useFetch<V = unknown, U = undefined, T = V>(
   url: RequestInfo,
-  options?: RequestInit & {
-    mapResult?: (result: V) => { data: T };
-    parseResponse?: (response: Response) => Promise<T>;
+  options: RequestInit & {
+    mapResult: (result: V) => { data: T; hasMore?: boolean };
+    parseResponse?: (response: Response) => Promise<V>;
   } & Omit<CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>, "abortable">,
-): UseCachedPromiseReturnType<T, U> & { pagination?: undefined };
+): UseCachedPromiseReturnType<T, U> & { pagination: undefined };
 
 export function useFetch<V = unknown, U = undefined, T extends unknown[] = unknown[]>(
   url: RequestInfo | PaginatedRequestInfo,
