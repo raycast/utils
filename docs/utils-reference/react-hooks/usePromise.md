@@ -193,7 +193,7 @@ Another thing to notice is that the async function receives a [PaginationOptions
 Every time the promise resolves, the hook needs to figure out if it should paginate further, or if it should stop, and it uses `hasMore` for this.
 In addition to this, the hook also needs `data`, and needs it to be an array, because internally it appends it to a list, thus making sure the `data` that the hook _returns_ always contains the data for all of the pages that have been loaded so far.
 
-### Example
+### Full Example
 
 ```tsx
 import { setTimeout } from "node:timers/promises";
