@@ -8,7 +8,6 @@ import {
   AsyncState,
   FunctionReturningPaginatedPromise,
   UnwrapReturn,
-  Flatten,
   PaginationOptions,
 } from "./types";
 import { useLatest } from "./useLatest";
