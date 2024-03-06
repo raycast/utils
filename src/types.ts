@@ -1,5 +1,11 @@
 export type PaginationOptions<T = any> = {
+  /**
+   * Specifies the current page index. Zero-based.
+   */
   page: number;
+  /**
+   * The last item from the previous page of results, useful for APIs implementing cursor-based pagination.
+   */
   lastItem?: Flatten<T>;
 };
 export type FunctionReturningPromise<T extends any[] = any[], U = any> = (...args: T) => Promise<U>;
