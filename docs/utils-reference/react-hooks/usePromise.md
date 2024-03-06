@@ -144,6 +144,55 @@ export default function Command() {
 }
 ```
 
+## Pagination
+
+The hook has built-in support for pagination. In order to enable pagination, `fn`'s type needs to change from
+
+> an asynchronous function or a function that returns a Promise
+
+to
+
+> a function that returns an asynchronous function or a function that returns a Promise
+
+In practice, this means going from
+
+```ts
+const { isLoading, data } = usePromise(
+  async (searchText: string) => {
+    const data = await getUser(); // or any asynchronous logic you need to perform
+    return data;
+  },
+  [searchText],
+);
+```
+
+to
+
+```ts
+const { isLoading, data, pagination } = usePromise(
+  (searchText: string) =>
+    async ({ page, lastItem }) => {
+      const data = await getUsers(); // or any other asynchronous logic you need to perform
+      const hasMore = page < 50; //
+      return { data, hasMore };
+    },
+  [searchText],
+);
+```
+
+You'll notice that, in the second case, the hook returns an additional item: `pagination`. This can be passed to Raycast's `List` or `Grid` components in order to enable pagination.
+Another thing to notice is that the async function receives a [PaginationOptions](#paginationoptions) argument, and returns a specific data format:
+
+```ts
+{
+  data: any[];
+  hasMore: boolean;
+}
+```
+
+Every time the promise resolves, the hook needs to figure out if it should paginate further, or if it should stop, and it uses `hasMore` for this.
+In addition to this, the hook also needs `data`, and needs it to be an array, because internally it appends it to a list, thus making sure the `data` that the hook _returns_ always contains the data for all of the pages that have been loaded so far.
+
 ## Types
 
 ### AsyncState
@@ -193,4 +242,18 @@ export type MutatePromise<T> = (
     shouldRevalidateAfter?: boolean;
   },
 ) => Promise<any>;
+```
+
+### PaginationOptions
+
+An object passed to a `PaginatedPromise`, it has two properties:
+
+- `page`: 0-indexed, this it's incremented every time the promise resolves, and is reset whenever `revalidate()` is called.
+- `lastItem`: this is a copy of the last item in the `data` array from the last time the promise was executed. Provided for APIs that implement cursor-based pagination.
+
+```ts
+export type PaginationOptions<T = any> = {
+  page: number;
+  lastItem?: T;
+};
 ```
