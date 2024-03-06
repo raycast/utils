@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
+import hash from "object-hash";
 import mediaTyper from "media-typer";
 import contentType from "content-type";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
@@ -205,7 +206,7 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
   // @ts-expect-error lastItem can't be inferred properly
   return useCachedPromise(promise, [urlRef.current as PaginatedRequestInfo, fetchOptions], {
     ...useCachedPromiseOptions,
-    internal_cacheKeySuffix: firstPageUrlRef.current,
+    internal_cacheKeySuffix: firstPageUrlRef.current + hash(mapResultRef.current) + hash(parseResponseRef.current),
     abortable,
   });
 }
