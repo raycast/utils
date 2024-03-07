@@ -226,7 +226,10 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
 
             return data;
           },
-          handleError,
+          (error: unknown) => {
+            hasMoreRef.current = false;
+            return handleError(error);
+          },
         ) as Promise<UnwrapReturn<T>>;
       }
 
