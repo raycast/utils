@@ -130,7 +130,7 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
  */
 export function useFetch<V = unknown, U = undefined, T = V>(
   url: RequestInfo,
-  options: RequestInit & {
+  options?: RequestInit & {
     mapResult: (result: V) => { data: T; hasMore?: boolean };
     parseResponse?: (response: Response) => Promise<V>;
   } & Omit<CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U>, "abortable">,
