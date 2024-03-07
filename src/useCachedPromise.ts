@@ -1,6 +1,13 @@
 import { useEffect, useRef, useCallback } from "react";
 import hash from "object-hash";
-import { FunctionReturningPromise, UseCachedPromiseReturnType, MutatePromise } from "./types";
+import {
+  FunctionReturningPromise,
+  UseCachedPromiseReturnType,
+  MutatePromise,
+  FunctionReturningPaginatedPromise,
+  UnwrapReturn,
+  PaginationOptions,
+} from "./types";
 import { useCachedState } from "./useCachedState";
 import { usePromise, PromiseOptions } from "./usePromise";
 
@@ -9,7 +16,10 @@ import { useLatest } from "./useLatest";
 // Symbol to differentiate an empty cache from `undefined`
 const emptyCache = Symbol();
 
-export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = PromiseOptions<T> & {
+export type CachedPromiseOptions<
+  T extends FunctionReturningPromise | FunctionReturningPaginatedPromise,
+  U,
+> = PromiseOptions<T> & {
   /**
    * The initial data if there aren't any in the Cache yet.
    */
@@ -21,6 +31,58 @@ export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = Promis
    */
   keepPreviousData?: boolean;
 };
+
+/**
+ * Wraps an asynchronous function or a function that returns a Promise in another function, and returns the {@link AsyncState} corresponding to the execution of the function. The last value will be kept between command runs.
+ *
+ * @remark This overload should be used when working with paginated data sources.
+ * @remark When paginating, only the first page will be cached.
+ *
+ * @example
+ * ```
+ * import { setTimeout } from "node:timers/promises";
+ * import { useState } from "react";
+ * import { List } from "@raycast/api";
+ * import { useCachedPromise } from "@raycast/utils";
+ *
+ * export default function Command() {
+ *   const [searchText, setSearchText] = useState("");
+ *
+ *   const { isLoading, data, pagination } = useCachedPromise(
+ *     (searchText: string) => async (options: { page: number }) => {
+ *       await setTimeout(200);
+ *       const newData = Array.from({ length: 25 }, (_v, index) => ({
+ *         index,
+ *         page: options.page,
+ *         text: searchText,
+ *       }));
+ *       return { data: newData, hasMore: options.page < 10 };
+ *     },
+ *     [searchText],
+ *   );
+ *
+ *   return (
+ *     <List isLoading={isLoading} onSearchTextChange={setSearchText} pagination={pagination}>
+ *       {data?.map((item) => (
+ *         <List.Item
+ *           key={`${item.page} ${item.index} ${item.text}`}
+ *           title={`Page ${item.page} Item ${item.index}`}
+ *           subtitle={item.text}
+ *         />
+ *       ))}
+ *     </List>
+ *   );
+ * }
+ * ```
+ */
+export function useCachedPromise<T extends FunctionReturningPaginatedPromise<[]>>(
+  fn: T,
+): UseCachedPromiseReturnType<UnwrapReturn<T>, undefined>;
+export function useCachedPromise<T extends FunctionReturningPaginatedPromise, U extends any[] = any[]>(
+  fn: T,
+  args: Parameters<T>,
+  options?: CachedPromiseOptions<T, U>,
+): UseCachedPromiseReturnType<UnwrapReturn<T>, U>;
 
 /**
  * Wraps an asynchronous function or a function that returns a Promise and returns the {@link AsyncState} corresponding to the execution of the function. The last value will be kept between command runs.
@@ -60,22 +122,35 @@ export type CachedPromiseOptions<T extends FunctionReturningPromise, U> = Promis
  */
 export function useCachedPromise<T extends FunctionReturningPromise<[]>>(
   fn: T,
-): UseCachedPromiseReturnType<Awaited<ReturnType<T>>, undefined>;
+): UseCachedPromiseReturnType<UnwrapReturn<T>, undefined>;
 export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
   fn: T,
   args: Parameters<T>,
   options?: CachedPromiseOptions<T, U>,
-): UseCachedPromiseReturnType<Awaited<ReturnType<T>>, U>;
-export function useCachedPromise<T extends FunctionReturningPromise, U = undefined>(
-  fn: T,
-  args?: Parameters<T>,
-  options?: CachedPromiseOptions<T, U>,
-) {
-  const { initialData, keepPreviousData, ...usePromiseOptions } = options || {};
+): UseCachedPromiseReturnType<UnwrapReturn<T>, U>;
+
+export function useCachedPromise<
+  T extends FunctionReturningPromise | FunctionReturningPaginatedPromise,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  U extends any[] | undefined = undefined,
+>(fn: T, args?: Parameters<T>, options?: CachedPromiseOptions<T, U>) {
+  /**
+   * The hook generates a cache key from the promise it receives & its arguments.
+   * Sometimes that's not enough to guarantee uniqueness, so hooks that build on top of `useCachedPromise` can
+   * use an `internal_cacheKeySuffix` to help it.
+   *
+   * @remark For internal use only.
+   */
+  const {
+    initialData,
+    keepPreviousData,
+    internal_cacheKeySuffix,
+    ...usePromiseOptions
+  }: CachedPromiseOptions<T, U> & { internal_cacheKeySuffix?: string } = options || {};
   const lastUpdateFrom = useRef<"cache" | "promise">();
 
-  const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (Awaited<ReturnType<T>> | U)>(
-    hash(args || []),
+  const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (UnwrapReturn<T> | U)>(
+    hash(args || []) + internal_cacheKeySuffix ?? "",
     emptyCache,
     {
       cacheNamespace: hash(fn),
@@ -84,39 +159,60 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
 
   // Use a ref to store previous returned data. Use the inital data as its inital value from the cache.
   const laggyDataRef = useRef<Awaited<ReturnType<T>> | U>(cachedData !== emptyCache ? cachedData : (initialData as U));
+  const paginationArgsRef = useRef<PaginationOptions<UnwrapReturn<T> | U> | undefined>(undefined);
 
   const {
     mutate: _mutate,
     revalidate,
     ...state
+    // @ts-expect-error fn has the same signature in both usePromise and useCachedPromise
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } = usePromise(fn, args || ([] as any as Parameters<T>), {
     ...usePromiseOptions,
-    onData(data) {
+    onData(data, pagination) {
+      paginationArgsRef.current = pagination;
       if (usePromiseOptions.onData) {
-        usePromiseOptions.onData(data);
+        usePromiseOptions.onData(data, pagination);
       }
-      // update the cache when we fetch new values
+      if (pagination && pagination.page > 0) {
+        // don't cache beyond the first page
+        return;
+      }
       lastUpdateFrom.current = "promise";
       laggyDataRef.current = data;
       mutateCache(data);
     },
   });
 
-  // data returned if there are no special cases
-  const data = cachedData !== emptyCache ? cachedData : (initialData as U);
-
-  const returnedData =
+  let returnedData: U | Awaited<ReturnType<T>> | UnwrapReturn<T>;
+  const pagination = state.pagination;
+  // when paginating, only the first page gets cached, so we return the data we get from `usePromise`, because
+  // it will be accumulated.
+  if (paginationArgsRef.current && paginationArgsRef.current.page > 0 && state.data) {
+    returnedData = state.data as UnwrapReturn<T>;
     // if the latest update if from the Promise, we keep it
-    lastUpdateFrom.current === "promise"
-      ? laggyDataRef.current
-      : // if we want to keep the latest data, we pick the cache but only if it's not empty
-      keepPreviousData
-      ? cachedData !== emptyCache
-        ? cachedData
-        : // if the cache is empty, we will return the previous data
-          laggyDataRef.current
-      : data;
+  } else if (lastUpdateFrom.current === "promise") {
+    returnedData = laggyDataRef.current;
+  } else if (keepPreviousData && cachedData !== emptyCache) {
+    // if we want to keep the latest data, we pick the cache but only if it's not empty
+    returnedData = cachedData;
+    if (pagination) {
+      pagination.hasMore = true;
+      pagination.pageSize = cachedData.length;
+    }
+  } else if (keepPreviousData && cachedData === emptyCache) {
+    // if the cache is empty, we will return the previous data
+    returnedData = laggyDataRef.current;
+    // there are no special cases, so either return the cache or initial data
+  } else if (cachedData !== emptyCache) {
+    returnedData = cachedData;
+    if (pagination) {
+      pagination.hasMore = true;
+      pagination.pageSize = cachedData.length;
+    }
+  } else {
+    returnedData = initialData as U;
+  }
 
   const latestData = useLatest(returnedData);
 
@@ -168,6 +264,7 @@ export function useCachedPromise<T extends FunctionReturningPromise, U = undefin
     isLoading: state.isLoading,
     error: state.error,
     mutate,
+    pagination,
     revalidate,
   };
 }

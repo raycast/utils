@@ -1,4 +1,25 @@
-export type FunctionReturningPromise<T extends any[] = any[]> = (...args: T) => Promise<any>;
+export type PaginationOptions<T = any> = {
+  /**
+   * Specifies the current page index. Zero-based.
+   */
+  page: number;
+  /**
+   * The last item from the previous page of results, useful for APIs implementing cursor-based pagination.
+   */
+  lastItem?: Flatten<T>;
+};
+export type FunctionReturningPromise<T extends any[] = any[], U = any> = (...args: T) => Promise<U>;
+export type FunctionReturningPaginatedPromise<T extends any[] = any[], U extends any[] = any[]> = (
+  ...args: T
+) => (pagination: PaginationOptions<U>) => Promise<{ data: U; hasMore?: boolean }>;
+export type UnwrapReturn<T extends FunctionReturningPromise | FunctionReturningPaginatedPromise> =
+  T extends FunctionReturningPromise
+    ? Awaited<ReturnType<T>>
+    : T extends FunctionReturningPaginatedPromise
+    ? // @ts-expect-error data
+      Awaited<ReturnType<ReturnType<T>>>["data"]
+    : never;
+export type Flatten<T> = T extends Array<infer U> ? U : T;
 
 export type AsyncState<T> =
   | {
@@ -54,6 +75,10 @@ export type MutatePromise<T, U = T, V = any> = (
 
 export type UsePromiseReturnType<T> = AsyncState<T> & {
   /**
+   * Pagination information that can be passed to `List` or `Grid`.
+   */
+  pagination?: { pageSize: number; hasMore: boolean; onLoadMore: () => void };
+  /**
    * Function to manually call the function again
    */
   revalidate: () => Promise<T>;
@@ -82,6 +107,10 @@ export type UsePromiseReturnType<T> = AsyncState<T> & {
 };
 
 export type UseCachedPromiseReturnType<T, U> = AsyncState<T> & {
+  /**
+   * Pagination information that can be passed to `List` or `Grid`.
+   */
+  pagination?: { pageSize: number; hasMore: boolean; onLoadMore: () => void };
   // we override the type of the data because it won't be `undefined` (except when the initial state is `undefined`)
   data: T | U;
   /**
