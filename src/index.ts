@@ -3,6 +3,7 @@ export * from "./useCachedState";
 export * from "./useCachedPromise";
 export * from "./useFetch";
 export * from "./useExec";
+export * from "./useJSON";
 export * from "./useSQL";
 export * from "./useForm";
 export * from "./useAI";
