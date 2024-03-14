@@ -181,13 +181,6 @@
     },
     {
       "name": "json",
-      "title": "useJSON",
-      "subtitle": "Utils Smoke Tests",
-      "description": "Utils Smoke Tests",
-      "mode": "view"
-    },
-    {
-      "name": "json-paginated",
       "title": "useJSON - paginated",
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
