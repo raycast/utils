@@ -6,7 +6,7 @@ import { setTimeout } from "timers/promises";
 export default function Command() {
   const [searchText, setSearchText] = useState<string>("");
 
-  const { isLoading, data, pagination, revalidate } = useCachedPromise(
+  const { isLoading, data, mutate, pagination, revalidate } = useCachedPromise(
     (text: string) => async (options) => {
       await setTimeout(500);
       const data = items(text, options.page);
@@ -20,18 +20,27 @@ export default function Command() {
   );
 
   return (
-    <List
-      isLoading={isLoading}
-      onSearchTextChange={setSearchText}
-      pagination={pagination}
-      actions={
-        <ActionPanel>
-          <Action title="Reload" onAction={() => revalidate()} />
-        </ActionPanel>
-      }
-    >
+    <List isLoading={isLoading} onSearchTextChange={setSearchText} pagination={pagination}>
       {data.map((item) => (
-        <List.Item key={item} title={item} />
+        <List.Item
+          key={item}
+          title={item}
+          actions={
+            <ActionPanel>
+              <Action title="Reload" onAction={() => revalidate()} />
+              <Action
+                title="Delete All Items But This One"
+                onAction={async () => {
+                  mutate(setTimeout(1000), {
+                    optimisticUpdate: () => {
+                      return [item];
+                    },
+                  });
+                }}
+              />
+            </ActionPanel>
+          }
+        />
       ))}
     </List>
   );

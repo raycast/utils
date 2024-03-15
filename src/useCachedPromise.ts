@@ -263,7 +263,7 @@ export function useCachedPromise<
     data: returnedData,
     isLoading: state.isLoading,
     error: state.error,
-    mutate,
+    mutate: paginationArgsRef.current && paginationArgsRef.current.page > 0 ? _mutate : mutate,
     pagination,
     revalidate,
   };
