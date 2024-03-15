@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v1.13.6
+
+- Add `useJSON` hook.
+
 ### v1.13.5
 
 - Extended `PaginationOptions` with `cursor`.
