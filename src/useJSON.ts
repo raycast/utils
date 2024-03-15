@@ -12,9 +12,9 @@ import { isJSON } from "./fetch-utils";
 import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
 import { FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
 
-async function cache(url: string, destination: string) {
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return await cacheURL(url, destination);
+async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
+  if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
+    return await cacheURL(url, destination, fetchOptions);
   } else if (url.startsWith("file://") && url.endsWith(".json")) {
     return await cacheFile(normalize(decodeURIComponent(new URL(url).pathname)), destination);
   } else {
@@ -22,8 +22,8 @@ async function cache(url: string, destination: string) {
   }
 }
 
-async function cacheURL(url: string, destination: string) {
-  const response = await fetch(url);
+async function cacheURL(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
+  const response = await fetch(url, fetchOptions);
 
   if (!response.ok) {
     throw new Error("Failed to fetch URL");
@@ -42,14 +42,14 @@ async function cacheFile(source: string, destination: string) {
   await pipeline(createReadStream(source), createWriteStream(destination));
 }
 
-async function cacheURLIfNecessary(url: string, folder: string, fileName: string) {
+async function cacheURLIfNecessary(url: RequestInfo, folder: string, fileName: string, fetchOptions?: RequestInit) {
   const destination = join(folder, fileName);
 
   try {
     await stat(folder);
   } catch (e) {
     mkdirSync(folder, { recursive: true });
-    await cache(url, destination);
+    await cache(url, destination, fetchOptions);
     return;
   }
 
@@ -57,12 +57,12 @@ async function cacheURLIfNecessary(url: string, folder: string, fileName: string
   try {
     stats = await stat(destination);
   } catch (e) {
-    await cache(url, destination);
+    await cache(url, destination, fetchOptions);
     return;
   }
 
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    const headResponse = await fetch(url, { method: "HEAD" });
+  if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
+    const headResponse = await fetch(url, { ...fetchOptions, method: "HEAD" });
     if (!headResponse.ok) {
       throw new Error("Could not fetch URL");
     }
@@ -73,14 +73,14 @@ async function cacheURLIfNecessary(url: string, folder: string, fileName: string
 
     const lastModified = Date.parse(headResponse.headers.get("last-modified") ?? "");
     if (stats.size === 0 || isNaN(lastModified) || lastModified > stats.mtimeMs) {
-      await cache(url, destination);
+      await cache(url, destination, fetchOptions);
       return;
     }
   } else if (url.startsWith("file://") && url.endsWith(".json")) {
     try {
       const sourceStats = await stat(normalize(decodeURIComponent(new URL(url).pathname)));
       if (sourceStats.mtimeMs > stats.mtimeMs) {
-        await cache(url, destination);
+        await cache(url, destination, fetchOptions);
       }
     } catch (e) {
       throw new Error("Source file could not be read");
@@ -212,7 +212,7 @@ type Options<T> = {
  * }
  * ```
  */
-export function useJSON<T, U = unknown>(url: string): UseCachedPromiseReturnType<T[], U>;
+export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseReturnType<T[], U>;
 
 /**
  * Takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource, caches it to the command's support
@@ -302,33 +302,55 @@ export function useJSON<T, U = unknown>(url: string): UseCachedPromiseReturnType
  * ```
  */
 export function useJSON<T, U extends any[] = any[]>(
-  url: string,
-  options: Options<T> & Omit<CachedPromiseOptions<FunctionReturningPaginatedPromise, U>, "abortable">,
+  url: RequestInfo,
+  options: Options<T> & RequestInit & Omit<CachedPromiseOptions<FunctionReturningPaginatedPromise, U>, "abortable">,
 ): UseCachedPromiseReturnType<T[], U>;
 
 export function useJSON<T, U extends any[] = any[]>(
-  url: string,
-  options?: Options<T> & Omit<CachedPromiseOptions<FunctionReturningPaginatedPromise, U>, "abortable">,
+  url: RequestInfo,
+  options?: Options<T> & RequestInit & Omit<CachedPromiseOptions<FunctionReturningPaginatedPromise, U>, "abortable">,
 ): UseCachedPromiseReturnType<T[], U> {
   const {
+    initialData,
+    execute,
+    keepPreviousData,
+    onError,
+    onData,
+    onWillExecute,
     fileName,
     filter,
     folder = environment.supportPath,
     pageSize = 20,
-    ...useCachedPromiseOptions
+    ...fetchOptions
   } = options ?? {};
+
+  const useCachedPromiseOptions: CachedPromiseOptions<FunctionReturningPaginatedPromise, U> = {
+    initialData,
+    execute,
+    keepPreviousData,
+    onError,
+    onData,
+    onWillExecute,
+  };
 
   const generatorRef = useRef<AsyncGenerator<T[]> | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const hasMoreRef = useRef(false);
 
   return useCachedPromise(
-    (url: string, filter: ((item: T) => boolean) | undefined, pageSize: number, folder: string, fileName: string) =>
-      async ({ page }: { page: number }) => {
+    (
+      url: RequestInfo,
+      pageSize: number,
+      folder: string,
+      fileName: string,
+      fetchOptions: RequestInit | undefined,
+      filter: ((item: T) => boolean) | undefined,
+    ) =>
+      async ({ page }) => {
         if (page === 0) {
           controllerRef.current?.abort();
           controllerRef.current = new AbortController();
-          await cacheURLIfNecessary(url, folder, fileName);
+          await cacheURLIfNecessary(url, folder, fileName, fetchOptions);
           const destination = join(folder, fileName);
           generatorRef.current = streamJsonFile(destination, pageSize, controllerRef.current?.signal, filter);
         }
@@ -339,7 +361,7 @@ export function useJSON<T, U extends any[] = any[]>(
         hasMoreRef.current = !done;
         return { hasMore: hasMoreRef.current, data: (newData ?? []) as T[] };
       },
-    [url, filter, pageSize, folder, `${fileName?.replace(/\.json$/, "") ?? "cache"}.json`],
+    [url, pageSize, folder, `${fileName?.replace(/\.json$/, "") ?? "cache"}.json`, fetchOptions, filter],
     useCachedPromiseOptions,
   );
 }
