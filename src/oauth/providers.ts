@@ -2,15 +2,11 @@ import { Color, OAuth } from "@raycast/api";
 import { OAuthService } from "./OAuthService";
 import { OnAuthorizeParams } from "./withAccessToken";
 
-type ClientOptions = {
-  clientId: string;
-  authorizeUrl: string;
-  tokenUrl: string;
-};
-
 type BaseProviderOptions = {
   scope: string;
   personalAccessToken?: string;
+  authorizeUrl?: string;
+  tokenUrl?: string;
   refreshTokenUrl?: string;
   onAuthorize?: (params: OnAuthorizeParams) => void;
   bodyEncoding?: "json" | "url-encoded";
@@ -18,9 +14,9 @@ type BaseProviderOptions = {
   tokenRefreshResponseParser?: (response: unknown) => OAuth.TokenResponse;
 };
 
-export type ProviderWithDefaultClientOptions = BaseProviderOptions & Partial<ClientOptions>;
+export type ProviderWithDefaultClientOptions = BaseProviderOptions & { clientId?: string };
 
-export type ProviderOptions = BaseProviderOptions & ClientOptions;
+export type ProviderOptions = BaseProviderOptions & { clientId: string };
 
 const PROVIDERS_CONFIG = {
   asana: {
@@ -104,8 +100,8 @@ export const googleService = (options: ProviderOptions) =>
       description: "Connect your Google account",
     }),
     clientId: options.clientId,
-    authorizeUrl: options.authorizeUrl,
-    tokenUrl: options.tokenUrl,
+    authorizeUrl: options.authorizeUrl ?? "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: options.tokenUrl ?? "https://oauth2.googleapis.com/token",
     refreshTokenUrl: options.tokenUrl,
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
@@ -125,8 +121,8 @@ export const jiraService = (options: ProviderOptions) =>
       description: "Connect your Jira account",
     }),
     clientId: options.clientId,
-    authorizeUrl: options.authorizeUrl,
-    tokenUrl: options.tokenUrl,
+    authorizeUrl: options.authorizeUrl ?? "https://auth.atlassian.com/authorize",
+    tokenUrl: options.tokenUrl ?? "https://auth.atlassian.com/oauth/token",
     refreshTokenUrl: options.refreshTokenUrl,
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
@@ -181,12 +177,14 @@ export const slackService = (options: ProviderWithDefaultClientOptions) =>
     onAuthorize: options.onAuthorize,
     tokenRefreshResponseParser: options.tokenRefreshResponseParser,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tokenResponseParser: options.tokenResponseParser ?? ((response: any) => {
-      return {
-        access_token: response.authed_user.access_token,
-        scope: response.authed_user.scope,
-      }
-    })
+    tokenResponseParser:
+      options.tokenResponseParser ??
+      ((response: any) => {
+        return {
+          access_token: response.authed_user.access_token,
+          scope: response.authed_user.scope,
+        };
+      }),
   });
 
 export const zoomService = (options: ProviderOptions) =>
@@ -199,8 +197,8 @@ export const zoomService = (options: ProviderOptions) =>
       description: "Connect your Zoom account",
     }),
     clientId: options.clientId,
-    authorizeUrl: options.authorizeUrl,
-    tokenUrl: options.tokenUrl,
+    authorizeUrl: options.authorizeUrl ?? "https://zoom.us/oauth/authorize",
+    tokenUrl: options.tokenUrl ?? "https://zoom.us/oauth/token",
     refreshTokenUrl: options.refreshTokenUrl,
     scope: options.scope,
     personalAccessToken: options.personalAccessToken,
