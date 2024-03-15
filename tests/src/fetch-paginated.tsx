@@ -1,6 +1,7 @@
 import { ActionPanel, Action, Icon, Image, List, Grid } from "@raycast/api";
 import { useFetch } from "@raycast/utils";
 import { useState } from "react";
+import { setTimeout } from "timers/promises";
 
 type SearchResult = {
   companies: Company[];
@@ -39,7 +40,7 @@ function getSearchParams(searchText: string, page: number) {
 export default function Command() {
   const [searchText, setSearchText] = useState("");
 
-  const { isLoading, pagination, data, revalidate } = useFetch(
+  const { isLoading, pagination, data, mutate, revalidate } = useFetch(
     (pagination) =>
       "https://api.ycombinator.com/v0.1/companies?" + getSearchParams(searchText, pagination.page + 1).toString(),
     {
@@ -64,6 +65,16 @@ export default function Command() {
           actions={
             <ActionPanel title={company.name}>
               <Action title="Reload" onAction={() => revalidate()} />
+              <Action
+                title="Delete All Items But This One"
+                onAction={async () => {
+                  mutate(setTimeout(1000), {
+                    optimisticUpdate: () => {
+                      return [company];
+                    },
+                  });
+                }}
+              />
             </ActionPanel>
           }
         />
