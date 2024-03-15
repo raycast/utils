@@ -1,7 +1,8 @@
-import { List, environment } from "@raycast/api";
+import { Action, ActionPanel, List, environment } from "@raycast/api";
 import { useCachedState, useJSON } from "@raycast/utils";
 import { join } from "path";
 import { useCallback, useState } from "react";
+import { setTimeout } from "timers/promises";
 
 type Formula = { name: string; desc?: string };
 
@@ -29,6 +30,7 @@ export default function Main(): JSX.Element {
 
   const {
     data: formulae,
+    mutate: mutateFormulae,
     isLoading: isLoadingFormulae,
     pagination: formulaPagination,
   } = useJSON("https://formulae.brew.sh/api/formula.json", {
@@ -42,6 +44,7 @@ export default function Main(): JSX.Element {
 
   const {
     data: casks,
+    mutate: mutateCasks,
     isLoading: isLoadingCasks,
     pagination: caskPagination,
   } = useJSON("https://formulae.brew.sh/api/cask.json", {
@@ -74,13 +77,53 @@ export default function Main(): JSX.Element {
       {type === "cask" ? (
         <List.Section title="Casks">
           {casks?.map((d) => {
-            return <List.Item key={d.token} title={d.name[0] ?? "Unknown"} subtitle={d.desc} />;
+            return (
+              <List.Item
+                key={d.token}
+                title={d.name[0] ?? "Unknown"}
+                subtitle={d.desc}
+                actions={
+                  <ActionPanel>
+                    <Action
+                      title="Delete All Items But This One"
+                      onAction={async () => {
+                        mutateCasks(setTimeout(5000), {
+                          optimisticUpdate: () => {
+                            return [d];
+                          },
+                        });
+                      }}
+                    />
+                  </ActionPanel>
+                }
+              />
+            );
           })}
         </List.Section>
       ) : (
         <List.Section title="Formulae">
           {formulae?.map((d) => {
-            return <List.Item key={d.name} title={d.name} subtitle={d.desc} />;
+            return (
+              <List.Item
+                key={d.name}
+                title={d.name}
+                subtitle={d.desc}
+                actions={
+                  <ActionPanel>
+                    <Action
+                      title="Delete All Items But This One"
+                      onAction={async () => {
+                        mutateFormulae(setTimeout(5000), {
+                          optimisticUpdate: () => {
+                            return [d];
+                          },
+                        });
+                      }}
+                    />
+                  </ActionPanel>
+                }
+              />
+            );
           })}
         </List.Section>
       )}

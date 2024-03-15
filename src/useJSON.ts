@@ -154,6 +154,8 @@ type Options<T> = {
   /**
    * A function to decide whether a particular item should be kept or not.
    * Defaults to `undefined`.
+   *
+   * @remark The hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
    */
   filter?: (item: T) => boolean;
   /**
@@ -225,6 +227,7 @@ export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseRetur
  * ```
  * import { List, environment } from "@raycast/api";
  * import { useJSON } from "@raycast/utils";
+ * import { join } from 'path';
  * import { useCallback, useState } from "react";
  *
  * type Formula = { name: string; desc?: string };
