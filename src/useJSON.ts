@@ -107,6 +107,7 @@ async function* streamJsonFile<T>(
   pageSize: number,
   abortSignal?: AbortSignal,
   filterFn?: (item: T) => boolean,
+  transformFn?: (item: any) => T,
 ): AsyncGenerator<T[]> {
   let page: T[] = [];
   const fileStream = createReadStream(filePath);
@@ -134,8 +135,9 @@ async function* streamJsonFile<T>(
         return [];
       }
 
-      if (!filterFn || filterFn(data.value)) {
-        page.push(data.value);
+      const value = transformFn?.(data.value) ?? data.value;
+      if (!filterFn || filterFn(value)) {
+        page.push(value);
       }
       if (page.length >= pageSize) {
         yield page;
@@ -166,11 +168,18 @@ type Options<T> = {
   folder?: string;
   /**
    * A function to decide whether a particular item should be kept or not.
-   * Defaults to `undefined`.
+   * Defaults to `undefined`, keeping any encountered item.
    *
    * @remark The hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
    */
   filter?: (item: T) => boolean;
+  /**
+   * A function to apply to each item before passing it to `filter`. Useful for ensuring that all items have the expected properties, and, as on optimization, for getting rid of the properties that you don't care about.
+   * Defaults to a passthrough function if not provided.
+   *
+   * @remark The hook will revalidate every time the transform function changes, so it is important to use [useCallback](https://react.dev/reference/react/useCallback) to ensure it only changes when necessary to prevent unnecessary re-renders or computations.
+   */
+  transform?: (item: any) => T;
   /**
    * The amount of items to return for each page.
    * Defaults to `20`.
@@ -256,12 +265,17 @@ export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseRetur
  *     [searchText],
  *   );
  *
+ *   const formulaTransform = useCallback((item: any): Formula => {
+ *     return { name: item.name, desc: item.desc };
+ *   }, []);
+ *
  *   const { data, isLoading, pagination } = useJSON("https://formulae.brew.sh/api/formula.json", {
  *     initialData: [] as Formula[],
  *     pageSize: 20,
  *     folder: join(environment.supportPath, "cache"),
  *     fileName: "formulae",
  *     filter: formulaFilter,
+ *     transform: formulaTransform,
  *   });
  *
  *   return (
@@ -297,12 +311,17 @@ export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseRetur
  *     [searchText],
  *   );
  *
+ *   const formulaTransform = useCallback((item: any): Formula => {
+ *     return { name: item.name, desc: item.desc };
+ *   }, []);
+ *
  *   const { data, isLoading, pagination } = useJSON(`file:///${join(homedir(), "Downloads", "formulae.json")}`, {
  *     initialData: [] as Formula[],
  *     pageSize: 20,
  *     folder: join(environment.supportPath, "cache"),
  *     fileName: "formulae",
  *     filter: formulaFilter,
+ *     transform: formulaTransform,
  *   });
  *
  *   return (
@@ -335,6 +354,7 @@ export function useJSON<T, U extends any[] = any[]>(
     onWillExecute,
     fileName,
     filter,
+    transform,
     folder = environment.supportPath,
     pageSize = 20,
     ...fetchOptions
@@ -361,6 +381,7 @@ export function useJSON<T, U extends any[] = any[]>(
       fileName: string,
       fetchOptions: RequestInit | undefined,
       filter: ((item: T) => boolean) | undefined,
+      transform: ((item: any) => T) | undefined,
     ) =>
       async ({ page }) => {
         if (page === 0) {
@@ -368,7 +389,13 @@ export function useJSON<T, U extends any[] = any[]>(
           controllerRef.current = new AbortController();
           await cacheURLIfNecessary(url, folder, fileName, { ...fetchOptions, signal: controllerRef.current?.signal });
           const destination = join(folder, fileName);
-          generatorRef.current = streamJsonFile(destination, pageSize, controllerRef.current?.signal, filter);
+          generatorRef.current = streamJsonFile(
+            destination,
+            pageSize,
+            controllerRef.current?.signal,
+            filter,
+            transform,
+          );
         }
         if (!generatorRef.current) {
           return { hasMore: hasMoreRef.current, data: [] };
@@ -377,7 +404,7 @@ export function useJSON<T, U extends any[] = any[]>(
         hasMoreRef.current = !done;
         return { hasMore: hasMoreRef.current, data: (newData ?? []) as T[] };
       },
-    [url, pageSize, folder, `${fileName?.replace(/\.json$/, "") ?? "cache"}.json`, fetchOptions, filter],
+    [url, pageSize, folder, `${fileName?.replace(/\.json$/, "") ?? "cache"}.json`, fetchOptions, filter, transform],
     useCachedPromiseOptions,
   );
 }

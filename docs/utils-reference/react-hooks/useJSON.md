@@ -11,6 +11,7 @@ export function useJSON<T, U>(
     fileName?: string;
     folder?: string;
     filter?: (item: T) => boolean;
+    transform?: (item: any) => T;
     pageSize?: number;
     initialData?: U;
     keepPreviousData?: boolean;
@@ -34,6 +35,7 @@ With a few options:
 - `options.fileName` is the name of the file where the JSON content will be cached. By default, `cache.json` will be used.
 - `options.folder` the folder where to cache the JSON. By default, `environment.supportPath` will be used.
 - `options.pageSize` the amount of items to fetch at a time. By default, 20 will be used
+- `options.transform` is a function called with each object encountered while streaming. The result of this function is what will be passed to `options.filter`. Note that the hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
 - `options.filter` is a function called with each object encountered while streaming. If it returns `true`, the object will be kept, otherwise it will be discarded. Note that the hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
 
 Including the [useCachedPromise](./useCachedPromise.md)'s options:
@@ -81,12 +83,17 @@ export default function Main(): JSX.Element {
     [searchText],
   );
 
+  const formulaTransform = useCallback((item: any): Formula => {
+    return { name: item.name, desc: item.desc };
+  }, []);
+
   const { data, isLoading, pagination } = useJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
     folder: join(environment.supportPath, "cache"),
     fileName: "formulae",
     filter: formulaFilter,
+    transform: formulaTransform
   });
 
   return (
@@ -129,12 +136,17 @@ export default function Main(): JSX.Element {
     [searchText],
   );
 
+  const formulaTransform = useCallback((item: any): Formula => {
+    return { name: item.name, desc: item.desc };
+  }, []);
+
   const { data, isLoading, mutate, pagination } = useJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
     folder: join(environment.supportPath, "cache"),
     fileName: "formulae",
     filter: formulaFilter,
+    transform: formulaTransform,
   });
 
   return (
