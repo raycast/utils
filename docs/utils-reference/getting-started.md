@@ -18,7 +18,7 @@ npm install --save @raycast/utils
 
 ### v1.13.6
 
-- Add `useJSON` hook.
+- Add `useStreamJSON` hook.
 
 ### v1.13.5
 

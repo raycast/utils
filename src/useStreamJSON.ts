@@ -197,12 +197,12 @@ type Options<T> = {
  * @example
  * ```
  * import { List } from "@raycast/api";
- * import { useJSON } from "@raycast/utils";
+ * import { useStreamJSON } from "@raycast/utils";
  *
  * type Formula = { name: string; desc?: string };
  *
  * export default function Main(): JSX.Element {
- *   const { data, isLoading, pagination } = useJSON<Formula>("https://formulae.brew.sh/api/formula.json");
+ *   const { data, isLoading, pagination } = useStreamJSON<Formula>("https://formulae.brew.sh/api/formula.json");
  *
  *   return (
  *     <List isLoading={isLoading} pagination={pagination}>
@@ -217,14 +217,14 @@ type Options<T> = {
  * @example
  * ```
  * import { List } from "@raycast/api";
- * import { useJSON } from "@raycast/utils";
+ * import { useStreamJSON } from "@raycast/utils";
  * import { homedir } from "os";
  * import { join } from "path";
  *
  * type Formula = { name: string; desc?: string };
  *
  * export default function Main(): JSX.Element {
- *   const { data, isLoading, pagination } = useJSON<Formula>(`file:///${join(homedir(), "Downloads", "formulae.json")}`);
+ *   const { data, isLoading, pagination } = useStreamJSON<Formula>(`file:///${join(homedir(), "Downloads", "formulae.json")}`);
  *
  *   return (
  *     <List isLoading={isLoading} pagination={pagination}>
@@ -236,7 +236,7 @@ type Options<T> = {
  * }
  * ```
  */
-export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseReturnType<T[], U>;
+export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseReturnType<T[], U>;
 
 /**
  * Takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource, caches it to the command's support
@@ -248,7 +248,7 @@ export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseRetur
  * @example
  * ```
  * import { List, environment } from "@raycast/api";
- * import { useJSON } from "@raycast/utils";
+ * import { useStreamJSON } from "@raycast/utils";
  * import { join } from 'path';
  * import { useCallback, useState } from "react";
  *
@@ -269,7 +269,7 @@ export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseRetur
  *     return { name: item.name, desc: item.desc };
  *   }, []);
  *
- *   const { data, isLoading, pagination } = useJSON("https://formulae.brew.sh/api/formula.json", {
+ *   const { data, isLoading, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
  *     initialData: [] as Formula[],
  *     pageSize: 20,
  *     folder: join(environment.supportPath, "cache"),
@@ -293,7 +293,7 @@ export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseRetur
  * @example
  * ```
  * import { List, environment } from "@raycast/api";
- * import { useJSON } from "@raycast/utils";
+ * import { useStreamJSON } from "@raycast/utils";
  * import { join } from "path";
  * import { homedir } from "os";
  * import { useCallback, useState } from "react";
@@ -315,7 +315,7 @@ export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseRetur
  *     return { name: item.name, desc: item.desc };
  *   }, []);
  *
- *   const { data, isLoading, pagination } = useJSON(`file:///${join(homedir(), "Downloads", "formulae.json")}`, {
+ *   const { data, isLoading, pagination } = useStreamJSON(`file:///${join(homedir(), "Downloads", "formulae.json")}`, {
  *     initialData: [] as Formula[],
  *     pageSize: 20,
  *     folder: join(environment.supportPath, "cache"),
@@ -336,12 +336,12 @@ export function useJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseRetur
  * }
  * ```
  */
-export function useJSON<T, U extends any[] = any[]>(
+export function useStreamJSON<T, U extends any[] = any[]>(
   url: RequestInfo,
   options: Options<T> & RequestInit & Omit<CachedPromiseOptions<FunctionReturningPaginatedPromise, U>, "abortable">,
 ): UseCachedPromiseReturnType<T[], U>;
 
-export function useJSON<T, U extends any[] = any[]>(
+export function useStreamJSON<T, U extends any[] = any[]>(
   url: RequestInfo,
   options?: Options<T> & RequestInit & Omit<CachedPromiseOptions<FunctionReturningPaginatedPromise, U>, "abortable">,
 ): UseCachedPromiseReturnType<T[], U> {

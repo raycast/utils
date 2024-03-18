@@ -1,5 +1,5 @@
 import { Action, ActionPanel, List, environment } from "@raycast/api";
-import { useCachedState, useJSON } from "@raycast/utils";
+import { useCachedState, useStreamJSON } from "@raycast/utils";
 import { join } from "path";
 import { useCallback, useState } from "react";
 import { setTimeout } from "timers/promises";
@@ -41,7 +41,7 @@ export default function Main(): JSX.Element {
     mutate: mutateFormulae,
     isLoading: isLoadingFormulae,
     pagination: formulaPagination,
-  } = useJSON("https://formulae.brew.sh/api/formula.json", {
+  } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
     folder: join(environment.supportPath, "cache"),
@@ -56,7 +56,7 @@ export default function Main(): JSX.Element {
     mutate: mutateCasks,
     isLoading: isLoadingCasks,
     pagination: caskPagination,
-  } = useJSON("https://formulae.brew.sh/api/cask.json", {
+  } = useStreamJSON("https://formulae.brew.sh/api/cask.json", {
     initialData: [] as Cask[],
     folder: join(environment.supportPath, "cache"),
     pageSize: 20,
