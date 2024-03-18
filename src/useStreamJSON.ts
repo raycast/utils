@@ -7,10 +7,11 @@ import { pipeline } from "node:stream/promises";
 import { useRef } from "react";
 import Chain from "stream-chain";
 import { parser } from "stream-json";
+import Pick from "stream-json/filters/Pick";
 import StreamArray from "stream-json/streamers/StreamArray";
 import { isJSON } from "./fetch-utils";
-import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
 import { FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
+import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
 
 async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
@@ -106,25 +107,18 @@ async function* streamJsonFile<T>(
   filePath: string,
   pageSize: number,
   abortSignal?: AbortSignal,
+  dataPath?: string,
   filterFn?: (item: T) => boolean,
   transformFn?: (item: any) => T,
 ): AsyncGenerator<T[]> {
   let page: T[] = [];
-  const fileStream = createReadStream(filePath);
-  const jsonParser = parser();
-  const arrayParser = new StreamArray();
 
-  const pipeline = new Chain([fileStream, jsonParser, arrayParser]);
+  const pipeline = new Chain([
+    createReadStream(filePath),
+    dataPath ? Pick.withParser({ filter: dataPath }) : parser(),
+    new StreamArray(),
+  ]);
 
-  fileStream.on("error", (_error) => {
-    pipeline.destroy();
-  });
-  jsonParser.on("error", (_error) => {
-    pipeline.destroy();
-  });
-  arrayParser.on("error", (_error) => {
-    pipeline.destroy();
-  });
   abortSignal?.addEventListener("abort", () => {
     pipeline.destroy();
   });
@@ -144,13 +138,16 @@ async function* streamJsonFile<T>(
         page = [];
       }
     }
-    if (page.length > 0) {
-      yield page;
-    }
   } catch (e) {
     pipeline.destroy();
     return [];
   }
+
+  if (page.length > 0) {
+    yield page;
+  }
+
+  return [];
 }
 
 type Options<T> = {
@@ -166,6 +163,14 @@ type Options<T> = {
    * @remark If the folder doesn't exist, the hook will try to create it, and any intermediate folders.
    */
   folder?: string;
+  /**
+   * The hook expects to iterate through an array of data, so by default, it assumes the JSON it receives itself represents an array. However, sometimes the array of data is wrapped in an object,
+   * i.e. `{ "success": true, "data": […] }`, or even `{ "success": true, "results": { "data": […] } }`. In those cases, you can use `dataPath` to specify where the data array can be found.
+   *
+   * @example For `{ "success": true, "data": […] }`, dataPath would be `data`
+   * @example For `{ "success": true, "results": { "data": […] } }`, dataPath would be `results.data`
+   */
+  dataPath?: string;
   /**
    * A function to decide whether a particular item should be kept or not.
    * Defaults to `undefined`, keeping any encountered item.
@@ -353,6 +358,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     onData,
     onWillExecute,
     fileName,
+    dataPath,
     filter,
     transform,
     folder = environment.supportPath,
@@ -380,8 +386,9 @@ export function useStreamJSON<T, U extends any[] = any[]>(
       folder: string,
       fileName: string,
       fetchOptions: RequestInit | undefined,
+      dataPath: string | undefined,
       filter: ((item: T) => boolean) | undefined,
-      transform: ((item: any) => T) | undefined,
+      transform: ((item: unknown) => T) | undefined,
     ) =>
       async ({ page }) => {
         if (page === 0) {
@@ -393,6 +400,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
             destination,
             pageSize,
             controllerRef.current?.signal,
+            dataPath,
             filter,
             transform,
           );
@@ -404,7 +412,16 @@ export function useStreamJSON<T, U extends any[] = any[]>(
         hasMoreRef.current = !done;
         return { hasMore: hasMoreRef.current, data: (newData ?? []) as T[] };
       },
-    [url, pageSize, folder, `${fileName?.replace(/\.json$/, "") ?? "cache"}.json`, fetchOptions, filter, transform],
+    [
+      url,
+      pageSize,
+      folder,
+      `${fileName?.replace(/\.json$/, "") ?? "cache"}.json`,
+      fetchOptions,
+      dataPath,
+      filter,
+      transform,
+    ],
     useCachedPromiseOptions,
   );
 }
