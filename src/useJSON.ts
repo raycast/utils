@@ -16,7 +16,11 @@ async function cache(url: RequestInfo, destination: string, fetchOptions?: Reque
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
     return await cacheURL(url, destination, fetchOptions);
   } else if (url.startsWith("file://") && url.endsWith(".json")) {
-    return await cacheFile(normalize(decodeURIComponent(new URL(url).pathname)), destination);
+    return await cacheFile(
+      normalize(decodeURIComponent(new URL(url).pathname)),
+      destination,
+      fetchOptions?.signal ? fetchOptions.signal : undefined,
+    );
   } else {
     throw new Error("Only HTTP(S) or file URLs with the 'json' extension  are supported");
   }
@@ -35,11 +39,19 @@ async function cacheURL(url: RequestInfo, destination: string, fetchOptions?: Re
   if (!response.body) {
     throw new Error("Failed to retrieve expected JSON content: Response body is missing or inaccessible.");
   }
-  await pipeline(response.body as unknown as NodeJS.ReadableStream, createWriteStream(destination));
+  await pipeline(
+    response.body as unknown as NodeJS.ReadableStream,
+    createWriteStream(destination),
+    fetchOptions?.signal ? { signal: fetchOptions.signal } : undefined,
+  );
 }
 
-async function cacheFile(source: string, destination: string) {
-  await pipeline(createReadStream(source), createWriteStream(destination));
+async function cacheFile(source: string, destination: string, abortSignal?: AbortSignal) {
+  await pipeline(
+    createReadStream(source),
+    createWriteStream(destination),
+    abortSignal ? { signal: abortSignal } : undefined,
+  );
 }
 
 async function cacheURLIfNecessary(url: RequestInfo, folder: string, fileName: string, fetchOptions?: RequestInit) {
@@ -119,7 +131,7 @@ async function* streamJsonFile<T>(
   try {
     for await (const data of pipeline) {
       if (abortSignal?.aborted) {
-        break;
+        return [];
       }
 
       if (!filterFn || filterFn(data.value)) {
@@ -135,6 +147,7 @@ async function* streamJsonFile<T>(
     }
   } catch (e) {
     pipeline.destroy();
+    return [];
   }
 }
 
@@ -353,7 +366,7 @@ export function useJSON<T, U extends any[] = any[]>(
         if (page === 0) {
           controllerRef.current?.abort();
           controllerRef.current = new AbortController();
-          await cacheURLIfNecessary(url, folder, fileName, fetchOptions);
+          await cacheURLIfNecessary(url, folder, fileName, { ...fetchOptions, signal: controllerRef.current?.signal });
           const destination = join(folder, fileName);
           generatorRef.current = streamJsonFile(destination, pageSize, controllerRef.current?.signal, filter);
         }
