@@ -1,11 +1,11 @@
-# `useJSON`
+# `useStreamJSON`
 
 Hook which takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource, caches it to the command's support folder, and streams through its content. Useful when dealing with large JSON arrays which would be too big to fit in the command's memory.
 
 ## Signature
 
 ```ts
-export function useJSON<T, U>(
+export function useStreamJSON<T, U>(
   url: RequestInfo,
   options: RequestInit & {
     fileName?: string;
@@ -66,7 +66,7 @@ Returns an object with the [AsyncState](#asyncstate) corresponding to the execut
 
 ```ts
 import { Action, ActionPanel, List, environment } from "@raycast/api";
-import { useJSON } from "@raycast/utils";
+import { useStreamJSON } from "@raycast/utils";
 import { join } from "path";
 import { useCallback, useState } from "react";
 
@@ -87,7 +87,7 @@ export default function Main(): JSX.Element {
     return { name: item.name, desc: item.desc };
   }, []);
 
-  const { data, isLoading, pagination } = useJSON("https://formulae.brew.sh/api/formula.json", {
+  const { data, isLoading, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
     folder: join(environment.supportPath, "cache"),
@@ -118,7 +118,7 @@ When doing so, you can specify a `rollbackOnError` function to mutate back the d
 
 ```tsx
 import { Action, ActionPanel, List, environment } from "@raycast/api";
-import { useJSON } from "@raycast/utils";
+import { useStreamJSON } from "@raycast/utils";
 import { join } from "path";
 import { useCallback, useState } from "react";
 import { setTimeout } from "timers/promises";
@@ -140,7 +140,7 @@ export default function Main(): JSX.Element {
     return { name: item.name, desc: item.desc };
   }, []);
 
-  const { data, isLoading, mutate, pagination } = useJSON("https://formulae.brew.sh/api/formula.json", {
+  const { data, isLoading, mutate, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
     folder: join(environment.supportPath, "cache"),
