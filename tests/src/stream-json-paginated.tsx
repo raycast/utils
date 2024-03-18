@@ -10,7 +10,7 @@ type Cask = { token: string; name: string[]; desc?: string };
 
 export default function Main(): JSX.Element {
   const [searchText, setSearchText] = useState("");
-  const [type, setType] = useCachedState<"cask" | "formula">("cask");
+  const [type, setType] = useCachedState<"cask" | "formula" | "nestedData">("cask");
 
   const formulaFilter = useCallback(
     (item: Formula) => {
@@ -22,18 +22,6 @@ export default function Main(): JSX.Element {
 
   const formulaTransform = useCallback((item: any): Formula => {
     return { name: item.name, desc: item.desc };
-  }, []);
-
-  const caskFilter = useCallback(
-    (item: Cask) => {
-      if (!searchText) return true;
-      return item.name.join(",").toLocaleLowerCase().includes(searchText);
-    },
-    [searchText],
-  );
-
-  const caskTransform = useCallback((item: any): Cask => {
-    return { token: item.token, name: item.name, desc: item.desc };
   }, []);
 
   const {
@@ -51,6 +39,18 @@ export default function Main(): JSX.Element {
     execute: type === "formula",
   });
 
+  const caskFilter = useCallback(
+    (item: Cask) => {
+      if (!searchText) return true;
+      return item.name.join(",").toLocaleLowerCase().includes(searchText);
+    },
+    [searchText],
+  );
+
+  const caskTransform = useCallback((item: any): Cask => {
+    return { token: item.token, name: item.name, desc: item.desc };
+  }, []);
+
   const {
     data: casks,
     mutate: mutateCasks,
@@ -66,25 +66,52 @@ export default function Main(): JSX.Element {
     execute: type === "cask",
   });
 
+  const nestedDataFilter = useCallback(
+    (item: string) => {
+      if (!searchText) return true;
+      return item.toLocaleLowerCase().includes(searchText);
+    },
+    [searchText],
+  );
+
+  const nestedDataTransform = useCallback((item: string): string => {
+    return item.toLocaleLowerCase();
+  }, []);
+
+  const {
+    data: nestedData,
+    mutate: mutateNestedData,
+    isLoading: isLoadingDataKey,
+    pagination: nestedDataPagination,
+  } = useStreamJSON(`file:///${join(environment.assetsPath, "stream-json-nested-object.json")}`, {
+    initialData: [] as string[],
+    fileName: "nested-data-cache",
+    dataPath: "nested.data",
+    filter: nestedDataFilter,
+    transform: nestedDataTransform,
+    execute: type === "nestedData",
+  });
+
   return (
     <List
-      isLoading={isLoadingFormulae || isLoadingCasks}
-      pagination={type === "cask" ? caskPagination : formulaPagination}
+      isLoading={isLoadingFormulae || isLoadingCasks || isLoadingDataKey}
+      pagination={type === "cask" ? caskPagination : type === "formula" ? formulaPagination : nestedDataPagination}
       onSearchTextChange={setSearchText}
       searchBarAccessory={
         <List.Dropdown
           value={type}
           tooltip=""
           onChange={(newValue: string) => {
-            setType(newValue as "cask" | "formula");
+            setType(newValue as "cask" | "formula" | "nestedData");
           }}
         >
           <List.Dropdown.Item title="Casks" value="cask" />
           <List.Dropdown.Item title="Formulae" value="formula" />
+          <List.Dropdown.Item title="Nested Data" value="nestedData" />
         </List.Dropdown>
       }
     >
-      {type === "cask" ? (
+      {type === "cask" && (
         <List.Section title="Casks">
           {casks?.map((d) => {
             return (
@@ -110,7 +137,9 @@ export default function Main(): JSX.Element {
             );
           })}
         </List.Section>
-      ) : (
+      )}
+
+      {type === "formula" && (
         <List.Section title="Formulae">
           {formulae?.map((d) => {
             return (
@@ -124,6 +153,33 @@ export default function Main(): JSX.Element {
                       title="Delete All Items But This One"
                       onAction={async () => {
                         mutateFormulae(setTimeout(5000), {
+                          optimisticUpdate: () => {
+                            return [d];
+                          },
+                        });
+                      }}
+                    />
+                  </ActionPanel>
+                }
+              />
+            );
+          })}
+        </List.Section>
+      )}
+
+      {type === "nestedData" && (
+        <List.Section title="Nested Data">
+          {nestedData?.map((d) => {
+            return (
+              <List.Item
+                key={d}
+                title={d}
+                actions={
+                  <ActionPanel>
+                    <Action
+                      title="Delete All Items But This One"
+                      onAction={async () => {
+                        mutateNestedData(setTimeout(5000), {
                           optimisticUpdate: () => {
                             return [d];
                           },

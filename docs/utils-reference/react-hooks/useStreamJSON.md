@@ -35,6 +35,7 @@ With a few options:
 - `options.fileName` is the name of the file where the JSON content will be cached. By default, `cache.json` will be used.
 - `options.folder` the folder where to cache the JSON. By default, `environment.supportPath` will be used.
 - `options.pageSize` the amount of items to fetch at a time. By default, 20 will be used
+- `options.dataPath` is a string informing the hook that the array of data is wrapped inside one or multiple objects, and the path it needs to take to get to it.
 - `options.transform` is a function called with each object encountered while streaming. The result of this function is what will be passed to `options.filter`. Note that the hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
 - `options.filter` is a function called with each object encountered while streaming. If it returns `true`, the object will be kept, otherwise it will be discarded. Note that the hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
 
