@@ -19,6 +19,7 @@ npm install --save @raycast/utils
 ### v1.13.3
 
 - Fixed `optimisticUpdate` not working when paginating beyond the first page when using `useCachedPromise` or other hooks that build on top of it..
+- Fixed `useFetch` type requiring `mapResult` for non-paginated overload.
 
 ### v1.13.2
 
@@ -34,12 +35,12 @@ npm install --save @raycast/utils
 
 ### v1.12.5
 
-- Added string array support for OAuth scope (Thanks @tonka3000!).
+- Add string array support for OAuth scope (Thanks @tonka3000!).
 
 ### v1.12.4
 
-- Added `tokenResponseParser` and `tokenRefreshResponseParser` in the options of `OAuthService`.
-- Fixed built-in Slack OAuthServices.
+- Add `tokenResponseParser` and `tokenRefreshResponseParser` in the options of `OAuthService`.
+- Fix built-in Slack OAuthServices.
 
 ### v1.12.3
 
