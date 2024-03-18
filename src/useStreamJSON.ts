@@ -89,7 +89,7 @@ async function cacheURLIfNecessary(url: RequestInfo, folder: string, fileName: s
       await cache(url, destination, fetchOptions);
       return;
     }
-  } else if (url.startsWith("file://") && url.endsWith(".json")) {
+  } else if (url.startsWith("file://")) {
     try {
       const sourceStats = await stat(normalize(decodeURIComponent(new URL(url).pathname)));
       if (sourceStats.mtimeMs > stats.mtimeMs) {
@@ -99,7 +99,7 @@ async function cacheURLIfNecessary(url: RequestInfo, folder: string, fileName: s
       throw new Error("Source file could not be read");
     }
   } else {
-    throw new Error("Only HTTP(S) or file URLs with the 'json' extension  are supported");
+    throw new Error("Only HTTP(S) or file URLs are supported");
   }
 }
 
