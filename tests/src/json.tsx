@@ -20,6 +20,10 @@ export default function Main(): JSX.Element {
     [searchText],
   );
 
+  const formulaTransform = useCallback((item: any): Formula => {
+    return { name: item.name, desc: item.desc };
+  }, []);
+
   const caskFilter = useCallback(
     (item: Cask) => {
       if (!searchText) return true;
@@ -28,6 +32,10 @@ export default function Main(): JSX.Element {
     [searchText],
   );
 
+  const caskTransform = useCallback((item: any): Cask => {
+    return { token: item.token, name: item.name, desc: item.desc };
+  }, []);
+
   const {
     data: formulae,
     mutate: mutateFormulae,
@@ -35,10 +43,11 @@ export default function Main(): JSX.Element {
     pagination: formulaPagination,
   } = useJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
-    pageSize: 10,
+    pageSize: 20,
     folder: join(environment.supportPath, "cache"),
     fileName: "formulas",
     filter: formulaFilter,
+    transform: formulaTransform,
     execute: type === "formula",
   });
 
@@ -50,9 +59,10 @@ export default function Main(): JSX.Element {
   } = useJSON("https://formulae.brew.sh/api/cask.json", {
     initialData: [] as Cask[],
     folder: join(environment.supportPath, "cache"),
-    pageSize: 10,
+    pageSize: 20,
     fileName: "casks",
     filter: caskFilter,
+    transform: caskTransform,
     execute: type === "cask",
   });
 
