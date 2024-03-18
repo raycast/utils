@@ -16,14 +16,14 @@ import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
 async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
     return await cacheURL(url, destination, fetchOptions);
-  } else if (url.startsWith("file://") && url.endsWith(".json")) {
+  } else if (url.startsWith("file://")) {
     return await cacheFile(
       normalize(decodeURIComponent(new URL(url).pathname)),
       destination,
       fetchOptions?.signal ? fetchOptions.signal : undefined,
     );
   } else {
-    throw new Error("Only HTTP(S) or file URLs with the 'json' extension  are supported");
+    throw new Error("Only HTTP(S) or file URLs are supported");
   }
 }
 
