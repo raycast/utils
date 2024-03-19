@@ -107,7 +107,7 @@ async function* streamJsonFile<T>(
   filePath: string,
   pageSize: number,
   abortSignal?: AbortSignal,
-  dataPath?: string,
+  dataPath?: string | RegExp,
   filterFn?: (item: T) => boolean,
   transformFn?: (item: any) => T,
 ): AsyncGenerator<T[]> {
@@ -170,7 +170,7 @@ type Options<T> = {
    * @example For `{ "success": true, "data": […] }`, dataPath would be `data`
    * @example For `{ "success": true, "results": { "data": […] } }`, dataPath would be `results.data`
    */
-  dataPath?: string;
+  dataPath?: string | RegExp;
   /**
    * A function to decide whether a particular item should be kept or not.
    * Defaults to `undefined`, keeping any encountered item.
@@ -386,7 +386,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
       folder: string,
       fileName: string,
       fetchOptions: RequestInit | undefined,
-      dataPath: string | undefined,
+      dataPath: string | RegExp | undefined,
       filter: ((item: T) => boolean) | undefined,
       transform: ((item: unknown) => T) | undefined,
     ) =>
