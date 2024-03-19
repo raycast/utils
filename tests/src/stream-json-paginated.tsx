@@ -86,7 +86,7 @@ export default function Main(): JSX.Element {
   } = useStreamJSON(`file:///${join(environment.assetsPath, "stream-json-nested-object.json")}`, {
     initialData: [] as string[],
     fileName: "nested-data-cache",
-    dataPath: "nested.data",
+    dataPath: /^nested.data$/,
     filter: nestedDataFilter,
     transform: nestedDataTransform,
     execute: type === "nestedData",
