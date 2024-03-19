@@ -1,6 +1,9 @@
+import { environment } from "@raycast/api";
 import fetch from "cross-fetch";
-import { createReadStream, ReadStream } from "node:fs";
-import { normalize } from "node:path";
+import { createReadStream, createWriteStream, mkdirSync, Stats } from "node:fs";
+import { stat } from "node:fs/promises";
+import { join, normalize } from "node:path";
+import { pipeline } from "node:stream/promises";
 import { useRef } from "react";
 import Chain from "stream-chain";
 import { parser } from "stream-json";
@@ -10,30 +13,98 @@ import { isJSON } from "./fetch-utils";
 import { FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
 import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
 
-async function getStream(url: RequestInfo, options?: RequestInit): Promise<ReadStream> {
+async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
-    const response = await fetch(url, options);
+    return await cacheURL(url, destination, fetchOptions);
+  } else if (url.startsWith("file://")) {
+    return await cacheFile(
+      normalize(decodeURIComponent(new URL(url).pathname)),
+      destination,
+      fetchOptions?.signal ? fetchOptions.signal : undefined,
+    );
+  } else {
+    throw new Error("Only HTTP(S) or file URLs are supported");
+  }
+}
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch URL");
+async function cacheURL(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
+  const response = await fetch(url, fetchOptions);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch URL");
+  }
+
+  if (!isJSON(response.headers.get("content-type"))) {
+    throw new Error("URL does not return JSON");
+  }
+  if (!response.body) {
+    throw new Error("Failed to retrieve expected JSON content: Response body is missing or inaccessible.");
+  }
+  await pipeline(
+    response.body as unknown as NodeJS.ReadableStream,
+    createWriteStream(destination),
+    fetchOptions?.signal ? { signal: fetchOptions.signal } : undefined,
+  );
+}
+
+async function cacheFile(source: string, destination: string, abortSignal?: AbortSignal) {
+  await pipeline(
+    createReadStream(source),
+    createWriteStream(destination),
+    abortSignal ? { signal: abortSignal } : undefined,
+  );
+}
+
+async function cacheURLIfNecessary(url: RequestInfo, folder: string, fileName: string, fetchOptions?: RequestInit) {
+  const destination = join(folder, fileName);
+
+  try {
+    await stat(folder);
+  } catch (e) {
+    mkdirSync(folder, { recursive: true });
+    await cache(url, destination, fetchOptions);
+    return;
+  }
+
+  let stats: Stats | undefined = undefined;
+  try {
+    stats = await stat(destination);
+  } catch (e) {
+    await cache(url, destination, fetchOptions);
+    return;
+  }
+
+  if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
+    const headResponse = await fetch(url, { ...fetchOptions, method: "HEAD" });
+    if (!headResponse.ok) {
+      throw new Error("Could not fetch URL");
     }
 
-    if (!isJSON(response.headers.get("content-type"))) {
+    if (!isJSON(headResponse.headers.get("content-type"))) {
       throw new Error("URL does not return JSON");
     }
-    if (!response.body) {
-      throw new Error("Failed to retrieve expected JSON content: Response body is missing or inaccessible.");
+
+    const lastModified = Date.parse(headResponse.headers.get("last-modified") ?? "");
+    if (stats.size === 0 || isNaN(lastModified) || lastModified > stats.mtimeMs) {
+      await cache(url, destination, fetchOptions);
+      return;
     }
-    return response.body as unknown as ReadStream;
   } else if (url.startsWith("file://")) {
-    return createReadStream(normalize(decodeURIComponent(new URL(url).pathname)));
+    try {
+      const sourceStats = await stat(normalize(decodeURIComponent(new URL(url).pathname)));
+      if (sourceStats.mtimeMs > stats.mtimeMs) {
+        await cache(url, destination, fetchOptions);
+      }
+    } catch (e) {
+      throw new Error("Source file could not be read");
+    }
   } else {
     throw new Error("Only HTTP(S) or file URLs are supported");
   }
 }
 
 async function* streamJsonFile<T>(
-  stream: ReadStream,
+  filePath: string,
   pageSize: number,
   abortSignal?: AbortSignal,
   dataPath?: string,
@@ -42,7 +113,11 @@ async function* streamJsonFile<T>(
 ): AsyncGenerator<T[]> {
   let page: T[] = [];
 
-  const pipeline = new Chain([stream, dataPath ? Pick.withParser({ filter: dataPath }) : parser(), new StreamArray()]);
+  const pipeline = new Chain([
+    createReadStream(filePath),
+    dataPath ? Pick.withParser({ filter: dataPath }) : parser(),
+    new StreamArray(),
+  ]);
 
   abortSignal?.addEventListener("abort", () => {
     pipeline.destroy();
@@ -77,6 +152,18 @@ async function* streamJsonFile<T>(
 
 type Options<T> = {
   /**
+   * The name of the file where the JSON will be cached.
+   * Defaults to `cache.json`.
+   */
+  fileName?: string;
+  /**
+   * The folder where the cache file should be saved.
+   * Defaults to the extension's support `environment.supportPath`.
+   *
+   * @remark If the folder doesn't exist, the hook will try to create it, and any intermediate folders.
+   */
+  folder?: string;
+  /**
    * The hook expects to iterate through an array of data, so by default, it assumes the JSON it receives itself represents an array. However, sometimes the array of data is wrapped in an object,
    * i.e. `{ "success": true, "data": […] }`, or even `{ "success": true, "results": { "data": […] } }`. In those cases, you can use `dataPath` to specify where the data array can be found.
    *
@@ -106,8 +193,9 @@ type Options<T> = {
 };
 
 /**
- * Takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource and streams through its content.
- * Useful when dealing with large JSON arrays which would be too big to fit in the command's memory.
+ * Takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource, caches it to the command's support
+ * folder, and streams through its content. Useful when dealing with large JSON arrays which would be too big to fit
+ * in the command's memory.
  *
  * @remark The JSON resource needs to consist of an array of objects
  *
@@ -156,8 +244,9 @@ type Options<T> = {
 export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseReturnType<T[], U>;
 
 /**
- * Takes a `http://`, `https://` or `file:///` URL pointing to a JSON resourceand  streams through its content.
- * Useful when dealing with large JSON arrays which would be too big to fit in the command's memory.
+ * Takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource, caches it to the command's support
+ * folder, and streams through its content. Useful when dealing with large JSON arrays which would be too big to fit
+ * in the command's memory.
  *
  * @remark The JSON resource needs to consist of an array of objects
  *
@@ -188,6 +277,8 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
  *   const { data, isLoading, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
  *     initialData: [] as Formula[],
  *     pageSize: 20,
+ *     folder: join(environment.supportPath, "cache"),
+ *     fileName: "formulae",
  *     filter: formulaFilter,
  *     transform: formulaTransform,
  *   });
@@ -232,6 +323,8 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
  *   const { data, isLoading, pagination } = useStreamJSON(`file:///${join(homedir(), "Downloads", "formulae.json")}`, {
  *     initialData: [] as Formula[],
  *     pageSize: 20,
+ *     folder: join(environment.supportPath, "cache"),
+ *     fileName: "formulae",
  *     filter: formulaFilter,
  *     transform: formulaTransform,
  *   });
@@ -264,9 +357,11 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     onError,
     onData,
     onWillExecute,
+    fileName,
     dataPath,
     filter,
     transform,
+    folder = environment.supportPath,
     pageSize = 20,
     ...fetchOptions
   } = options ?? {};
@@ -288,6 +383,8 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     (
       url: RequestInfo,
       pageSize: number,
+      folder: string,
+      fileName: string,
       fetchOptions: RequestInit | undefined,
       dataPath: string | undefined,
       filter: ((item: T) => boolean) | undefined,
@@ -297,9 +394,10 @@ export function useStreamJSON<T, U extends any[] = any[]>(
         if (page === 0) {
           controllerRef.current?.abort();
           controllerRef.current = new AbortController();
-          const stream = await getStream(url, fetchOptions);
+          await cacheURLIfNecessary(url, folder, fileName, { ...fetchOptions, signal: controllerRef.current?.signal });
+          const destination = join(folder, fileName);
           generatorRef.current = streamJsonFile(
-            stream,
+            destination,
             pageSize,
             controllerRef.current?.signal,
             dataPath,
@@ -314,7 +412,16 @@ export function useStreamJSON<T, U extends any[] = any[]>(
         hasMoreRef.current = !done;
         return { hasMore: hasMoreRef.current, data: (newData ?? []) as T[] };
       },
-    [url, pageSize, fetchOptions, dataPath, filter, transform],
+    [
+      url,
+      pageSize,
+      folder,
+      `${fileName?.replace(/\.json$/, "") ?? "cache"}.json`,
+      fetchOptions,
+      dataPath,
+      filter,
+      transform,
+    ],
     useCachedPromiseOptions,
   );
 }
