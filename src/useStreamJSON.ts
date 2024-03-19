@@ -140,7 +140,7 @@ async function* streamJsonFile<T>(
     }
   } catch (e) {
     pipeline.destroy();
-    return [];
+    throw e;
   }
 
   if (page.length > 0) {
