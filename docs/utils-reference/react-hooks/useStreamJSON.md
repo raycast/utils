@@ -1,6 +1,6 @@
 # `useStreamJSON`
 
-Hook which takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource and streams through its content. Useful when dealing with large JSON arrays which would be too big to fit in the command's memory.
+Hook which takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource, caches it to the command's support folder, and streams through its content. Useful when dealing with large JSON arrays which would be too big to fit in the command's memory.
 
 ## Signature
 
@@ -8,6 +8,8 @@ Hook which takes a `http://`, `https://` or `file:///` URL pointing to a JSON re
 export function useStreamJSON<T, U>(
   url: RequestInfo,
   options: RequestInit & {
+    fileName?: string;
+    folder?: string;
     filter?: (item: T) => boolean;
     transform?: (item: any) => T;
     pageSize?: number;
@@ -25,11 +27,13 @@ export function useStreamJSON<T, U>(
 
 ### Arguments
 
-- `url` - The [`RequestInfo`](https://github.com/nodejs/undici/blob/v5.7.0/types/fetch.d.ts#L12) describing the resource that needs to be fetched. Strings starting with `http://`, `https://` and `Request` objects will use `fetch`, while strings starting with `file:///` will use `createReadStream`.
+- `url` - The [`RequestInfo`](https://github.com/nodejs/undici/blob/v5.7.0/types/fetch.d.ts#L12) describing the resource that needs to be fetched. Strings starting with `http://`, `https://` and `Request` objects will use `fetch`, while strings starting with `file:///` will be copied to the cache folder.
 
 With a few options:
 
 - `options` extends [`RequestInit`](https://github.com/nodejs/undici/blob/v5.7.0/types/fetch.d.ts#L103-L117) allowing you to specify a body, headers, etc. to apply to the request.
+- `options.fileName` is the name of the file where the JSON content will be cached. By default, `cache.json` will be used.
+- `options.folder` the folder where to cache the JSON. By default, `environment.supportPath` will be used.
 - `options.pageSize` the amount of items to fetch at a time. By default, 20 will be used
 - `options.dataPath` is a string informing the hook that the array of data is wrapped inside one or multiple objects, and the path it needs to take to get to it.
 - `options.transform` is a function called with each object encountered while streaming. The result of this function is what will be passed to `options.filter`. Note that the hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
@@ -87,6 +91,8 @@ export default function Main(): JSX.Element {
   const { data, isLoading, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
+    folder: join(environment.supportPath, "cache"),
+    fileName: "formulae",
     filter: formulaFilter,
     transform: formulaTransform
   });
@@ -138,6 +144,8 @@ export default function Main(): JSX.Element {
   const { data, isLoading, mutate, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
+    folder: join(environment.supportPath, "cache"),
+    fileName: "formulae",
     filter: formulaFilter,
     transform: formulaTransform,
   });
