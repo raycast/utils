@@ -166,9 +166,13 @@ type Options<T> = {
   /**
    * The hook expects to iterate through an array of data, so by default, it assumes the JSON it receives itself represents an array. However, sometimes the array of data is wrapped in an object,
    * i.e. `{ "success": true, "data": […] }`, or even `{ "success": true, "results": { "data": […] } }`. In those cases, you can use `dataPath` to specify where the data array can be found.
+   * 
+   * @remark If your JSON object has multiple arrays that you want to stream data from, you can pass a regular expression to stream through all of them.
    *
    * @example For `{ "success": true, "data": […] }`, dataPath would be `data`
    * @example For `{ "success": true, "results": { "data": […] } }`, dataPath would be `results.data`
+   * @example For `{ "success": true, "results": { "first_list": […], "second_list": […], "third_list": […] } }`, dataPath would be `/^results\.(first_list|second_list|third_list)$
+/`.
    */
   dataPath?: string | RegExp;
   /**
