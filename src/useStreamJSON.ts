@@ -55,13 +55,23 @@ async function cacheFile(source: string, destination: string, abortSignal?: Abor
   );
 }
 
-async function cacheURLIfNecessary(url: RequestInfo, folder: string, fileName: string, fetchOptions?: RequestInit) {
+async function cacheURLIfNecessary(
+  url: RequestInfo,
+  folder: string,
+  fileName: string,
+  forceUpdate: boolean,
+  fetchOptions?: RequestInit,
+) {
   const destination = join(folder, fileName);
 
   try {
     await stat(folder);
   } catch (e) {
     mkdirSync(folder, { recursive: true });
+    await cache(url, destination, fetchOptions);
+    return;
+  }
+  if (forceUpdate) {
     await cache(url, destination, fetchOptions);
     return;
   }
@@ -85,7 +95,7 @@ async function cacheURLIfNecessary(url: RequestInfo, folder: string, fileName: s
     }
 
     const lastModified = Date.parse(headResponse.headers.get("last-modified") ?? "");
-    if (stats.size === 0 || isNaN(lastModified) || lastModified > stats.mtimeMs) {
+    if (stats.size === 0 || Number.isNaN(lastModified) || lastModified > stats.mtimeMs) {
       await cache(url, destination, fetchOptions);
       return;
     }
@@ -369,6 +379,8 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     pageSize = 20,
     ...fetchOptions
   } = options ?? {};
+  const previousUrl = useRef<RequestInfo>();
+  const previousDestination = useRef<string>();
 
   const useCachedPromiseOptions: CachedPromiseOptions<FunctionReturningPaginatedPromise, U> = {
     initialData,
@@ -398,8 +410,22 @@ export function useStreamJSON<T, U extends any[] = any[]>(
         if (page === 0) {
           controllerRef.current?.abort();
           controllerRef.current = new AbortController();
-          await cacheURLIfNecessary(url, folder, fileName, { ...fetchOptions, signal: controllerRef.current?.signal });
           const destination = join(folder, fileName);
+          /**
+           * Force update the cache when the URL changes but the cache destination does not.
+           */
+          const forceCacheUpdate = Boolean(
+            previousUrl.current &&
+              previousUrl.current !== url &&
+              previousDestination.current &&
+              previousDestination.current === destination,
+          );
+          previousUrl.current = url;
+          previousDestination.current = destination;
+          await cacheURLIfNecessary(url, folder, fileName, forceCacheUpdate, {
+            ...fetchOptions,
+            signal: controllerRef.current?.signal,
+          });
           generatorRef.current = streamJsonFile(
             destination,
             pageSize,
