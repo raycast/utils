@@ -169,7 +169,11 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
   const urlRef = useRef<RequestInfo | PaginatedRequestInfo>();
   const firstPageUrlRef = useRef<RequestInfo | undefined>();
   const firstPageUrl = typeof url === "function" ? url({ page: 0 }) : undefined;
-  if (!urlRef.current || firstPageUrlRef.current !== firstPageUrl) {
+  /**
+   * When paginating, `url` is a `PaginatedRequestInfo`, so we only want to update the ref when the `firstPageUrl` changes.
+   * When not paginating, `url` is a `RequestInfo`, so we want to update the ref whenever `url` changes.
+   */
+  if (!urlRef.current || typeof firstPageUrlRef.current === "undefined" || firstPageUrlRef.current !== firstPageUrl) {
     urlRef.current = url;
   }
   firstPageUrlRef.current = firstPageUrl;
@@ -187,9 +191,6 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
     async (url: RequestInfo, options?: RequestInit) => {
       const res = await fetch(url, { signal: abortable.current?.signal, ...options });
       const parsed = (await parseResponseRef.current(res)) as V;
-      if (!mapResultRef.current) {
-        return parsed as unknown as T;
-      }
       const mapped = mapResultRef.current(parsed);
       return mapped?.data as unknown as T;
     },
