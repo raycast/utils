@@ -10,7 +10,7 @@ import { parser } from "stream-json";
 import Pick from "stream-json/filters/Pick";
 import StreamArray from "stream-json/streamers/StreamArray";
 import { isJSON } from "./fetch-utils";
-import { FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
+import { Flatten, FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
 import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
 
 async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
@@ -118,15 +118,16 @@ async function* streamJsonFile<T>(
   pageSize: number,
   abortSignal?: AbortSignal,
   dataPath?: string | RegExp,
-  filterFn?: (item: T) => boolean,
+  filterFn?: (item: Flatten<T>) => boolean,
   transformFn?: (item: any) => T,
-): AsyncGenerator<T[]> {
-  let page: T[] = [];
+): AsyncGenerator<T extends unknown[] ? T : T[]> {
+  let page: T extends unknown[] ? T : T[] = [] as T extends unknown[] ? T : T[];
 
   const pipeline = new Chain([
     createReadStream(filePath),
     dataPath ? Pick.withParser({ filter: dataPath }) : parser(),
     new StreamArray(),
+    (data) => transformFn?.(data.value) ?? data.value,
   ]);
 
   abortSignal?.addEventListener("abort", () => {
@@ -138,14 +139,12 @@ async function* streamJsonFile<T>(
       if (abortSignal?.aborted) {
         return [];
       }
-
-      const value = transformFn?.(data.value) ?? data.value;
-      if (!filterFn || filterFn(value)) {
-        page.push(value);
+      if (!filterFn || filterFn(data)) {
+        page.push(data);
       }
       if (page.length >= pageSize) {
         yield page;
-        page = [];
+        page = [] as T extends unknown[] ? T : T[];
       }
     }
   } catch (e) {
@@ -191,7 +190,7 @@ type Options<T> = {
    *
    * @remark The hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
    */
-  filter?: (item: T) => boolean;
+  filter?: (item: Flatten<T>) => boolean;
   /**
    * A function to apply to each item before passing it to `filter`. Useful for ensuring that all items have the expected properties, and, as on optimization, for getting rid of the properties that you don't care about.
    * Defaults to a passthrough function if not provided.
@@ -255,7 +254,7 @@ type Options<T> = {
  * }
  * ```
  */
-export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseReturnType<T[], U>;
+export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromiseReturnType<T, U>;
 
 /**
  * Takes a `http://`, `https://` or `file:///` URL pointing to a JSON resource, caches it to the command's support
@@ -358,12 +357,12 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
 export function useStreamJSON<T, U extends any[] = any[]>(
   url: RequestInfo,
   options: Options<T> & RequestInit & Omit<CachedPromiseOptions<FunctionReturningPaginatedPromise, U>, "abortable">,
-): UseCachedPromiseReturnType<T[], U>;
+): UseCachedPromiseReturnType<T extends unknown[] ? T : T[], U>;
 
 export function useStreamJSON<T, U extends any[] = any[]>(
   url: RequestInfo,
   options?: Options<T> & RequestInit & Omit<CachedPromiseOptions<FunctionReturningPaginatedPromise, U>, "abortable">,
-): UseCachedPromiseReturnType<T[], U> {
+): UseCachedPromiseReturnType<T extends unknown[] ? T : T[], U> {
   const {
     initialData,
     execute,
@@ -391,7 +390,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     onWillExecute,
   };
 
-  const generatorRef = useRef<AsyncGenerator<T[]> | null>(null);
+  const generatorRef = useRef<AsyncGenerator<T extends unknown[] ? T : T[]> | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const hasMoreRef = useRef(false);
 
@@ -403,7 +402,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
       fileName: string,
       fetchOptions: RequestInit | undefined,
       dataPath: string | RegExp | undefined,
-      filter: ((item: T) => boolean) | undefined,
+      filter: ((item: Flatten<T>) => boolean) | undefined,
       transform: ((item: unknown) => T) | undefined,
     ) =>
       async ({ page }) => {
@@ -436,11 +435,11 @@ export function useStreamJSON<T, U extends any[] = any[]>(
           );
         }
         if (!generatorRef.current) {
-          return { hasMore: hasMoreRef.current, data: [] };
+          return { hasMore: hasMoreRef.current, data: [] as T extends unknown[] ? T : T[] };
         }
         const { value: newData, done } = await generatorRef.current.next();
         hasMoreRef.current = !done;
-        return { hasMore: hasMoreRef.current, data: (newData ?? []) as T[] };
+        return { hasMore: hasMoreRef.current, data: (newData ?? []) as T extends unknown[] ? T : T[] };
       },
     [
       url,
