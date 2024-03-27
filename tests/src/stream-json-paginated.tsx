@@ -32,8 +32,6 @@ export default function Main(): JSX.Element {
   } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
-    folder: join(environment.supportPath, "cache"),
-    fileName: "formulas",
     filter: formulaFilter,
     transform: formulaTransform,
     execute: type === "formula",
@@ -58,9 +56,7 @@ export default function Main(): JSX.Element {
     pagination: caskPagination,
   } = useStreamJSON("https://formulae.brew.sh/api/cask.json", {
     initialData: [] as Cask[],
-    folder: join(environment.supportPath, "cache"),
     pageSize: 20,
-    fileName: "casks",
     filter: caskFilter,
     transform: caskTransform,
     execute: type === "cask",
@@ -85,7 +81,6 @@ export default function Main(): JSX.Element {
     pagination: nestedDataPagination,
   } = useStreamJSON(`file:///${join(environment.assetsPath, "stream-json-nested-object.json")}`, {
     initialData: [] as string[],
-    fileName: "nested-data-cache",
     dataPath: /^nested.data$/,
     filter: nestedDataFilter,
     transform: nestedDataTransform,
