@@ -8,8 +8,6 @@ Hook which takes a `http://`, `https://` or `file:///` URL pointing to a JSON re
 export function useStreamJSON<T, U>(
   url: RequestInfo,
   options: RequestInit & {
-    fileName?: string;
-    folder?: string;
     filter?: (item: T) => boolean;
     transform?: (item: any) => T;
     pageSize?: number;
@@ -32,8 +30,6 @@ export function useStreamJSON<T, U>(
 With a few options:
 
 - `options` extends [`RequestInit`](https://github.com/nodejs/undici/blob/v5.7.0/types/fetch.d.ts#L103-L117) allowing you to specify a body, headers, etc. to apply to the request.
-- `options.fileName` is the name of the file where the JSON content will be cached. By default, `cache.json` will be used.
-- `options.folder` the folder where to cache the JSON. By default, `environment.supportPath` will be used.
 - `options.pageSize` the amount of items to fetch at a time. By default, 20 will be used
 - `options.dataPath` is a string or regular expression informing the hook that the array (or arrays) of data you want to stream through is wrapped inside one or multiple objects, and it indicates the path it needs to take to get to it.
 - `options.transform` is a function called with each top-level object encountered while streaming. If the function returns an array, the hook will end up streaming through its children, and each array item will be passed to `options.filter`. If the function returns something other than an array, _it_ will be passed to `options.filter`. Note that the hook will revalidate every time the filter function changes, so you need to use [useCallback](https://react.dev/reference/react/useCallback) to make sure it only changes when it needs to.
@@ -91,8 +87,6 @@ export default function Main(): JSX.Element {
   const { data, isLoading, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
-    folder: join(environment.supportPath, "cache"),
-    fileName: "formulae",
     filter: formulaFilter,
     transform: formulaTransform
   });
@@ -144,8 +138,6 @@ export default function Main(): JSX.Element {
   const { data, isLoading, mutate, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
     initialData: [] as Formula[],
     pageSize: 20,
-    folder: join(environment.supportPath, "cache"),
-    fileName: "formulae",
     filter: formulaFilter,
     transform: formulaTransform,
   });
