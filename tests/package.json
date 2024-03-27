@@ -178,6 +178,13 @@
           "required": true
         }
       ]
+    },
+    {
+      "name": "stream-json-paginated",
+      "title": "useStreamJSON - paginated",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
     }
   ],
   "dependencies": {
