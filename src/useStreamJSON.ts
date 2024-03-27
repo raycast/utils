@@ -12,6 +12,7 @@ import StreamArray from "stream-json/streamers/StreamArray";
 import { isJSON } from "./fetch-utils";
 import { Flatten, FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
 import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
+import objectHash from "object-hash";
 
 async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
@@ -160,18 +161,6 @@ async function* streamJsonFile<T>(
 }
 
 type Options<T> = {
-  /**
-   * The name of the file where the JSON will be cached.
-   * Defaults to `cache.json`.
-   */
-  fileName?: string;
-  /**
-   * The folder where the cache file should be saved.
-   * Defaults to the extension's support `environment.supportPath`.
-   *
-   * @remark If the folder doesn't exist, the hook will try to create it, and any intermediate folders.
-   */
-  folder?: string;
   /**
    * The hook expects to iterate through an array of data, so by default, it assumes the JSON it receives itself represents an array. However, sometimes the array of data is wrapped in an object,
    * i.e. `{ "success": true, "data": […] }`, or even `{ "success": true, "results": { "data": […] } }`. In those cases, you can use `dataPath` to specify where the data array can be found.
@@ -326,8 +315,6 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
  *   const { data, isLoading, pagination } = useStreamJSON("https://formulae.brew.sh/api/formula.json", {
  *     initialData: [] as Formula[],
  *     pageSize: 20,
- *     folder: join(environment.supportPath, "cache"),
- *     fileName: "formulae",
  *     filter: formulaFilter,
  *     transform: formulaTransform,
  *   });
@@ -372,8 +359,6 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
  *   const { data, isLoading, pagination } = useStreamJSON(`file:///${join(homedir(), "Downloads", "formulae.json")}`, {
  *     initialData: [] as Formula[],
  *     pageSize: 20,
- *     folder: join(environment.supportPath, "cache"),
- *     fileName: "formulae",
  *     filter: formulaFilter,
  *     transform: formulaTransform,
  *   });
@@ -406,11 +391,9 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     onError,
     onData,
     onWillExecute,
-    fileName,
     dataPath,
     filter,
     transform,
-    folder = environment.supportPath,
     pageSize = 20,
     ...fetchOptions
   } = options ?? {};
@@ -434,14 +417,14 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     (
       url: RequestInfo,
       pageSize: number,
-      folder: string,
-      fileName: string,
       fetchOptions: RequestInit | undefined,
       dataPath: string | RegExp | undefined,
       filter: ((item: Flatten<T>) => boolean) | undefined,
       transform: ((item: unknown) => T) | undefined,
     ) =>
       async ({ page }) => {
+        const fileName = objectHash(url) + ".json";
+        const folder = environment.supportPath;
         if (page === 0) {
           controllerRef.current?.abort();
           controllerRef.current = new AbortController();
@@ -477,16 +460,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
         hasMoreRef.current = !done;
         return { hasMore: hasMoreRef.current, data: (newData ?? []) as T extends unknown[] ? T : T[] };
       },
-    [
-      url,
-      pageSize,
-      folder,
-      `${fileName?.replace(/\.json$/, "") ?? "cache"}.json`,
-      fetchOptions,
-      dataPath,
-      filter,
-      transform,
-    ],
+    [url, pageSize, fetchOptions, dataPath, filter, transform],
     useCachedPromiseOptions,
   );
 }
