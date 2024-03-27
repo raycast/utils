@@ -192,10 +192,46 @@ type Options<T> = {
    */
   filter?: (item: Flatten<T>) => boolean;
   /**
-   * A function to apply to each item before passing it to `filter`. Useful for ensuring that all items have the expected properties, and, as on optimization, for getting rid of the properties that you don't care about.
+   * A function to apply to each item as it is encountered. Useful for a couple of things:
+   * 1. ensuring that all items have the expected properties, and, as on optimization, for getting rid of the properties that you don't care about.
+   * 2. when top-level objects actually represent nested data, which should be flattened. In this case, `transform` can return an array of items, and the hook will stream through each one of those items,
+   * passing them to `filter` etc.
+   *
    * Defaults to a passthrough function if not provided.
    *
    * @remark The hook will revalidate every time the transform function changes, so it is important to use [useCallback](https://react.dev/reference/react/useCallback) to ensure it only changes when necessary to prevent unnecessary re-renders or computations.
+   *
+   * @example
+   * ```
+   * // For data: `{ "data": [ { "type": "folder", "name": "item 1", "children": [ { "type": "item", "name": "item 2" }, { "type": "item", "name": "item 3" } ] }, { "type": "folder", "name": "item 4", children: [] } ] }`
+   *
+   * type Item = {
+   *  type: "item";
+   *  name: string;
+   * };
+   *
+   * type Folder = {
+   *   type: "folder";
+   *   name: string;
+   *   children: (Item | Folder)[];
+   * };
+   *
+   * function flatten(item: Item | Folder): { name: string }[] {
+   *   const flattened: { name: string }[] = [];
+   *   if (item.type === "folder") {
+   *     flattened.push(...item.children.map(flatten).flat());
+   *   }
+   *   if (item.type === "item") {
+   *     flattened.push({ name: item.name });
+   *   }
+   *   return flattened;
+   * }
+   *
+   * const transform = useCallback(flatten, []);
+   * const filter = useCallback((item: { name: string }) => {
+   *   …
+   * })
+   * ```
    */
   transform?: (item: any) => T;
   /**
