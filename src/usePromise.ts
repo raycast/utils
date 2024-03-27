@@ -204,7 +204,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
         usePaginationRef.current = true;
         return promiseOrPaginatedPromise(paginationArgsRef.current).then(
           // @ts-expect-error too complicated for TS
-          ({ data, hasMore, cursor }: { data: UnwrapReturn<T>; hasMore: boolean }) => {
+          ({ data, hasMore, cursor }: { data: UnwrapReturn<T>; hasMore: boolean; cursor?: any }) => {
             if (callId === lastCallId.current) {
               if (paginationArgsRef.current) {
                 paginationArgsRef.current.cursor = cursor;
