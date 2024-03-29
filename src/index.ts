@@ -7,6 +7,7 @@ export * from "./useSQL";
 export * from "./useForm";
 export * from "./useAI";
 export * from "./useFrecencySorting";
+export * from "./useLocalStorage";
 
 export * from "./icon";
 
