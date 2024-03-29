@@ -204,8 +204,13 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
         usePaginationRef.current = true;
         return promiseOrPaginatedPromise(paginationArgsRef.current).then(
           // @ts-expect-error too complicated for TS
-          ({ data, hasMore }: { data: UnwrapReturn<T>; hasMore: boolean }) => {
+          ({ data, hasMore, cursor }: { data: UnwrapReturn<T>; hasMore: boolean; cursor?: any }) => {
             if (callId === lastCallId.current) {
+              if (paginationArgsRef.current) {
+                paginationArgsRef.current.cursor = cursor;
+                paginationArgsRef.current.lastItem = data?.[data.length - 1];
+              }
+
               if (latestOnData.current) {
                 latestOnData.current(data, paginationArgsRef.current);
               }
@@ -307,10 +312,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
   );
 
   const onLoadMore = useCallback(() => {
-    paginationArgsRef.current = {
-      page: paginationArgsRef.current.page + 1,
-      lastItem: latestValue.current?.[latestValue.current.length - 1],
-    };
+    paginationArgsRef.current.page += 1;
     const args = (latestArgs.current || []) as Parameters<T>;
     callback(...args);
   }, [paginationArgsRef, latestValue, latestArgs, callback]);

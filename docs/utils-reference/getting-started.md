@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v1.13.5
+
+- Extended `PaginationOptions` with `cursor`.
+
 ### v1.13.4
 
 - Fixed non-paginated version of `useFetch` not being re-run when `url` changes.

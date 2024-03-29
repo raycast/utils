@@ -7,11 +7,16 @@ export type PaginationOptions<T = any> = {
    * The last item from the previous page of results, useful for APIs implementing cursor-based pagination.
    */
   lastItem?: Flatten<T>;
+  /**
+   * Some APIs don't use the last returned item as a cursor, but instead provide the next cursor explicitly. In those cases,
+   * you can pass `cursor` along with `data` and `hasMore`, and it will be included in each pagination call.
+   */
+  cursor?: any;
 };
 export type FunctionReturningPromise<T extends any[] = any[], U = any> = (...args: T) => Promise<U>;
 export type FunctionReturningPaginatedPromise<T extends any[] = any[], U extends any[] = any[]> = (
   ...args: T
-) => (pagination: PaginationOptions<U>) => Promise<{ data: U; hasMore?: boolean }>;
+) => (pagination: PaginationOptions<U>) => Promise<{ data: U; hasMore?: boolean; cursor?: any }>;
 export type UnwrapReturn<T extends FunctionReturningPromise | FunctionReturningPaginatedPromise> =
   T extends FunctionReturningPromise
     ? Awaited<ReturnType<T>>
