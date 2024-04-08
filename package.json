@@ -1,6 +1,6 @@
 {
   "name": "@raycast/utils",
-  "version": "1.13.6",
+  "version": "1.14.0",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com/utils-reference",
@@ -33,7 +33,9 @@
     "dequal": "^2.0.3",
     "media-typer": "^1.1.0",
     "object-hash": "^3.0.0",
-    "signal-exit": "^4.0.2"
+    "signal-exit": "^4.0.2",
+    "stream-chain": "^2.2.5",
+    "stream-json": "^1.8.0"
   },
   "devDependencies": {
     "@raycast/api": "1.52.0",
@@ -41,6 +43,8 @@
     "@types/media-typer": "^1.1.1",
     "@types/object-hash": "^3.0.4",
     "@types/signal-exit": "^3.0.2",
+    "@types/stream-chain": "^2.0.4",
+    "@types/stream-json": "^1.7.7",
     "@typescript-eslint/eslint-plugin": "6.7.5",
     "@typescript-eslint/parser": "6.7.5",
     "eslint": "8.51.0",
