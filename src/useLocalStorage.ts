@@ -1,6 +1,7 @@
 import { LocalStorage } from "@raycast/api";
 import { useCachedPromise } from "./useCachedPromise";
 import { showFailureToast } from "./showFailureToast";
+import { replacer, reviver } from "./helpers";
 
 export type UseLocalStorageReturnValue<T> = {
   value: T;
@@ -19,7 +20,6 @@ export type UseLocalStorageReturnValueWithUndefined<T> = {
 /**
  * A hook to manage a value in the local storage.
  *
- * @remark The hook uses `useCachedPromise` internally to cache the value and provide a loading state.
  * @remark The value is stored as a JSON string in the local storage.
  *
  * @param key - The key to use for the value in the local storage.
@@ -48,20 +48,15 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
       const item = await LocalStorage.getItem<string>(storageKey);
 
       if (item) {
-        return JSON.parse(item);
+        return JSON.parse(item, reviver);
       }
     },
     [key],
-    {
-      onError(error) {
-        showFailureToast(error, { title: "Failed to get value from local storage" });
-      },
-    },
   );
 
   async function setValue(value: T) {
     try {
-      await LocalStorage.setItem(key, JSON.stringify(value));
+      await LocalStorage.setItem(key, JSON.stringify(value, replacer));
       await mutate();
     } catch (error) {
       await showFailureToast(error, { title: "Failed to set value in local storage" });
