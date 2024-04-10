@@ -2,8 +2,6 @@
 
 A hook to manage a value in the local storage.
 
-The hook uses `useCachedPromise` internally to cache the value and provide a loading state. The value is stored as a JSON string in the local storage.
-
 ## Signature
 
 ```ts
