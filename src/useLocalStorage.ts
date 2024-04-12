@@ -56,8 +56,11 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
 
   async function setValue(value: T) {
     try {
-      await LocalStorage.setItem(key, JSON.stringify(value, replacer));
-      await mutate();
+      await mutate(LocalStorage.setItem(key, JSON.stringify(value, replacer)), {
+        optimisticUpdate() {
+          return value;
+        },
+      });
     } catch (error) {
       await showFailureToast(error, { title: "Failed to set value in local storage" });
     }
@@ -65,8 +68,11 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
 
   async function removeValue() {
     try {
-      await LocalStorage.removeItem(key);
-      await mutate();
+      await mutate(LocalStorage.removeItem(key), {
+        optimisticUpdate() {
+          return undefined;
+        },
+      });
     } catch (error) {
       await showFailureToast(error, { title: "Failed to remove value from local storage" });
     }
