@@ -22,4 +22,5 @@
   - [useSQL](utils-reference/react-hooks/useSQL.md)
   - [useAI](utils-reference/react-hooks/useAI.md)
   - [useFrecencySorting](utils-reference/react-hooks/useFrecencySorting.md)
+  - [useStreamJSON](utils-reference/react-hooks/useStreamJSON.md)
   - [useLocalStorage](utils-reference/react-hooks/useLocalStorage.md)
