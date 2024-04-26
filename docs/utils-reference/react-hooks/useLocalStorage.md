@@ -6,7 +6,6 @@ A hook to manage a value in the local storage.
 
 ```ts
 function useLocalStorage<T>(key: string, initialValue: T): UseLocalStorageReturnValue<T>;
-function useLocalStorage<T>(key: string): UseLocalStorageReturnValueWithUndefined<T>;
 ```
 
 ### Arguments
@@ -70,17 +69,6 @@ export default function Command() {
 ```ts
 type UseLocalStorageReturnValue<T> = {
   value: T;
-  setValue: (value: T) => Promise<void>;
-  removeValue: () => Promise<void>;
-  isLoading: boolean;
-};
-```
-
-### UseLocalStorageReturnValueWithUndefined
-
-```ts
-type UseLocalStorageReturnValueWithUndefined<T> = {
-  value?: T;
   setValue: (value: T) => Promise<void>;
   removeValue: () => Promise<void>;
   isLoading: boolean;

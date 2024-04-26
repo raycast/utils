@@ -1,21 +1,7 @@
 import { LocalStorage } from "@raycast/api";
-import { useCachedPromise } from "./useCachedPromise";
 import { showFailureToast } from "./showFailureToast";
 import { replacer, reviver } from "./helpers";
-
-export type UseLocalStorageReturnValue<T> = {
-  value: T;
-  setValue: (value: T) => Promise<void>;
-  removeValue: () => Promise<void>;
-  isLoading: boolean;
-};
-
-export type UseLocalStorageReturnValueWithUndefined<T> = {
-  value?: T;
-  setValue: (value: T) => Promise<void>;
-  removeValue: () => Promise<void>;
-  isLoading: boolean;
-};
+import { usePromise } from "./usePromise";
 
 /**
  * A hook to manage a value in the local storage.
@@ -36,19 +22,17 @@ export type UseLocalStorageReturnValueWithUndefined<T> = {
  * const { value, setValue } = useLocalStorage<string>("my-key", "default value");
  * ```
  */
-export function useLocalStorage<T>(key: string, initialValue: T): UseLocalStorageReturnValue<T>;
-export function useLocalStorage<T>(key: string): UseLocalStorageReturnValueWithUndefined<T>;
-export function useLocalStorage<T>(key: string, initialValue?: T) {
+export function useLocalStorage<T>(key: string) {
   const {
     data: value,
     isLoading,
     mutate,
-  } = useCachedPromise(
+  } = usePromise(
     async (storageKey: string) => {
       const item = await LocalStorage.getItem<string>(storageKey);
 
       if (item) {
-        return JSON.parse(item, reviver);
+        return JSON.parse(item, reviver) as T;
       }
     },
     [key],
@@ -57,7 +41,7 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
   async function setValue(value: T) {
     try {
       await mutate(LocalStorage.setItem(key, JSON.stringify(value, replacer)), {
-        optimisticUpdate() {
+        optimisticUpdate(value) {
           return value;
         },
       });
@@ -78,5 +62,5 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
     }
   }
 
-  return { value: value ?? initialValue, setValue, removeValue, isLoading };
+  return { value, setValue, removeValue, isLoading };
 }
