@@ -1,11 +1,11 @@
-import { Detail, LaunchProps } from "@raycast/api";
+import { Detail } from "@raycast/api";
 import { withAccessToken, OAuthService, getAccessToken } from "@raycast/utils";
 
 const slack = OAuthService.slack({
-  scope: 'users.profile:write, dnd:write', // Specify the scopes your application requires
+  scope: "users.profile:write, dnd:write",
 });
 
-function AuthorizedComponent(props: LaunchProps) {
+function AuthorizedComponent() {
   const { token } = getAccessToken();
   return <Detail markdown={`Access token: ${token}`} />;
 }
