@@ -5,7 +5,12 @@ A hook to manage a value in the local storage.
 ## Signature
 
 ```ts
-function useLocalStorage<T>(key: string, initialValue: T): UseLocalStorageReturnValue<T>;
+function useLocalStorage<T>(key: string, initialValue?: T): {
+  value: T | undefined;
+  setValue: (value: T) => Promise<void>;
+  removeValue: () => Promise<void>;
+  isLoading: boolean;
+}
 ```
 
 ### Arguments
@@ -35,16 +40,16 @@ const exampleTodos = [
 ];
 
 export default function Command() {
-  const { value: todos, setValue: setTodos } = useLocalStorage("todos", exampleTodos);
+  const { value: todos, setValue: setTodos, isLoading } = useLocalStorage("todos", exampleTodos);
 
   async function toggleTodo(id: string) {
-    const newTodos = todos.map((todo) => (todo.id === id ? { ...todo, done: !todo.done } : todo));
+    const newTodos = todos?.map((todo) => (todo.id === id ? { ...todo, done: !todo.done } : todo)) ?? [];
     await setTodos(newTodos);
   }
 
   return (
-    <List>
-      {todos.map((todo) => (
+    <List isLoading={isLoading}>
+      {todos?.map((todo) => (
         <List.Item
           icon={todo.done ? { source: Icon.Checkmark, tintColor: Color.Green } : Icon.Circle}
           key={todo.id}
@@ -52,7 +57,7 @@ export default function Command() {
           actions={
             <ActionPanel>
               <Action title={todo.done ? "Uncomplete" : "Complete"} onAction={() => toggleTodo(todo.id)} />
-              <Action title="Delete" onAction={() => toggleTodo(todo.id)} />
+              <Action title="Delete" style={Action.Style.Destructive} onAction={() => toggleTodo(todo.id)} />
             </ActionPanel>
           }
         />
@@ -60,17 +65,4 @@ export default function Command() {
     </List>
   );
 }
-```
-
-## Types
-
-### UseLocalStorageReturnValue
-
-```ts
-type UseLocalStorageReturnValue<T> = {
-  value: T;
-  setValue: (value: T) => Promise<void>;
-  removeValue: () => Promise<void>;
-  isLoading: boolean;
-};
 ```

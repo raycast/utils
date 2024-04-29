@@ -22,7 +22,7 @@ import { usePromise } from "./usePromise";
  * const { value, setValue } = useLocalStorage<string>("my-key", "default value");
  * ```
  */
-export function useLocalStorage<T>(key: string) {
+export function useLocalStorage<T>(key: string, initialValue?: T) {
   const {
     data: value,
     isLoading,
@@ -31,9 +31,7 @@ export function useLocalStorage<T>(key: string) {
     async (storageKey: string) => {
       const item = await LocalStorage.getItem<string>(storageKey);
 
-      if (item) {
-        return JSON.parse(item, reviver) as T;
-      }
+      return item ? JSON.parse(item, reviver) : initialValue;
     },
     [key],
   );
