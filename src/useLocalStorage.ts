@@ -31,7 +31,7 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
     async (storageKey: string) => {
       const item = await LocalStorage.getItem<string>(storageKey);
 
-      return item ? JSON.parse(item, reviver) : initialValue;
+      return item ? (JSON.parse(item, reviver) as T) : initialValue;
     },
     [key],
   );
