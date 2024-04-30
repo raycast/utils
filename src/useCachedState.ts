@@ -1,28 +1,7 @@
 import { useCallback, Dispatch, SetStateAction, useSyncExternalStore, useMemo } from "react";
 import { Cache } from "@raycast/api";
 import { useLatest } from "./useLatest";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function replacer(this: any, key: string, _value: unknown) {
-  const value = this[key];
-  if (value instanceof Date) {
-    return `__raycast_cached_date__${value.toString()}`;
-  }
-  if (Buffer.isBuffer(value)) {
-    return `__raycast_cached_buffer__${value.toString("base64")}`;
-  }
-  return _value;
-}
-
-function reviver(_key: string, value: unknown) {
-  if (typeof value === "string" && value.startsWith("__raycast_cached_date__")) {
-    return new Date(value.replace("__raycast_cached_date__", ""));
-  }
-  if (typeof value === "string" && value.startsWith("__raycast_cached_buffer__")) {
-    return Buffer.from(value.replace("__raycast_cached_buffer__", ""), "base64");
-  }
-  return value;
-}
+import { replacer, reviver } from "./helpers";
 
 const rootCache = Symbol("cache without namespace");
 const cacheMap = new Map<string | symbol, Cache>();
