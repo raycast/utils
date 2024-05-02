@@ -7,8 +7,8 @@ const exampleTodos = [
   { id: "3", title: "Call mom", done: false },
 ];
 
-export default function Command() {
-  const { value: todos, setValue: setTodos, isLoading } = useLocalStorage("todos", exampleTodos);
+function ListItem({ id, title, done }: { id: string; title: string; done: boolean }) {
+  const { value: todos, setValue: setTodos } = useLocalStorage("todos", exampleTodos);
 
   async function toggleTodo(id: string) {
     const newTodos = todos?.map((todo) => (todo.id === id ? { ...todo, done: !todo.done } : todo)) ?? [];
@@ -16,20 +16,22 @@ export default function Command() {
   }
 
   return (
-    <List isLoading={isLoading}>
-      {todos?.map((todo) => (
-        <List.Item
-          icon={todo.done ? { source: Icon.Checkmark, tintColor: Color.Green } : Icon.Circle}
-          key={todo.id}
-          title={todo.title}
-          actions={
-            <ActionPanel>
-              <Action title={todo.done ? "Uncomplete" : "Complete"} onAction={() => toggleTodo(todo.id)} />
-              <Action title="Delete" style={Action.Style.Destructive} onAction={() => toggleTodo(todo.id)} />
-            </ActionPanel>
-          }
-        />
-      ))}
-    </List>
+    <List.Item
+      icon={done ? { source: Icon.Checkmark, tintColor: Color.Green } : Icon.Circle}
+      id={id}
+      title={title}
+      actions={
+        <ActionPanel>
+          <Action title={done ? "Uncomplete" : "Complete"} onAction={() => toggleTodo(id)} />
+          <Action title="Delete" style={Action.Style.Destructive} onAction={() => toggleTodo(id)} />
+        </ActionPanel>
+      }
+    />
   );
+}
+
+export default function Command() {
+  const { value: todos, isLoading } = useLocalStorage("todos", exampleTodos);
+
+  return <List isLoading={isLoading}>{todos?.map((todo) => <ListItem key={todo.id} {...todo} />)}</List>;
 }

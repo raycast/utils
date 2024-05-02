@@ -2,6 +2,8 @@ import { LocalStorage } from "@raycast/api";
 import { showFailureToast } from "./showFailureToast";
 import { replacer, reviver } from "./helpers";
 import { usePromise } from "./usePromise";
+import { useCachedState } from "./useCachedState";
+import { useEffect } from "react";
 
 /**
  * A hook to manage a value in the local storage.
@@ -23,8 +25,13 @@ import { usePromise } from "./usePromise";
  * ```
  */
 export function useLocalStorage<T>(key: string, initialValue?: T) {
+  const [lastUpdate, setLastUpdate] = useCachedState<number>(`useLocalStorage-${key}-last-update`, 0, {
+    cacheNamespace: "useLocalStorage",
+  });
+
   const {
     data: value,
+    revalidate,
     isLoading,
     mutate,
   } = usePromise(
@@ -36,10 +43,15 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
     [key],
   );
 
+  useEffect(() => {
+    revalidate();
+  }, [lastUpdate]);
+
   async function setValue(value: T) {
     try {
       await mutate(LocalStorage.setItem(key, JSON.stringify(value, replacer)), {
         optimisticUpdate(value) {
+          setLastUpdate(Date.now());
           return value;
         },
       });
@@ -52,6 +64,7 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
     try {
       await mutate(LocalStorage.removeItem(key), {
         optimisticUpdate() {
+          setLastUpdate(Date.now());
           return undefined;
         },
       });
