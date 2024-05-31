@@ -3,7 +3,7 @@ import hash from "object-hash";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 import { FunctionReturningPaginatedPromise, FunctionReturningPromise, UseCachedPromiseReturnType } from "./types";
-import { fetch } from "cross-fetch";
+import fetch, { Response, RequestInfo, RequestInit } from "node-fetch-cjs";
 import { isJSON } from "./fetch-utils";
 
 async function defaultParsing(response: Response) {

@@ -1,13 +1,6 @@
 import React from "react";
 import { environment, OAuth } from "@raycast/api";
-
-export type OnAuthorizeParams = {
-  type: OAuthType;
-  token: string;
-  idToken?: string;
-};
-
-type OAuthType = "oauth" | "personal";
+import type { OAuthType, OnAuthorizeParams } from "./types";
 
 let token: string | null = null;
 let type: OAuthType | null = null;

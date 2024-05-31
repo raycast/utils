@@ -1,5 +1,5 @@
 import { environment } from "@raycast/api";
-import fetch from "cross-fetch";
+import fetch, { RequestInfo, RequestInit } from "node-fetch-cjs";
 import { createReadStream, createWriteStream, mkdirSync, Stats } from "node:fs";
 import { stat } from "node:fs/promises";
 import { join, normalize } from "node:path";
@@ -21,7 +21,7 @@ async function cache(url: RequestInfo, destination: string, fetchOptions?: Reque
     return await cacheFile(
       normalize(decodeURIComponent(new URL(url).pathname)),
       destination,
-      fetchOptions?.signal ? fetchOptions.signal : undefined,
+      fetchOptions?.signal ? (fetchOptions.signal as AbortSignal) : undefined,
     );
   } else {
     throw new Error("Only HTTP(S) or file URLs are supported");
@@ -44,7 +44,7 @@ async function cacheURL(url: RequestInfo, destination: string, fetchOptions?: Re
   await pipeline(
     response.body as unknown as NodeJS.ReadableStream,
     createWriteStream(destination),
-    fetchOptions?.signal ? { signal: fetchOptions.signal } : undefined,
+    fetchOptions?.signal ? { signal: fetchOptions.signal as AbortSignal } : undefined,
   );
 }
 
@@ -164,7 +164,7 @@ type Options<T> = {
   /**
    * The hook expects to iterate through an array of data, so by default, it assumes the JSON it receives itself represents an array. However, sometimes the array of data is wrapped in an object,
    * i.e. `{ "success": true, "data": […] }`, or even `{ "success": true, "results": { "data": […] } }`. In those cases, you can use `dataPath` to specify where the data array can be found.
-   * 
+   *
    * @remark If your JSON object has multiple arrays that you want to stream data from, you can pass a regular expression to stream through all of them.
    *
    * @example For `{ "success": true, "data": […] }`, dataPath would be `data`
