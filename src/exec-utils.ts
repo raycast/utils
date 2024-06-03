@@ -2,6 +2,7 @@ import childProcess from "node:child_process";
 import { constants as BufferConstants } from "node:buffer";
 import Stream from "node:stream";
 import { promisify } from "node:util";
+import { onExit } from "signal-exit";
 
 export type SpawnedPromise = Promise<{
   exitCode: number | null;
@@ -14,7 +15,6 @@ export function getSpawnedPromise(
   spawned: childProcess.ChildProcessWithoutNullStreams,
   { timeout }: { timeout?: number } = {},
 ): SpawnedPromise {
-  const { onExit } = require("signal-exit");
   const spawnedPromise: SpawnedPromise = new Promise((resolve, reject) => {
     spawned.on("exit", (exitCode, signal) => {
       resolve({ exitCode, signal, timedOut: false });

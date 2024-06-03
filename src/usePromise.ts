@@ -315,7 +315,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
     paginationArgsRef.current.page += 1;
     const args = (latestArgs.current || []) as Parameters<T>;
     callback(...args);
-  }, [paginationArgsRef, latestValue, latestArgs, callback]);
+  }, [paginationArgsRef, latestArgs, callback]);
 
   // revalidate when the args change
   useEffect(() => {
