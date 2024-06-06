@@ -27,6 +27,11 @@ export type PromiseOptions<T extends FunctionReturningPromise | FunctionReturnin
    */
   execute?: boolean;
   /**
+   * Custom error title for the generic failure toast.
+   * This will replace "Failed to fetch latest data".
+   */
+  errorTitle?: string;
+  /**
    * Called when an execution fails. By default it will log the error and show
    * a generic failure toast.
    */
@@ -183,7 +188,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
           } else {
             if (environment.launchType !== LaunchType.Background) {
               showFailureToast(error, {
-                title: "Failed to fetch latest data",
+                title: options?.errorTitle ?? "Failed to fetch latest data",
                 primaryAction: {
                   title: "Retry",
                   onAction(toast) {

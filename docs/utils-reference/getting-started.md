@@ -16,6 +16,14 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v1.16.0
+
+- Add an `errorTitle` prop to `useFetch`, `useCachedPromise`, and `usePromise` to make it possible to customize the error displayed instead of a generic "Failed to fetch latest data".
+
+### v1.15.0
+
+- Add `useLocalStorage` hook.
+
 ### v1.14.0
 
 - Add `useStreamJSON` hook.
