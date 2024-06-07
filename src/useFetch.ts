@@ -126,7 +126,7 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
     onError,
     onData,
     onWillExecute,
-    errorTitle,
+    failureToastOptions,
     ...fetchOptions
   } = options || {};
 
@@ -137,7 +137,7 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
     onError,
     onData,
     onWillExecute,
-    errorTitle,
+    failureToastOptions,
   };
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);

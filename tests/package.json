@@ -192,6 +192,13 @@
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
       "mode": "view"
+    },
+    {
+      "name": "show-failure-toast",
+      "title": "showFailureToast",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
     }
   ],
   "dependencies": {

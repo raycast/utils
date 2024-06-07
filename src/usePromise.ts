@@ -1,5 +1,5 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
-import { environment, LaunchType } from "@raycast/api";
+import { environment, LaunchType, Toast } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
 import {
   FunctionReturningPromise,
@@ -27,10 +27,10 @@ export type PromiseOptions<T extends FunctionReturningPromise | FunctionReturnin
    */
   execute?: boolean;
   /**
-   * Custom error title for the generic failure toast.
-   * This will replace "Failed to fetch latest data".
+   * Options for the generic failure toast.
+   * It allows you to customize the title, message, and primary action of the failure toast.
    */
-  errorTitle?: string;
+  failureToastOptions?: Partial<Pick<Toast.Options, "title" | "primaryAction" | "message">>;
   /**
    * Called when an execution fails. By default it will log the error and show
    * a generic failure toast.
@@ -188,7 +188,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
           } else {
             if (environment.launchType !== LaunchType.Background) {
               showFailureToast(error, {
-                title: options?.errorTitle ?? "Failed to fetch latest data",
+                title: "Failed to fetch latest data",
                 primaryAction: {
                   title: "Retry",
                   onAction(toast) {
@@ -196,6 +196,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
                     latestCallback.current?.(...((latestArgs.current || []) as Parameters<T>));
                   },
                 },
+                ...options?.failureToastOptions,
               });
             }
           }

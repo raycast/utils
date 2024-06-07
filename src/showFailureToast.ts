@@ -27,12 +27,15 @@ import { Clipboard, environment, open, Toast, showToast } from "@raycast/api";
  * }
  * ```
  */
-export function showFailureToast(error: unknown, options?: { title?: string; primaryAction?: Toast.ActionOptions }) {
+export function showFailureToast(
+  error: unknown,
+  options?: Partial<Pick<Toast.Options, "title" | "primaryAction" | "message">>,
+) {
   const message = error instanceof Error ? error.message : String(error);
   return showToast({
     style: Toast.Style.Failure,
     title: options?.title ?? "Something went wrong",
-    message: message,
+    message: options?.message ?? message,
     primaryAction: options?.primaryAction ?? handleErrorToastAction(error),
     secondaryAction: options?.primaryAction ? handleErrorToastAction(error) : undefined,
   });
