@@ -18,7 +18,7 @@ npm install --save @raycast/utils
 
 ### v1.16.0
 
-- Add an `errorTitle` prop to `useFetch`, `useCachedPromise`, and `usePromise` to make it possible to customize the error displayed instead of a generic "Failed to fetch latest data".
+- Add a `failureToastOptions` prop to `useFetch`, `useCachedPromise`, and `usePromise` to make it possible to customize the error displayed instead of a generic "Failed to fetch latest data".
 
 ### v1.15.0
 
