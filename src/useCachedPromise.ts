@@ -14,7 +14,7 @@ import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 
 // Symbol to differentiate an empty cache from `undefined`
-const emptyCache = Symbol();
+const emptyCache = /* #__PURE__ */ Symbol();
 
 export type CachedPromiseOptions<
   T extends FunctionReturningPromise | FunctionReturningPaginatedPromise,
@@ -150,7 +150,7 @@ export function useCachedPromise<
   const lastUpdateFrom = useRef<"cache" | "promise">();
 
   const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (UnwrapReturn<T> | U)>(
-    hash(args || []) + internal_cacheKeySuffix ?? "",
+    hash(args || []) + (internal_cacheKeySuffix ?? ""),
     emptyCache,
     {
       cacheNamespace: hash(fn),

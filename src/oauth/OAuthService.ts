@@ -1,6 +1,5 @@
 import { OAuth } from "@raycast/api";
-import fetch from "cross-fetch";
-import { OnAuthorizeParams } from "./withAccessToken";
+import fetch from "node-fetch-cjs";
 import {
   asanaService,
   githubService,
@@ -10,21 +9,7 @@ import {
   slackService,
   zoomService,
 } from "./providers";
-
-export interface OAuthServiceOptions {
-  client: OAuth.PKCEClient;
-  clientId: string;
-  scope: string | string[];
-  authorizeUrl: string;
-  tokenUrl: string;
-  refreshTokenUrl?: string;
-  personalAccessToken?: string;
-  bodyEncoding?: "json" | "url-encoded";
-  extraParameters?: Record<string, string>;
-  onAuthorize?: (params: OnAuthorizeParams) => void;
-  tokenResponseParser?: (response: unknown) => OAuth.TokenResponse;
-  tokenRefreshResponseParser?: (response: unknown) => OAuth.TokenResponse;
-}
+import type { OAuthServiceOptions, OnAuthorizeParams } from "./types";
 
 type FetchTokensArgs = { authRequest: OAuth.AuthorizationRequest; authorizationCode: string } & Pick<
   OAuthServiceOptions,
@@ -91,7 +76,7 @@ export class OAuthService implements OAuthServiceOptions {
    * const asana = OAuthService.asana({ scope: 'default' })
    * ```
    */
-  public static asana = asanaService;
+  public static asana: typeof asanaService = asanaService;
 
   /**
    * GitHub OAuth service provided out of the box.
@@ -101,7 +86,7 @@ export class OAuthService implements OAuthServiceOptions {
    * const github = OAuthService.github({ scope: 'repo user' })
    * ```
    */
-  public static github = githubService;
+  public static github: typeof githubService = githubService;
 
   /**
    * Google OAuth service provided out of the box.
@@ -116,7 +101,7 @@ export class OAuthService implements OAuthServiceOptions {
    * });
    * ```
    */
-  public static google = googleService;
+  public static google: typeof googleService = googleService;
 
   /**
    * Jira OAuth service provided out of the box.
@@ -131,7 +116,7 @@ export class OAuthService implements OAuthServiceOptions {
    * });
    * ```
    */
-  public static jira = jiraService;
+  public static jira: typeof jiraService = jiraService;
 
   /**
    * Linear OAuth service provided out of the box.
@@ -141,7 +126,7 @@ export class OAuthService implements OAuthServiceOptions {
    * const linear = OAuthService.linear({ scope: 'read write' })
    * ```
    */
-  public static linear = linearService;
+  public static linear: typeof linearService = linearService;
 
   /**
    * Slack OAuth service provided out of the box.
@@ -151,7 +136,7 @@ export class OAuthService implements OAuthServiceOptions {
    * const slack = OAuthService.slack({ scope: 'emoji:read' })
    * ```
    */
-  public static slack = slackService;
+  public static slack: typeof slackService = slackService;
 
   /**
    * Zoom OAuth service provided out of the box.
@@ -167,7 +152,7 @@ export class OAuthService implements OAuthServiceOptions {
    * });
    * ```
    */
-  public static zoom = zoomService;
+  public static zoom: typeof zoomService = zoomService;
 
   /**
    * Initiates the OAuth authorization process or refreshes existing tokens if necessary.
@@ -184,7 +169,7 @@ export class OAuthService implements OAuthServiceOptions {
           token: currentTokenSet.refreshToken,
           clientId: this.clientId,
           tokenUrl: this.refreshTokenUrl ?? this.tokenUrl,
-        })
+        });
         await this.client.setTokens(tokens);
         return tokens.access_token;
       }

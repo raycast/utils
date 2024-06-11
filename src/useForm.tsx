@@ -119,7 +119,7 @@ interface FormProps<T extends Form.Values> {
  * }
  * ```
  */
-function useForm<T extends Form.Values>(props: {
+export function useForm<T extends Form.Values>(props: {
   /** Callback that will be called when the form is submitted and all validations pass. */
   onSubmit: (values: T) => void | boolean | Promise<void | boolean>;
   /** The initial values to set when the Form is first rendered. */
@@ -243,5 +243,3 @@ function useForm<T extends Form.Values>(props: {
 
   return { handleSubmit, setValidationError, setValue, values, itemProps, focus, reset };
 }
-
-export { useForm };

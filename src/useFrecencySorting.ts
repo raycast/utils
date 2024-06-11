@@ -14,8 +14,6 @@ const HALF_LIFE_DAYS = 10;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-const DECAY_RATE_CONSTANT = Math.log(2) / (HALF_LIFE_DAYS * MS_PER_DAY);
-
 const VISIT_TYPE_POINTS = {
   Default: 100,
   Embed: 0,
@@ -28,6 +26,7 @@ function getNewFrecency(item?: Frecency): Frecency {
   const frecency = item ? item.frecency : 0;
 
   const visitAgeInDays = (now - lastVisited) / MS_PER_DAY;
+  const DECAY_RATE_CONSTANT = Math.log(2) / (HALF_LIFE_DAYS * MS_PER_DAY);
   const currentVisitValue = VISIT_TYPE_POINTS.Default * Math.exp(-DECAY_RATE_CONSTANT * visitAgeInDays);
   const totalVisitValue = frecency + currentVisitValue;
 

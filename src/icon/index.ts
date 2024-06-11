@@ -1,3 +1,3 @@
-export * from "./avatar";
-export * from "./favicon";
-export * from "./progress";
+export { getAvatarIcon } from "./avatar";
+export { getFavicon } from "./favicon";
+export { getProgressIcon } from "./progress";

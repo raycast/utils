@@ -3,8 +3,8 @@ import { Cache } from "@raycast/api";
 import { useLatest } from "./useLatest";
 import { replacer, reviver } from "./helpers";
 
-const rootCache = Symbol("cache without namespace");
-const cacheMap = new Map<string | symbol, Cache>();
+const rootCache = /* #__PURE__ */ Symbol("cache without namespace");
+const cacheMap = /* #__PURE__ */ new Map<string | symbol, Cache>();
 
 /**
  * Returns a stateful value, and a function to update it. The value will be kept between command runs.
