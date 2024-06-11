@@ -1,5 +1,5 @@
 import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
-import { environment, LaunchType } from "@raycast/api";
+import { environment, LaunchType, Toast } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
 import {
   FunctionReturningPromise,
@@ -26,6 +26,11 @@ export type PromiseOptions<T extends FunctionReturningPromise | FunctionReturnin
    * wait util you have all the arguments ready to execute the function.
    */
   execute?: boolean;
+  /**
+   * Options for the generic failure toast.
+   * It allows you to customize the title, message, and primary action of the failure toast.
+   */
+  failureToastOptions?: Partial<Pick<Toast.Options, "title" | "primaryAction" | "message">>;
   /**
    * Called when an execution fails. By default it will log the error and show
    * a generic failure toast.
@@ -191,6 +196,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
                     latestCallback.current?.(...((latestArgs.current || []) as Parameters<T>));
                   },
                 },
+                ...options?.failureToastOptions,
               });
             }
           }
