@@ -26,13 +26,6 @@ export interface OAuthServiceOptions {
   tokenRefreshResponseParser?: (response: unknown) => OAuth.TokenResponse;
 }
 
-type FetchTokensArgs = { authRequest: OAuth.AuthorizationRequest; authorizationCode: string } & Pick<
-  OAuthServiceOptions,
-  "clientId" | "tokenUrl" | "bodyEncoding"
->;
-
-type RefreshTokensArgs = { token: string } & Pick<OAuthServiceOptions, "clientId" | "tokenUrl" | "bodyEncoding">;
-
 /**
  * Class allowing to create an OAuth service using the the PKCE (Proof Key for Code Exchange) flow.
  *
@@ -182,9 +175,7 @@ export class OAuthService implements OAuthServiceOptions {
       if (currentTokenSet.refreshToken && currentTokenSet.isExpired()) {
         const tokens = await this.refreshTokens({
           token: currentTokenSet.refreshToken,
-          clientId: this.clientId,
-          tokenUrl: this.refreshTokenUrl ?? this.tokenUrl,
-        })
+        });
         await this.client.setTokens(tokens);
         return tokens.access_token;
       }
@@ -202,8 +193,6 @@ export class OAuthService implements OAuthServiceOptions {
     const tokens = await this.fetchTokens({
       authRequest,
       authorizationCode,
-      clientId: this.clientId,
-      tokenUrl: this.tokenUrl,
     });
 
     await this.client.setTokens(tokens);
@@ -211,11 +200,17 @@ export class OAuthService implements OAuthServiceOptions {
     return tokens.access_token;
   }
 
-  private async fetchTokens({ authRequest, authorizationCode, clientId, tokenUrl, bodyEncoding }: FetchTokensArgs) {
+  private async fetchTokens({
+    authRequest,
+    authorizationCode,
+  }: {
+    authRequest: OAuth.AuthorizationRequest;
+    authorizationCode: string;
+  }) {
     let options;
-    if (bodyEncoding === "url-encoded") {
+    if (this.bodyEncoding === "url-encoded") {
       const params = new URLSearchParams();
-      params.append("client_id", clientId);
+      params.append("client_id", this.clientId);
       params.append("code", authorizationCode);
       params.append("code_verifier", authRequest.codeVerifier);
       params.append("grant_type", "authorization_code");
@@ -225,7 +220,7 @@ export class OAuthService implements OAuthServiceOptions {
     } else {
       options = {
         body: JSON.stringify({
-          client_id: clientId,
+          client_id: this.clientId,
           code: authorizationCode,
           code_verifier: authRequest.codeVerifier,
           grant_type: "authorization_code",
@@ -235,7 +230,7 @@ export class OAuthService implements OAuthServiceOptions {
       };
     }
 
-    const response = await fetch(tokenUrl, { method: "POST", ...options });
+    const response = await fetch(this.tokenUrl, { method: "POST", ...options });
     if (!response.ok) {
       const responseText = await response.text();
       console.error("fetch tokens error:", responseText);
@@ -247,11 +242,11 @@ export class OAuthService implements OAuthServiceOptions {
     return Array.isArray(tokens.scope) ? { ...tokens, scope: tokens.scope.join(" ") } : tokens;
   }
 
-  private async refreshTokens({ token, clientId, tokenUrl, bodyEncoding }: RefreshTokensArgs) {
+  private async refreshTokens({ token }: { token: string }) {
     let options;
-    if (bodyEncoding === "url-encoded") {
+    if (this.bodyEncoding === "url-encoded") {
       const params = new URLSearchParams();
-      params.append("client_id", clientId);
+      params.append("client_id", this.clientId);
       params.append("refresh_token", token);
       params.append("grant_type", "refresh_token");
 
@@ -259,7 +254,7 @@ export class OAuthService implements OAuthServiceOptions {
     } else {
       options = {
         body: JSON.stringify({
-          client_id: clientId,
+          client_id: this.clientId,
           refresh_token: token,
           grant_type: "refresh_token",
         }),
@@ -267,7 +262,7 @@ export class OAuthService implements OAuthServiceOptions {
       };
     }
 
-    const response = await fetch(tokenUrl, { method: "POST", ...options });
+    const response = await fetch(this.refreshTokenUrl ?? this.tokenUrl, { method: "POST", ...options });
     if (!response.ok) {
       const responseText = await response.text();
       console.error("refresh tokens error:", responseText);
