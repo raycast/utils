@@ -176,8 +176,12 @@ export class OAuthService implements OAuthServiceOptions {
         const tokens = await this.refreshTokens({
           token: currentTokenSet.refreshToken,
         });
-        await this.client.setTokens(tokens);
-        return tokens.access_token;
+
+        // In the case where the refresh token flows fails, nothing is returned and the authorize function is called again.
+        if (tokens) {
+          await this.client.setTokens(tokens);
+          return tokens.access_token;
+        }
       }
       return currentTokenSet.accessToken;
     }
@@ -266,10 +270,14 @@ export class OAuthService implements OAuthServiceOptions {
     if (!response.ok) {
       const responseText = await response.text();
       console.error("refresh tokens error:", responseText);
-      throw new Error(`Error while refreshing tokens: ${response.status} (${response.statusText})\n${responseText}`);
+      // If the refresh token is invalid, stop the flow here, log out the user and prompt them to re-authorize.
+      this.client.description = `${this.client.providerName} needs you to sign-in again. Press ⏎ or click the button below to continue.`;
+      await this.client.removeTokens();
+      await this.authorize();
+    } else {
+      const tokenResponse = this.tokenRefreshResponseParser(await response.json());
+      tokenResponse.refresh_token = tokenResponse.refresh_token ?? token;
+      return tokenResponse;
     }
-    const tokenResponse = this.tokenRefreshResponseParser(await response.json());
-    tokenResponse.refresh_token = tokenResponse.refresh_token ?? token;
-    return tokenResponse;
   }
 }
