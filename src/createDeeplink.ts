@@ -1,12 +1,15 @@
 import { environment, LaunchProps, LaunchType } from "@raycast/api";
 
-export type DeeplinkType = "extension" | "script-command"
+export enum DeeplinkType {
+  ScriptCommand = "script-command",
+  Extension = "extension",
+}
 
 export type CreateScriptCommandDeeplinkOptions = {
   /**
    * The type of deeplink, which should be "script-command".
    */
-  type: "script-command",
+  type: DeeplinkType.ScriptCommand,
   /**
    * The name of the command.
    */
@@ -96,11 +99,11 @@ export function createExtensionDeeplink(options: CreateExtensionDeeplinkOptions)
     params.append("fallbackText", options.fallbackText);
   }
 
-  return `${protocol}extensions/${options.ownerOrAuthorName}/${options.extensionName}/${options.command}`;
+  return `${protocol}extensions/${options.ownerOrAuthorName}/${options.extensionName}/${options.command}?${params.toString()}`;
 }
 
 export function createDeeplink(options: CreateDeeplinkOptions): string {
-  if (options.type === "script-command") {
+  if (options.type === DeeplinkType.ScriptCommand) {
     return createScriptCommandDeeplink(options);
   } else {
     return createExtensionDeeplink(options);
