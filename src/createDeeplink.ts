@@ -5,6 +5,9 @@ export enum DeeplinkType {
   Extension = "extension",
 }
 
+/**
+ * Options for creating a deeplink to a script command.
+ */
 export type CreateScriptCommandDeeplinkOptions = {
   /**
    * The type of deeplink, which should be "script-command".
@@ -20,8 +23,8 @@ export type CreateScriptCommandDeeplinkOptions = {
   arguments?: string[],
 };
 
-/**
- * Options for creating a deeplink to an extension.
+/** 
+ * Base options for creating a deeplink to an extension.
  */
 export type CreateExtensionDeeplinkBaseOptions = {
   /**
@@ -50,6 +53,10 @@ export type CreateExtensionDeeplinkBaseOptions = {
   fallbackText?: string,
 };
 
+/**
+ * Options for creating a deeplink to an extension from another extension.
+ * Requires both the ownerOrAuthorName and extensionName.
+ */
 export type CreateInterExtensionDeeplinkOptions = CreateExtensionDeeplinkBaseOptions & {
   /**
    * The name of the owner or author of the extension.
@@ -61,8 +68,14 @@ export type CreateInterExtensionDeeplinkOptions = CreateExtensionDeeplinkBaseOpt
   extensionName: string
 };
 
+/**
+ * Options for creating a deeplink to an extension.
+ */
 export type CreateExtensionDeeplinkOptions = CreateInterExtensionDeeplinkOptions | CreateExtensionDeeplinkBaseOptions
 
+/**
+ * Options for creating a deeplink.
+ */
 export type CreateDeeplinkOptions = CreateScriptCommandDeeplinkOptions | CreateExtensionDeeplinkOptions;
 
 function getProtocol() {
@@ -115,6 +128,9 @@ export function createExtensionDeeplink(options: CreateExtensionDeeplinkOptions)
   return `${protocol}extensions/${ownerOrAuthorName}/${extensionName}/${options.command}?${params.toString()}`;
 }
 
+/**
+ * Creates a deeplink to a script command or extension.
+ */
 export function createDeeplink(options: CreateDeeplinkOptions): string {
   if (options.type === DeeplinkType.ScriptCommand) {
     return createScriptCommandDeeplink(options);
