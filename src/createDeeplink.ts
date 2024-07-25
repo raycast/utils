@@ -1,4 +1,4 @@
-import { environment } from "@raycast/api";
+import { environment, LaunchProps, LaunchType } from "@raycast/api";
 
 export type DeeplinkType = "extension" | "script-command"
 
@@ -40,25 +40,15 @@ export type CreateExtensionDeeplinkOptions = {
   /**
    * Either "userInitiated", which runs the command in the foreground, or "background", which skips bringing Raycast to the front.
    */
-  launchType?: "userInitiated" | "background",
+  launchType?: LaunchType,
   /**
    * If the command accepts arguments, they can be passed using this query parameter.
    */
-  arguments?: {
-    /**
-     * The representation of arguments given that key here is the `name` defined in manifest file and value is the user's input
-     */
-    [item: string]: any;
-  },
+  arguments?: LaunchProps["arguments"],
   /**
    * If the command make use of LaunchContext, it can be passed using this query parameter.
    */
-  context?: {
-    /**
-     * The context values for a command launch.
-     */
-    [item: string]: any;
-  },
+  context?: LaunchProps["launchContext"],
   /**
    * Some text to prefill the search bar or first text input of the command
    */
