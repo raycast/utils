@@ -23,19 +23,11 @@ export type CreateScriptCommandDeeplinkOptions = {
 /**
  * Options for creating a deeplink to an extension.
  */
-export type CreateExtensionDeeplinkOptions = {
+export type CreateExtensionDeeplinkBaseOptions = {
   /**
    * The type of deeplink, which should be "extension".
    */
   type: "extension",
-  /**
-   * The name of the owner or author of the extension.
-   */
-  ownerOrAuthorName: string,
-  /**
-   * The name of the extension.
-   */
-  extensionName: string,
   /**
    * The command associated with the extension.
    */
@@ -57,6 +49,19 @@ export type CreateExtensionDeeplinkOptions = {
    */
   fallbackText?: string,
 };
+
+export type CreateInterExtensionDeeplinkOptions = CreateExtensionDeeplinkBaseOptions & {
+  /**
+   * The name of the owner or author of the extension.
+   */
+  ownerOrAuthorName: string,
+  /**
+   * The name of the extension.
+   */
+  extensionName: string
+};
+
+export type CreateExtensionDeeplinkOptions = CreateInterExtensionDeeplinkOptions | CreateExtensionDeeplinkBaseOptions
 
 export type CreateDeeplinkOptions = CreateScriptCommandDeeplinkOptions | CreateExtensionDeeplinkOptions;
 
@@ -99,7 +104,15 @@ export function createExtensionDeeplink(options: CreateExtensionDeeplinkOptions)
     params.append("fallbackText", options.fallbackText);
   }
 
-  return `${protocol}extensions/${options.ownerOrAuthorName}/${options.extensionName}/${options.command}?${params.toString()}`;
+  let ownerOrAuthorName = environment.ownerOrAuthorName;
+  let extensionName = environment.extensionName;
+
+  if ("ownerOrAuthorName" in options && "extensionName" in options) {
+    ownerOrAuthorName = options.ownerOrAuthorName;
+    extensionName = options.extensionName;
+  }
+
+  return `${protocol}extensions/${ownerOrAuthorName}/${extensionName}/${options.command}?${params.toString()}`;
 }
 
 export function createDeeplink(options: CreateDeeplinkOptions): string {
