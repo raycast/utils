@@ -5,28 +5,46 @@ export type DeeplinkType = "extension" | "script-command"
 export type CreateScriptCommandDeeplinkOptions = {
   type: "script-command",
   command: string,
+  arguments: string[],
 };
 
-export type CreateExtensionCommandDeeplinkOptions = {
+export type CreateExtensionDeeplinkOptions = {
   type: "extension",
   ownerOrAuthorName: string,
   extensionName: string,
   command: string,
 };
 
-export type CreateDeeplinkOptions = CreateScriptCommandDeeplinkOptions | CreateExtensionCommandDeeplinkOptions;
+export type CreateDeeplinkOptions = CreateScriptCommandDeeplinkOptions | CreateExtensionDeeplinkOptions;
 
 function getProtocol() {
   return environment.raycastVersion.includes("alpha") ? "raycastinternal://" : "raycast://";
 }
 
-export function createDeeplink(options: CreateDeeplinkOptions): string {
+export function createScriptCommandDeeplink(options: CreateScriptCommandDeeplinkOptions): string {
   const protocol = getProtocol();
 
-  switch (options.type) {
-    case "extension":
-      return `${protocol}extensions/${options.ownerOrAuthorName}/${options.extensionName}/${options.command}`;
-    case "script-command":
-      return `${protocol}script-commands/${options.command}`;
+  const params = new URLSearchParams();
+
+  if (options.arguments) {
+    for (const arg of options.arguments) {
+      params.append("arguments", arg);
+    }
+  }
+
+  return `${protocol}script-commands/${options.command}?${params.toString()}`;
+}
+
+export function createExtensionDeeplink(options: CreateExtensionDeeplinkOptions): string {
+  const protocol = getProtocol();
+
+  return `${protocol}extensions/${options.ownerOrAuthorName}/${options.extensionName}/${options.command}`;
+}
+
+export function createDeeplink(options: CreateDeeplinkOptions): string {
+  if (options.type === "script-command") {
+    return createScriptCommandDeeplink(options);
+  } else {
+    return createExtensionDeeplink(options);
   }
 }
