@@ -1,4 +1,4 @@
-import { ActionPanel, Action, Icon, Image, List, Grid } from "@raycast/api";
+import { ActionPanel, Action, Icon, Image, List } from "@raycast/api";
 import { useFetch } from "@raycast/utils";
 import { useState } from "react";
 import { setTimeout } from "timers/promises";

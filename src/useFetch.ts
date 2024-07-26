@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useRef } from "react";
-import hash from "object-hash";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 import { FunctionReturningPaginatedPromise, FunctionReturningPromise, UseCachedPromiseReturnType } from "./types";
 import { fetch } from "cross-fetch";
 import { isJSON } from "./fetch-utils";
+import { hash } from "./helpers";
 
 async function defaultParsing(response: Response) {
   if (!response.ok) {
