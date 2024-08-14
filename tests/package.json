@@ -199,6 +199,13 @@
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
       "mode": "view"
+    },
+    {
+      "name": "create-deeplink",
+      "title": "createDeeplink",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "no-view"
     }
   ],
   "dependencies": {
