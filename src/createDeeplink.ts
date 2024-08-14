@@ -1,7 +1,9 @@
 import { environment, LaunchProps, LaunchType } from "@raycast/api";
 
 export enum DeeplinkType {
+  /** A script command */
   ScriptCommand = "script-command",
+  /** An extension command */
   Extension = "extension",
 }
 
