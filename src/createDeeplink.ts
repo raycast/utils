@@ -83,40 +83,21 @@ function getProtocol() {
 }
 
 export function createScriptCommandDeeplink(options: CreateScriptCommandDeeplinkOptions): string {
-  const protocol = getProtocol();
-
-  const params = new URLSearchParams();
+  let url = `${getProtocol()}script-commands/${options.command}`;
 
   if (options.arguments) {
+    let params = "";
     for (const arg of options.arguments) {
-      params.append("arguments", arg);
+      params += "&arguments=" + encodeURIComponent(arg);
+      console.log(encodeURIComponent(arg));
     }
+    url += "?" + params.substring(1);
   }
 
-  return `${protocol}script-commands/${options.command}?${params.toString()}`;
+  return url;
 }
 
 export function createExtensionDeeplink(options: CreateExtensionDeeplinkOptions): string {
-  const protocol = getProtocol();
-
-  const params = new URLSearchParams();
-
-  if (options.launchType) {
-    params.append("launchType", options.launchType);
-  }
-
-  if (options.arguments) {
-    params.append("arguments", JSON.stringify(options.arguments));
-  }
-
-  if (options.context) {
-    params.append("context", JSON.stringify(options.context));
-  }
-
-  if (options.fallbackText) {
-    params.append("fallbackText", options.fallbackText);
-  }
-
   let ownerOrAuthorName = environment.ownerOrAuthorName;
   let extensionName = environment.extensionName;
 
@@ -125,7 +106,33 @@ export function createExtensionDeeplink(options: CreateExtensionDeeplinkOptions)
     extensionName = options.extensionName;
   }
 
-  return `${protocol}extensions/${ownerOrAuthorName}/${extensionName}/${options.command}?${params.toString()}`;
+
+
+
+  let url = `${getProtocol()}extensions/${ownerOrAuthorName}/${extensionName}/${options.command}`;
+
+  let params = "";
+  if (options.launchType) {
+    params += "&launchType=" + encodeURIComponent(options.launchType);
+  }
+
+  if (options.arguments) {
+    params += "&arguments=" + encodeURIComponent(JSON.stringify(options.arguments));
+  }
+
+  if (options.context) {
+    params += "&context=" + encodeURIComponent(JSON.stringify(options.context));
+  }
+
+  if (options.fallbackText) {
+    params += "&fallbackText=" + encodeURIComponent(options.fallbackText);
+  }
+
+  if (params) {
+    url += "?" + params.substring(1);
+  }
+
+  return url;
 }
 
 /**
