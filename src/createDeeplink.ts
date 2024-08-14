@@ -89,7 +89,6 @@ export function createScriptCommandDeeplink(options: CreateScriptCommandDeeplink
     let params = "";
     for (const arg of options.arguments) {
       params += "&arguments=" + encodeURIComponent(arg);
-      console.log(encodeURIComponent(arg));
     }
     url += "?" + params.substring(1);
   }
