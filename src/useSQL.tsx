@@ -4,12 +4,12 @@ import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import childProcess from "node:child_process";
 import path from "node:path";
-import hash from "object-hash";
 import { useRef, useState, useCallback, useMemo } from "react";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 import { getSpawnedPromise, getSpawnedResult } from "./exec-utils";
 import { showFailureToast } from "./showFailureToast";
+import { hash } from "./helpers";
 
 /**
  * Executes a query on a local SQL database and returns the {@link AsyncState} corresponding to the query of the command. The last value will be kept between command runs.

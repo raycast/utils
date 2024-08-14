@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback } from "react";
-import hash from "object-hash";
 import {
   FunctionReturningPromise,
   UseCachedPromiseReturnType,
@@ -10,8 +9,8 @@ import {
 } from "./types";
 import { useCachedState } from "./useCachedState";
 import { usePromise, PromiseOptions } from "./usePromise";
-
 import { useLatest } from "./useLatest";
+import { hash } from "./helpers";
 
 // Symbol to differentiate an empty cache from `undefined`
 const emptyCache = Symbol();

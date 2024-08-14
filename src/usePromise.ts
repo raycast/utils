@@ -153,6 +153,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
   const latestOnError = useLatest(options?.onError);
   const latestOnData = useLatest(options?.onData);
   const latestOnWillExecute = useLatest(options?.onWillExecute);
+  const latestFailureToast = useLatest(options?.failureToastOptions);
   const latestValue = useLatest(state.data);
   const latestCallback = useRef<(...args: Parameters<T>) => Promise<UnwrapReturn<T>>>();
 
@@ -196,7 +197,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
                     latestCallback.current?.(...((latestArgs.current || []) as Parameters<T>));
                   },
                 },
-                ...options?.failureToastOptions,
+                ...latestFailureToast.current,
               });
             }
           }
@@ -266,8 +267,8 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       latestCallback,
       latestOnWillExecute,
       paginationArgsRef,
+      latestFailureToast,
     ],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   );
 
   latestCallback.current = callback;
@@ -321,7 +322,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
     paginationArgsRef.current.page += 1;
     const args = (latestArgs.current || []) as Parameters<T>;
     callback(...args);
-  }, [paginationArgsRef, latestValue, latestArgs, callback]);
+  }, [paginationArgsRef, latestArgs, callback]);
 
   // revalidate when the args change
   useEffect(() => {

@@ -43,7 +43,7 @@ type WithAccessTokenParameters = {
 /**
  * The component (for a view/menu-bar commands) or function (for a no-view command) that is passed to withAccessToken.
  */
-export type WithAccessTokenComponentOrFn<T = any> = ((params: T) => Promise<void> | void) | React.ComponentType<T>;
+export type WithAccessTokenComponentOrFn<T = any, U = any> = ((params: T) => Promise<U> | U) | React.ComponentType<T>;
 
 /**
  * Higher-order component to wrap a given component or function and set an access token in a shared global variable.
@@ -72,11 +72,11 @@ export type WithAccessTokenComponentOrFn<T = any> = ((params: T) => Promise<void
  * @param {string} options.personalAccessToken - An optional personal access token.
  * @returns {React.ComponentType<T>} The wrapped component.
  */
-export function withAccessToken<T = any>(
+export function withAccessToken<T = any, U = any>(
   options: WithAccessTokenParameters,
-): <U extends WithAccessTokenComponentOrFn<T>>(
-  fnOrComponent: U,
-) => U extends (props: T) => Promise<void> | void ? Promise<void> : React.FunctionComponent<T>;
+): <V extends WithAccessTokenComponentOrFn<T, U>>(
+  fnOrComponent: V,
+) => V extends React.ComponentType<T> ? React.FunctionComponent<T> : (props: T) => Promise<U>;
 export function withAccessToken<T>(options: WithAccessTokenParameters) {
   if (environment.commandMode === "no-view") {
     return (fn: (props: T) => Promise<void> | (() => void)) => {

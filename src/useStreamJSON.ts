@@ -12,7 +12,7 @@ import StreamArray from "stream-json/streamers/StreamArray";
 import { isJSON } from "./fetch-utils";
 import { Flatten, FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
 import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
-import objectHash from "object-hash";
+import { hash } from "./helpers";
 
 async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
@@ -164,7 +164,7 @@ type Options<T> = {
   /**
    * The hook expects to iterate through an array of data, so by default, it assumes the JSON it receives itself represents an array. However, sometimes the array of data is wrapped in an object,
    * i.e. `{ "success": true, "data": […] }`, or even `{ "success": true, "results": { "data": […] } }`. In those cases, you can use `dataPath` to specify where the data array can be found.
-   * 
+   *
    * @remark If your JSON object has multiple arrays that you want to stream data from, you can pass a regular expression to stream through all of them.
    *
    * @example For `{ "success": true, "data": […] }`, dataPath would be `data`
@@ -423,7 +423,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
       transform: ((item: unknown) => T) | undefined,
     ) =>
       async ({ page }) => {
-        const fileName = objectHash(url) + ".json";
+        const fileName = hash(url) + ".json";
         const folder = environment.supportPath;
         if (page === 0) {
           controllerRef.current?.abort();

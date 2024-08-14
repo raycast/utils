@@ -1,3 +1,5 @@
+import objectHash from "object-hash";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function replacer(this: any, key: string, _value: unknown) {
   const value = this[key];
@@ -18,4 +20,16 @@ export function reviver(_key: string, value: unknown) {
     return Buffer.from(value.replace("__raycast_cached_buffer__", ""), "base64");
   }
   return value;
+}
+
+export function hash(object: objectHash.NotUndefined, options?: objectHash.NormalOption): string {
+  return objectHash(object, {
+    replacer: (value): string => {
+      if (value instanceof URLSearchParams) {
+        return value.toString();
+      }
+      return value;
+    },
+    ...options,
+  });
 }
