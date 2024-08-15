@@ -20,6 +20,7 @@ function usePromise<T>(
     onError?: (error: Error) => void;
     onData?: (data: Result<T>) => void;
     onWillExecute?: (args: Parameters<T>) => void;
+    failureToastOptions?: Partial<Pick<Toast.Options, "title" | "primaryAction" | "message">>;
   },
 ): AsyncState<Result<T>> & {
   revalidate: () => void;
@@ -39,6 +40,7 @@ With a few options:
 - `options.onError` is a function called when an execution fails. By default, it will log the error and show a generic failure toast with an action to retry.
 - `options.onData` is a function called when an execution succeeds.
 - `options.onWillExecute` is a function called when an execution will start.
+- `options.failureToastOptions` are the options to customize the title, message, and primary action of the failure toast.
 
 ### Returns
 
