@@ -172,8 +172,22 @@ to
 const { isLoading, data, pagination } = usePromise(
   (searchText: string) =>
     async ({ page, lastItem, cursor }) => {
+      const { data } = await getUsers(page); // or any other asynchronous logic you need to perform
+      const hasMore = page < 50;
+      return { data, hasMore };
+    },
+  [searchText],
+);
+```
+
+or, if your data source uses cursor-based pagination, you can return a `cursor` alongside `data` and `hasMore`, and the cursor will be passed as an argument the next time the function gets called:
+
+```ts
+const { isLoading, data, pagination } = usePromise(
+  (searchText: string) =>
+    async ({ page, lastItem, cursor }) => {
       const { data, nextCursor } = await getUsers(cursor); // or any other asynchronous logic you need to perform
-      const hasMore = page < 50; //
+      const hasMore = nextCursor !== undefined;
       return { data, hasMore, cursor: nextCursor };
     },
   [searchText],
