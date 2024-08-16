@@ -187,7 +187,7 @@ const { isLoading, data, pagination } = usePromise(
   (searchText: string) =>
     async ({ page, lastItem, cursor }) => {
       const { data, nextCursor } = await getUsers(cursor); // or any other asynchronous logic you need to perform
-      const hasMore = page < 50; //
+      const hasMore = nextCursor !== undefined;
       return { data, hasMore, cursor: nextCursor };
     },
   [searchText],

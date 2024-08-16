@@ -252,7 +252,7 @@ const { isLoading, data, pagination } = useCachedPromise(
   (searchText: string) => async (options) => {
     const response = await fetch(`https://api.example?q=${searchText}&cursor=${options.cursor}`);
     const { data, nextCursor } = await response.json();
-    const hasMore = options.page < 50;
+    const hasMore = nextCursor !== undefined;
     return { data, hasMore, cursor: nextCursor };
   },
   [searchText],

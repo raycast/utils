@@ -221,11 +221,8 @@ const { isLoading, data, pagination } = useFetch(
   {
     mapResult(result: SearchResult) {
       const { companies, nextCursor } = result;
-      return {
-        data: companies,
-        hasMore: result.page < result.totalPages,
-        cursor: nextCursor,
-      };
+      const hasMore = nextCursor !== undefined;
+      return { data: companies, hasMore, cursor: nextCursor, };
     },
     keepPreviousData: true,
     initialData: [],
