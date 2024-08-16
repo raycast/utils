@@ -211,6 +211,28 @@ const { isLoading, data, pagination } = useFetch(
 );
 ```
 
+or, if your data source uses cursor-based pagination, you can return a `cursor` alongside `data` and `hasMore`, and the cursor will be passed as an argument the next time the function gets called:
+
+```ts
+const { isLoading, data, pagination } = useFetch(
+  (options) =>
+    "https://api.ycombinator.com/v0.1/companies?" +
+    new URLSearchParams({ cursor: options.cursor, q: searchText }).toString(),
+  {
+    mapResult(result: SearchResult) {
+      const { companies, nextCursor } = result;
+      return {
+        data: companies,
+        hasMore: result.page < result.totalPages,
+        cursor: nextCursor,
+      };
+    },
+    keepPreviousData: true,
+    initialData: [],
+  },
+);
+```
+
 You'll notice that, in the second case, the hook returns an additional item: `pagination`. This can be passed to Raycast's `List` or `Grid` components in order to enable pagination.
 Another thing to notice is that `mapResult`, which is normally optional, is actually required when using pagination. Furthermore, its return type is
 
@@ -218,6 +240,7 @@ Another thing to notice is that `mapResult`, which is normally optional, is actu
 {
   data: any[],
   hasMore?: boolean;
+  cursor?: any;
 }
 ```
 

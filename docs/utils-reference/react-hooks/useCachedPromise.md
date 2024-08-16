@@ -233,9 +233,27 @@ to
 const { isLoading, data, pagination } = useCachedPromise(
   (searchText: string) => async (options) => {
     const response = await fetch(`https://api.example?q=${searchText}&page=${options.page}`);
-    const data = await response.json();
+    const { data } = await response.json();
     const hasMore = options.page < 50;
     return { data, hasMore };
+  },
+  [searchText],
+  {
+    // to make sure the screen isn't flickering when the searchText changes
+    keepPreviousData: true,
+  },
+);
+```
+
+or, if your data source uses cursor-based pagination, you can return a `cursor` alongside `data` and `hasMore`, and the cursor will be passed as an argument the next time the function gets called:
+
+```ts
+const { isLoading, data, pagination } = useCachedPromise(
+  (searchText: string) => async (options) => {
+    const response = await fetch(`https://api.example?q=${searchText}&cursor=${options.cursor}`);
+    const { data, nextCursor } = await response.json();
+    const hasMore = options.page < 50;
+    return { data, hasMore, cursor: nextCursor };
   },
   [searchText],
   {
@@ -252,6 +270,7 @@ Another thing to notice is that the async function receives a [PaginationOptions
 {
   data: any[];
   hasMore: boolean;
+  cursor?: any;
 }
 ```
 
