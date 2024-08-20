@@ -391,6 +391,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     onError,
     onData,
     onWillExecute,
+    failureToastOptions,
     dataPath,
     filter,
     transform,
@@ -407,6 +408,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     onError,
     onData,
     onWillExecute,
+    failureToastOptions,
   };
 
   const generatorRef = useRef<AsyncGenerator<T extends unknown[] ? T : T[]> | null>(null);
