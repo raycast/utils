@@ -14,45 +14,45 @@ export type CreateScriptCommandDeeplinkOptions = {
   /**
    * The type of deeplink, which should be "script-command".
    */
-  type: DeeplinkType.ScriptCommand,
+  type: DeeplinkType.ScriptCommand;
   /**
    * The name of the command.
    */
-  command: string,
+  command: string;
   /**
    * If the command accepts arguments, they can be passed using this query parameter.
    */
-  arguments?: string[],
+  arguments?: string[];
 };
 
-/** 
+/**
  * Base options for creating a deeplink to an extension.
  */
 export type CreateExtensionDeeplinkBaseOptions = {
   /**
    * The type of deeplink, which should be "extension".
    */
-  type: "extension",
+  type?: DeeplinkType.Extension;
   /**
    * The command associated with the extension.
    */
-  command: string,
+  command: string;
   /**
    * Either "userInitiated", which runs the command in the foreground, or "background", which skips bringing Raycast to the front.
    */
-  launchType?: LaunchType,
+  launchType?: LaunchType;
   /**
    * If the command accepts arguments, they can be passed using this query parameter.
    */
-  arguments?: LaunchProps["arguments"],
+  arguments?: LaunchProps["arguments"];
   /**
    * If the command make use of LaunchContext, it can be passed using this query parameter.
    */
-  context?: LaunchProps["launchContext"],
+  context?: LaunchProps["launchContext"];
   /**
    * Some text to prefill the search bar or first text input of the command
    */
-  fallbackText?: string,
+  fallbackText?: string;
 };
 
 /**
@@ -63,17 +63,17 @@ export type CreateInterExtensionDeeplinkOptions = CreateExtensionDeeplinkBaseOpt
   /**
    * The name of the owner or author of the extension.
    */
-  ownerOrAuthorName: string,
+  ownerOrAuthorName: string;
   /**
    * The name of the extension.
    */
-  extensionName: string
+  extensionName: string;
 };
 
 /**
  * Options for creating a deeplink to an extension.
  */
-export type CreateExtensionDeeplinkOptions = CreateInterExtensionDeeplinkOptions | CreateExtensionDeeplinkBaseOptions
+export type CreateExtensionDeeplinkOptions = CreateInterExtensionDeeplinkOptions | CreateExtensionDeeplinkBaseOptions;
 
 /**
  * Options for creating a deeplink.
@@ -106,9 +106,6 @@ export function createExtensionDeeplink(options: CreateExtensionDeeplinkOptions)
     ownerOrAuthorName = options.ownerOrAuthorName;
     extensionName = options.extensionName;
   }
-
-
-
 
   let url = `${getProtocol()}extensions/${ownerOrAuthorName}/${extensionName}/${options.command}`;
 
