@@ -20,6 +20,10 @@ npm install --save @raycast/utils
 
 - Add a new [`createDeeplink`](./functions/createDeeplink.md) function.
 
+### v1.16.5
+
+- Fixed the bug where `failureToastOptions` did not apply for `useExec` and `useStreamJSON` hooks.
+
 ### v1.16.4
 
 - Avoid throwing an error when `useFetch` can't parse the `Content-Type` header of the response.
