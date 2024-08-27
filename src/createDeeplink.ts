@@ -1,4 +1,6 @@
 import { environment, LaunchProps, LaunchType } from "@raycast/api";
+import fs from "node:fs";
+import path from "node:path";
 
 export enum DeeplinkType {
   /** A script command */
@@ -84,6 +86,11 @@ function getProtocol() {
   return environment.raycastVersion.includes("alpha") ? "raycastinternal://" : "raycast://";
 }
 
+function getOwnerOrAuthorName() {
+  const packageJSON = JSON.parse(fs.readFileSync(path.join(environment.assetsPath, "..", "package.json"), "utf8"));
+  return packageJSON.owner || packageJSON.author;
+}
+
 export function createScriptCommandDeeplink(options: CreateScriptCommandDeeplinkOptions): string {
   let url = `${getProtocol()}script-commands/${options.command}`;
 
@@ -99,7 +106,7 @@ export function createScriptCommandDeeplink(options: CreateScriptCommandDeeplink
 }
 
 export function createExtensionDeeplink(options: CreateExtensionDeeplinkOptions): string {
-  let ownerOrAuthorName = environment.ownerOrAuthorName;
+  let ownerOrAuthorName = getOwnerOrAuthorName();
   let extensionName = environment.extensionName;
 
   if ("ownerOrAuthorName" in options && "extensionName" in options) {

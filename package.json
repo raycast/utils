@@ -36,7 +36,7 @@
     "stream-json": "^1.8.0"
   },
   "devDependencies": {
-    "@raycast/api": "1.79.1",
+    "@raycast/api": "1.52.0",
     "@types/content-type": "^1.1.6",
     "@types/object-hash": "^3.0.4",
     "@types/signal-exit": "^3.0.2",
