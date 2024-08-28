@@ -28,7 +28,7 @@ export default function Command(props: LaunchProps<{ arguments: Arguments.Ai }>)
             <Action title="0" onAction={() => handleSetCreativity(0)} />
             <Action title="2" onAction={() => handleSetCreativity(2)} />
             <Action title="3" onAction={() => handleSetCreativity(3)} />
-            <Action title="undefined" onAction={() => handleSetCreativity(undefined)} />
+            <Action title="Undefined" onAction={() => handleSetCreativity(undefined)} />
           </ActionPanel.Submenu>
         </ActionPanel>
       }
