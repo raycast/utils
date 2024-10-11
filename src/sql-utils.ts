@@ -17,21 +17,6 @@ export function isPermissionError(error: unknown): error is PermissionError {
   return error instanceof Error && error.name === "PermissionError";
 }
 
-export function getSystemPreferencesInfo() {
-  const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
-  const preferencesName = macosVenturaAndLater ? "Settings" : "Preferences";
-  const action = macosVenturaAndLater
-    ? {
-        title: "Open System Settings -> Privacy",
-        target: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
-      }
-    : {
-        title: "Open System Preferences -> Security",
-        target: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
-      };
-  return { preferencesName, action };
-}
-
 export async function baseExecuteSQL<T = unknown>(
   databasePath: string,
   query: string,

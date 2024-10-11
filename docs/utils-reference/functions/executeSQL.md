@@ -5,7 +5,7 @@ A function that executes a SQL query on a local SQLite database and returns the 
 ## Signature
 
 ```ts
-function executeSQL<T = unknown>(databasePath: string, query: string): Promise<T[] | undefined>
+function executeSQL<T = unknown>(databasePath: string, query: string): Promise<T[]>
 ```
 
 ### Arguments
@@ -15,7 +15,7 @@ function executeSQL<T = unknown>(databasePath: string, query: string): Promise<T
 
 ### Return
 
-Returns a `Promise` that resolves to an array of objects representing the query results, or `undefined` if an error occurs.
+Returns a `Promise` that resolves to an array of objects representing the query results.
 
 ## Example
 
@@ -37,7 +37,7 @@ export default async function Command() {
 
   const messages = await executeSQL<Message>(DB_PATH, query);
 
-  if (messages && messages.length > 0) {
+  if (messages.length > 0) {
     const latestCode = messages[0].code;
     await Clipboard.paste(latestCode);
     await closeMainWindow();

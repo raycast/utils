@@ -1,10 +1,11 @@
 import { List, MenuBarExtra, Icon, open, LaunchType, environment, ActionPanel, Action } from "@raycast/api";
 import { existsSync } from "node:fs";
+import os from "node:os";
 import { useRef, useState, useCallback, useMemo } from "react";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 import { showFailureToast } from "./showFailureToast";
-import { baseExecuteSQL, PermissionError, isPermissionError, getSystemPreferencesInfo } from "./sql-utils";
+import { baseExecuteSQL, PermissionError, isPermissionError } from "./sql-utils";
 
 /**
  * Executes a query on a local SQL database and returns the {@link AsyncState} corresponding to the query of the command. The last value will be kept between command runs.
@@ -96,20 +97,31 @@ export function useSQL<T = unknown>(
   };
 }
 
+const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
+const preferencesString = macosVenturaAndLater ? "Settings" : "Preferences";
+
 function PermissionErrorScreen(props: { priming?: string }) {
-  const { preferencesName, action } = getSystemPreferencesInfo();
+  const action = macosVenturaAndLater
+    ? {
+        title: "Open System Settings -> Privacy",
+        target: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
+      }
+    : {
+        title: "Open System Preferences -> Security",
+        target: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
+      };
 
   if (environment.commandMode === "menu-bar") {
     return (
       <MenuBarExtra icon={Icon.Warning} title={environment.commandName}>
         <MenuBarExtra.Item
           title="Raycast needs full disk access"
-          tooltip={`You can revert this access in ${preferencesName} whenever you want`}
+          tooltip={`You can revert this access in ${preferencesString} whenever you want`}
         />
         {props.priming ? (
           <MenuBarExtra.Item
             title={props.priming}
-            tooltip={`You can revert this access in ${preferencesName} whenever you want`}
+            tooltip={`You can revert this access in ${preferencesString} whenever you want`}
           />
         ) : null}
         <MenuBarExtra.Separator />
@@ -130,7 +142,7 @@ function PermissionErrorScreen(props: { priming?: string }) {
         title="Raycast needs full disk access."
         description={`${
           props.priming ? props.priming + "\n" : ""
-        }You can revert this access in ${preferencesName} whenever you want.`}
+        }You can revert this access in ${preferencesString} whenever you want.`}
         actions={
           <ActionPanel>
             <Action.Open {...action} />
