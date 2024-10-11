@@ -107,8 +107,15 @@
       "mode": "view"
     },
     {
-      "name": "sql",
+      "name": "use-sql",
       "title": "useSQL",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "view"
+    },
+    {
+      "name": "execute-sql",
+      "title": "executeSQL",
       "subtitle": "Utils Smoke Tests",
       "description": "Utils Smoke Tests",
       "mode": "view"

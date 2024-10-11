@@ -1,7 +1,7 @@
-import { useSQL } from "@raycast/utils";
+import { List } from "@raycast/api";
 import { resolve } from "path";
 import { homedir } from "os";
-import { List } from "@raycast/api";
+import { usePromise, executeSQL } from "@raycast/utils";
 
 const NOTES_DB = resolve(homedir(), "Library/Group Containers/group.com.apple.notes/NoteStore.sqlite");
 const notesQuery = `
@@ -29,6 +29,7 @@ const notesQuery = `
     )
     ORDER BY modDate DESC
   `;
+
 type NoteItem = {
   id: string;
   UUID: string;
@@ -37,11 +38,10 @@ type NoteItem = {
 };
 
 export default function Command() {
-  const { isLoading, data, permissionView } = useSQL<NoteItem>(NOTES_DB, notesQuery);
-
-  if (permissionView) {
-    return permissionView;
-  }
+  const { isLoading, data } = usePromise(async () => {
+    const result = await executeSQL<NoteItem>(NOTES_DB, notesQuery);
+    return result || [];
+  });
 
   return (
     <List isLoading={isLoading}>
