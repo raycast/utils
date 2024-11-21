@@ -99,7 +99,7 @@ export async function runAppleScript<T = string>(
     ...execOptions,
     env: { PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" },
   });
-  const spawnedPromise = getSpawnedPromise(spawned, { timeout: timeout || 10000 });
+  const spawnedPromise = getSpawnedPromise(spawned, { timeout: timeout ?? 10000 });
 
   spawned.stdin.end(script);
 
