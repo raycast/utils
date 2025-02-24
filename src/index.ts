@@ -18,6 +18,7 @@ export * from "./createDeeplink";
 export * from "./executeSQL";
 export * from "./run-applescript";
 export * from "./showFailureToast";
+export * from "./cache";
 
 export type { AsyncState, MutatePromise } from "./types";
 export type { Response } from "cross-fetch";
