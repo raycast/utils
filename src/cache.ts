@@ -1,5 +1,5 @@
 import { Cache } from "@raycast/api";
-import { hash } from "./helpers";
+import { hash, replacer, reviver } from "./helpers";
 
 /**
  * Wraps a function with caching functionality using Raycast's Cache API.
@@ -30,7 +30,7 @@ export async function withCache<T>(
   const key = options?.key ?? hash(fn);
   const cached = cache.get(key);
   if (cached) {
-    const { data, timestamp } = JSON.parse(cached);
+    const { data, timestamp } = JSON.parse(cached, reviver);
     const isExpired = options?.maxAge && Date.now() - timestamp > options.maxAge;
     if (!isExpired && (!options?.validate || options.validate(data))) {
       return data;
@@ -40,10 +40,13 @@ export async function withCache<T>(
   const result = await fn();
   cache.set(
     key,
-    JSON.stringify({
-      data: result,
-      timestamp: Date.now(),
-    }),
+    JSON.stringify(
+      {
+        data: result,
+        timestamp: Date.now(),
+      },
+      replacer,
+    ),
   );
   return result;
 }
