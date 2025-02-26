@@ -16,4 +16,4 @@ npm install --save @raycast/utils
 
 ## Documentation
 
-Find the documentation on [developers.raycast.com](https://developers.raycast.com/utils-reference).
+Find the documentation on [developers.raycast.com](https://developers.raycast.com/utilities/getting-started).
