@@ -6,15 +6,17 @@ async function expensiveFunction() {
   return "Hello, world!";
 }
 
+const cachedFrunction = withCache(expensiveFunction);
+
 export default async function () {
   console.time("Uncached");
-  const res = await withCache(expensiveFunction);
+  const res = await cachedFrunction();
   console.timeEnd("Uncached");
 
   await showToast({ title: "Uncached result: " + res });
 
   console.time("Cached");
-  const res2 = await withCache(expensiveFunction);
+  const res2 = await cachedFrunction();
   console.timeEnd("Cached");
 
   await showToast({ title: "Cached result: " + res2 });
