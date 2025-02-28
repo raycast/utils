@@ -149,7 +149,7 @@ export function useCachedPromise<
   const lastUpdateFrom = useRef<"cache" | "promise">();
 
   const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (UnwrapReturn<T> | U)>(
-    hash(args || []) + internal_cacheKeySuffix ?? "",
+    hash(args || []) + internal_cacheKeySuffix,
     emptyCache,
     {
       cacheNamespace: hash(fn),
