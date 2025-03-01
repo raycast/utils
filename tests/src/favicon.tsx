@@ -5,6 +5,7 @@ export default function Command() {
   return (
     <List>
       <List.Item icon={getFavicon("https://raycast.com")} title="Raycast Website" />
+      <List.Item icon={getFavicon("raycast.com")} title="Raycast Website" />
     </List>
   );
 }
