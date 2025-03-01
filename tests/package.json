@@ -220,6 +220,13 @@
           "type": "text"
         }
       ]
+    },
+    {
+      "name": "cache",
+      "title": "withCache",
+      "subtitle": "Utils Smoke Tests",
+      "description": "Utils Smoke Tests",
+      "mode": "no-view"
     }
   ],
   "dependencies": {
