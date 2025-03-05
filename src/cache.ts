@@ -43,7 +43,9 @@ export function withCache<Fn extends (...args: any) => Promise<any>>(
       }
     }
 
-    const result = await fn();
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const result = await fn(...args);
     cache.set(
       key,
       JSON.stringify(

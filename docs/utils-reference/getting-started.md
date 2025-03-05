@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v1.19.1
+
+- Fixed an issue where arguments weren't passed to `withCache`.
+
 ### v1.19.0
 
 - Add a new [`withCache`](./functions/withCache.md) function.
