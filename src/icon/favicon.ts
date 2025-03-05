@@ -34,8 +34,18 @@ export function getFavicon(
     mask?: Image.Mask;
   },
 ): Image.ImageLike {
+  // a func adding https:// to the URL
+  // for cases where the URL is not a full URL
+  // e.g. "raycast.com"
+  const withHttps = (url: string) => {
+    if (!url.startsWith("http")) {
+      return `https://${url}`;
+    }
+    return url;
+  };
+
   try {
-    const urlObj = typeof url === "string" ? new URL(url) : url;
+    const urlObj = typeof url === "string" ? new URL(withHttps(url)) : url;
     const hostname = urlObj.hostname;
     return {
       source: `https://www.google.com/s2/favicons?sz=${options?.size ?? 64}&domain=${hostname}`,
