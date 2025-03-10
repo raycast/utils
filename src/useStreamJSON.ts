@@ -5,7 +5,7 @@ import { stat } from "node:fs/promises";
 import { join, normalize } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { useRef } from "react";
-import Chain from "stream-chain";
+import chain from "stream-chain";
 import { parser } from "stream-json";
 import Pick from "stream-json/filters/Pick";
 import StreamArray from "stream-json/streamers/StreamArray";
@@ -124,11 +124,11 @@ async function* streamJsonFile<T>(
 ): AsyncGenerator<T extends unknown[] ? T : T[]> {
   let page: T extends unknown[] ? T : T[] = [] as T extends unknown[] ? T : T[];
 
-  const pipeline = new Chain([
+  const pipeline = chain([
     createReadStream(filePath),
     dataPath ? Pick.withParser({ filter: dataPath }) : parser(),
     new StreamArray(),
-    (data) => transformFn?.(data.value) ?? data.value,
+    (data: { value: any }) => transformFn?.(data.value) ?? data.value,
   ]);
 
   abortSignal?.addEventListener("abort", () => {
