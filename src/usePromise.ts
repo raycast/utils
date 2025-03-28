@@ -1,4 +1,4 @@
-import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
+import { useEffect, useCallback, RefObject, useRef, useState } from "react";
 import { environment, LaunchType, Toast } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
 import {
@@ -17,7 +17,7 @@ export type PromiseOptions<T extends FunctionReturningPromise | FunctionReturnin
   /**
    * A reference to an `AbortController` to cancel a previous call when triggering a new one
    */
-  abortable?: MutableRefObject<AbortController | null | undefined>;
+  abortable?: RefObject<AbortController | null | undefined>;
   /**
    * Whether to actually execute the function or not.
    * This is useful for cases where one of the function's arguments depends on something that
