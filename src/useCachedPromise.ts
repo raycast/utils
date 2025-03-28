@@ -146,7 +146,7 @@ export function useCachedPromise<
     internal_cacheKeySuffix,
     ...usePromiseOptions
   }: CachedPromiseOptions<T, U> & { internal_cacheKeySuffix?: string } = options || {};
-  const lastUpdateFrom = useRef<"cache" | "promise">();
+  const lastUpdateFrom = useRef<"cache" | "promise">(null);
 
   const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (UnwrapReturn<T> | U)>(
     hash(args || []) + internal_cacheKeySuffix,

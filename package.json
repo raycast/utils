@@ -15,7 +15,7 @@
     "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
   },
   "peerDependencies": {
-    "@raycast/api": ">=1.69.0"
+    "@raycast/api": ">=1.94.0"
   },
   "keywords": [
     "Raycast",
@@ -36,7 +36,7 @@
     "stream-json": "^1.8.0"
   },
   "devDependencies": {
-    "@raycast/api": "1.52.0",
+    "@raycast/api": "1.94.0",
     "@types/content-type": "^1.1.6",
     "@types/object-hash": "^3.0.4",
     "@types/signal-exit": "^3.0.2",

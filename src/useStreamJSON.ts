@@ -398,8 +398,8 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     pageSize = 20,
     ...fetchOptions
   } = options ?? {};
-  const previousUrl = useRef<RequestInfo>();
-  const previousDestination = useRef<string>();
+  const previousUrl = useRef<RequestInfo>(null);
+  const previousDestination = useRef<string>(null);
 
   const useCachedPromiseOptions: CachedPromiseOptions<FunctionReturningPaginatedPromise, U> = {
     initialData,

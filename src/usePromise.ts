@@ -155,7 +155,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
   const latestOnWillExecute = useLatest(options?.onWillExecute);
   const latestFailureToast = useLatest(options?.failureToastOptions);
   const latestValue = useLatest(state.data);
-  const latestCallback = useRef<(...args: Parameters<T>) => Promise<UnwrapReturn<T>>>();
+  const latestCallback = useRef<(...args: Parameters<T>) => Promise<UnwrapReturn<T>>>(null);
 
   const paginationArgsRef = useRef<PaginationOptions>({ page: 0 });
   const usePaginationRef = useRef(false);
