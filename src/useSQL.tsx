@@ -97,10 +97,10 @@ export function useSQL<T = unknown>(
   };
 }
 
-const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
-const preferencesString = macosVenturaAndLater ? "Settings" : "Preferences";
-
 function PermissionErrorScreen(props: { priming?: string }) {
+  const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
+  const preferencesString = macosVenturaAndLater ? "Settings" : "Preferences";
+
   const action = macosVenturaAndLater
     ? {
         title: "Open System Settings -> Privacy",

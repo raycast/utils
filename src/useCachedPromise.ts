@@ -13,7 +13,7 @@ import { useLatest } from "./useLatest";
 import { hash } from "./helpers";
 
 // Symbol to differentiate an empty cache from `undefined`
-const emptyCache = Symbol();
+const emptyCache = /* #__PURE__ */ Symbol();
 
 export type CachedPromiseOptions<
   T extends FunctionReturningPromise | FunctionReturningPaginatedPromise,

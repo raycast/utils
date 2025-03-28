@@ -1,5 +1,4 @@
 import { environment } from "@raycast/api";
-import fetch from "cross-fetch";
 import { createReadStream, createWriteStream, mkdirSync, Stats } from "node:fs";
 import { stat } from "node:fs/promises";
 import { join, normalize } from "node:path";
@@ -13,6 +12,8 @@ import { isJSON } from "./fetch-utils";
 import { Flatten, FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
 import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
 import { hash } from "./helpers";
+
+type RequestInfo = string | URL | globalThis.Request;
 
 async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {

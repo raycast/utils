@@ -31,8 +31,12 @@ export function getSpawnedPromise(
     }
   });
 
+  const removeExitHandler = onExit(() => {
+    spawned.kill();
+  });
+
   if (timeout === 0 || timeout === undefined) {
-    return spawnedPromise;
+    return spawnedPromise.finally(() => removeExitHandler());
   }
 
   let timeoutId: NodeJS.Timeout;
@@ -47,10 +51,6 @@ export function getSpawnedPromise(
     clearTimeout(timeoutId);
   });
 
-  const removeExitHandler = onExit(() => {
-    spawned.kill();
-  });
-
   return Promise.race([timeoutPromise, safeSpawnedPromise]).finally(() => removeExitHandler());
 }
 
@@ -60,8 +60,6 @@ class MaxBufferError extends Error {
     this.name = "MaxBufferError";
   }
 }
-
-const streamPipelinePromisified = promisify(Stream.pipeline);
 
 function bufferStream<T extends string | Buffer>(options: { encoding: BufferEncoding | "buffer" }) {
   const { encoding } = options;
@@ -111,7 +109,7 @@ async function getStream<T extends string | Buffer>(
 
     (async () => {
       try {
-        await streamPipelinePromisified(inputStream, stream);
+        await promisify(Stream.pipeline)(inputStream, stream);
         resolve();
       } catch (error) {
         rejectPromise(error as any);
@@ -189,7 +187,7 @@ export function handleOutput<T extends string | Buffer>(options: { stripFinalNew
   return value;
 }
 
-const getErrorPrefix = ({
+function getErrorPrefix({
   timedOut,
   timeout,
   signal,
@@ -199,7 +197,7 @@ const getErrorPrefix = ({
   signal: NodeJS.Signals | null;
   timedOut: boolean;
   timeout?: number;
-}) => {
+}) {
   if (timedOut) {
     return `timed out after ${timeout} milliseconds`;
   }
@@ -213,9 +211,9 @@ const getErrorPrefix = ({
   }
 
   return "failed";
-};
+}
 
-const makeError = ({
+function makeError({
   stdout,
   stderr,
   error,
@@ -235,7 +233,7 @@ const makeError = ({
   command: string;
   options?: { timeout?: number };
   parentError: Error;
-}) => {
+}) {
   const prefix = getErrorPrefix({ timedOut, timeout: options?.timeout, signal, exitCode });
   const execaMessage = `Command ${prefix}: ${command}`;
   const shortMessage = error ? `${execaMessage}\n${error.message}` : execaMessage;
@@ -268,7 +266,7 @@ const makeError = ({
   }
 
   return error;
-};
+}
 
 export type ParseExecOutputHandler<
   T,
