@@ -2,7 +2,7 @@ import childProcess from "node:child_process";
 import { constants as BufferConstants } from "node:buffer";
 import Stream from "node:stream";
 import { promisify } from "node:util";
-import { onExit } from "signal-exit";
+import { onExit } from "./vendors/signal-exit";
 
 export type SpawnedPromise = Promise<{
   exitCode: number | null;

@@ -46,7 +46,7 @@ export function getProgressIcon(
   const padding = 5;
   const radius = 50 - padding - stroke / 2;
 
-  const svg = `<svg width="100px" height="100px">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100px" height="100px">
       <circle cx="50" cy="50" r="${radius}" stroke-width="${stroke}" stroke="${
         progress < 1 ? background : color
       }" opacity="${progress < 1 ? backgroundOpacity : "1"}" fill="none" />
@@ -63,5 +63,5 @@ export function getProgressIcon(
       }
     </svg>
   `.replaceAll("\n", "");
-  return `data:image/svg+xml,${svg}`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
