@@ -17,6 +17,7 @@ export { OAuthService, withAccessToken, getAccessToken } from "./oauth";
 export { createDeeplink, createExtensionDeeplink, createScriptCommandDeeplink, DeeplinkType } from "./createDeeplink";
 export { executeSQL } from "./executeSQL";
 export { runAppleScript } from "./run-applescript";
+export { runPowerShellScript } from "./run-powershell-script";
 export { showFailureToast } from "./showFailureToast";
 export { withCache } from "./cache";
 
