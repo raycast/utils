@@ -5,7 +5,7 @@ export default function Command() {
   return (
     <List>
       {Array.from({ length: 11 }, (_, i) => i / 10).map((i) => (
-        <List.Item icon={getProgressIcon(i)} title="Project" />
+        <List.Item key={i} icon={getProgressIcon(i)} title="Project" />
       ))}
     </List>
   );

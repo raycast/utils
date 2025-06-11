@@ -31,11 +31,8 @@ type PowerShellScriptOptions = {
  *   try {
  *     const res = await runPowerShellScript(
  *       `
- *       on run argv
- *         return "hello, " & item 1 of argv & "."
- *       end run
+ *       Write-Host "hello, world."
  *       `,
- *       ["world"]
  *     );
  *     await showHUD(res);
  *   } catch (error) {
@@ -49,38 +46,14 @@ export async function runPowerShellScript<T = string>(
   options?: PowerShellScriptOptions & {
     parseOutput?: ParseExecOutputHandler<T, string, PowerShellScriptOptions>;
   },
-): Promise<string>;
-export async function runPowerShellScript<T = string>(
-  script: string,
-  /**
-   * The arguments to pass to the script.
-   */
-  args: string[],
-  options?: PowerShellScriptOptions & {
-    parseOutput?: ParseExecOutputHandler<T, string, PowerShellScriptOptions>;
-  },
-): Promise<string>;
-export async function runPowerShellScript<T = string>(
-  script: string,
-  optionsOrArgs?:
-    | string[]
-    | (PowerShellScriptOptions & {
-        parseOutput?: ParseExecOutputHandler<T, string, PowerShellScriptOptions>;
-      }),
-  options?: PowerShellScriptOptions & {
-    parseOutput?: ParseExecOutputHandler<T, string, PowerShellScriptOptions>;
-  },
 ): Promise<string> {
   if (process.platform !== "win32") {
     throw new Error("PowerShell is only supported on Windows");
   }
 
-  const { timeout, ...execOptions } = Array.isArray(optionsOrArgs) ? options || {} : optionsOrArgs || {};
+  const { timeout, ...execOptions } = options || {};
 
   const outputArguments = ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "-"];
-  if (Array.isArray(optionsOrArgs)) {
-    outputArguments.push(...optionsOrArgs);
-  }
 
   const spawned = childProcess.spawn("powershell.exe", outputArguments, {
     ...execOptions,

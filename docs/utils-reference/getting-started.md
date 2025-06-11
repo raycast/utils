@@ -20,6 +20,7 @@ npm install --save @raycast/utils
 
 - The library can now be tree-shaken, reducing its size considerably.
 - When using `usePromise` and mutating the data with an optimistic update before it is fetched, the current fetch will be aborted to avoid a race condition.
+- Add a new [`runPowerShellScript`](./functions/runPowerShellScript.md) function.
 
 ### v1.19.1
 
