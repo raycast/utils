@@ -967,7 +967,7 @@ const streamBase =
     if (typeof objectFilter != "function") {
       // no object filter + no first check
       if (state === "check")
-        return (chunk) => {
+        return (chunk: any) => {
           if (asm[chunk.name]) {
             asm[chunk.name](chunk.value);
             if (asm.depth === level) {
@@ -977,7 +977,7 @@ const streamBase =
           return none;
         };
       // no object filter
-      return (chunk) => {
+      return (chunk: any) => {
         switch (state) {
           case "first":
             first(chunk);
@@ -997,7 +997,7 @@ const streamBase =
     }
 
     // object filter + a possible first check
-    return (chunk) => {
+    return (chunk: any) => {
       switch (state) {
         case "first":
           first(chunk);

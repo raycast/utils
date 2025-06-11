@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 export { usePromise } from "./usePromise";
 export { useCachedState } from "./useCachedState";
 export { useCachedPromise } from "./useCachedPromise";

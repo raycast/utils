@@ -34,8 +34,9 @@ export const combineManyMut = (a: any, b: any) => {
   return many(values);
 };
 
-export const flushable = (write: any, final = null) => {
+export const flushable = (write: (value: any) => any, final = null) => {
   const fn = final ? (value: any) => (value === none ? finalValue(undefined) : write(value)) : write;
+  // @ts-ignore
   fn[flushSymbol] = 1;
   return fn;
 };
