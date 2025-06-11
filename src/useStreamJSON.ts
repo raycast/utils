@@ -243,7 +243,7 @@ type Options<T> = {
  *
  * type Formula = { name: string; desc?: string };
  *
- * export default function Main(): JSX.Element {
+ * export default function Main(): React.JSX.Element {
  *   const { data, isLoading, pagination } = useStreamJSON<Formula>("https://formulae.brew.sh/api/formula.json");
  *
  *   return (
@@ -265,7 +265,7 @@ type Options<T> = {
  *
  * type Formula = { name: string; desc?: string };
  *
- * export default function Main(): JSX.Element {
+ * export default function Main(): React.JSX.Element {
  *   const { data, isLoading, pagination } = useStreamJSON<Formula>(`file:///${join(homedir(), "Downloads", "formulae.json")}`);
  *
  *   return (
@@ -296,7 +296,7 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
  *
  * type Formula = { name: string; desc?: string };
  *
- * export default function Main(): JSX.Element {
+ * export default function Main(): React.JSX.Element {
  *   const [searchText, setSearchText] = useState("");
  *
  *   const formulaFilter = useCallback(
@@ -340,7 +340,7 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
  *
  * type Formula = { name: string; desc?: string };
  *
- * export default function Main(): JSX.Element {
+ * export default function Main(): React.JSX.Element {
  *   const [searchText, setSearchText] = useState("");
  *
  *   const formulaFilter = useCallback(
