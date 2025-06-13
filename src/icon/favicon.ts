@@ -1,5 +1,5 @@
 import { Icon, Image } from "@raycast/api";
-import { URL } from "url";
+import { URL } from "node:url";
 
 /**
  * Icon showing the favicon of a website.

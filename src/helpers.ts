@@ -1,4 +1,5 @@
-import objectHash from "object-hash";
+import crypto from "node:crypto";
+import { typeHasher } from "./vendors/type-hasher";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function replacer(this: any, key: string, _value: unknown) {
@@ -22,14 +23,10 @@ export function reviver(_key: string, value: unknown) {
   return value;
 }
 
-export function hash(object: objectHash.NotUndefined, options?: objectHash.NormalOption): string {
-  return objectHash(object, {
-    replacer: (value): string => {
-      if (value instanceof URLSearchParams) {
-        return value.toString();
-      }
-      return value;
-    },
-    ...options,
-  });
+export function hash(object: any) {
+  const hashingStream = crypto.createHash("sha1");
+  const hasher = typeHasher(hashingStream);
+  hasher.dispatch(object);
+
+  return hashingStream.digest("hex");
 }

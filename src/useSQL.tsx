@@ -51,9 +51,9 @@ export function useSQL<T = unknown>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { permissionPriming, ...usePromiseOptions } = options || {};
 
-  const [permissionView, setPermissionView] = useState<JSX.Element>();
+  const [permissionView, setPermissionView] = useState<React.JSX.Element | null>(null);
   const latestOptions = useLatest(options || {});
-  const abortable = useRef<AbortController>();
+  const abortable = useRef<AbortController>(null);
 
   const handleError = useCallback(
     (_error: Error) => {
@@ -97,10 +97,10 @@ export function useSQL<T = unknown>(
   };
 }
 
-const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
-const preferencesString = macosVenturaAndLater ? "Settings" : "Preferences";
-
 function PermissionErrorScreen(props: { priming?: string }) {
+  const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
+  const preferencesString = macosVenturaAndLater ? "Settings" : "Preferences";
+
   const action = macosVenturaAndLater
     ? {
         title: "Open System Settings -> Privacy",

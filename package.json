@@ -4,18 +4,32 @@
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com/utils-reference",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "source": "src/index.ts",
+  "main": "dist/main.js",
+  "module": "dist/module.js",
+  "types": "dist/types.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/module.js",
+      "require": "./dist/main.js"
+    }
+  },
   "scripts": {
     "lint": "eslint src/",
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "(rm -rf .parcel-cache || true) && (rm -rf dist || true) && parcel build",
+    "dev": "parcel watch",
     "test": "npm run lint",
     "prepublishOnly": "npm run build && npm test",
     "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
   },
   "peerDependencies": {
-    "@raycast/api": ">=1.69.0"
+    "@raycast/api": ">=1.99.4",
+    "react": ">=19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "keywords": [
     "Raycast",
@@ -28,20 +42,13 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "cross-fetch": "^3.1.6",
-    "dequal": "^2.0.3",
-    "object-hash": "^3.0.0",
-    "signal-exit": "^4.0.2",
-    "stream-chain": "^2.2.5",
-    "stream-json": "^1.8.0"
+    "dequal": "^2.0.3"
   },
   "devDependencies": {
-    "@raycast/api": "1.52.0",
-    "@types/content-type": "^1.1.6",
-    "@types/object-hash": "^3.0.4",
-    "@types/signal-exit": "^3.0.2",
-    "@types/stream-chain": "^2.0.4",
-    "@types/stream-json": "^1.7.7",
+    "@parcel/packager-ts": "^2.15.2",
+    "@parcel/transformer-typescript-types": "^2.15.2",
+    "@raycast/api": "1.99.4",
+    "@types/node": "22.13.4",
     "@typescript-eslint/eslint-plugin": "6.7.5",
     "@typescript-eslint/parser": "6.7.5",
     "eslint": "8.51.0",
@@ -50,6 +57,7 @@
     "eslint-plugin-jest": "27.4.2",
     "eslint-plugin-prettier": "5.0.0",
     "eslint-plugin-react-hooks": "4.6.0",
-    "typescript": "5.2.2"
+    "parcel": "^2.15.2",
+    "typescript": "5.8.2"
   }
 }

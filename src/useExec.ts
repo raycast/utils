@@ -170,8 +170,18 @@ export function useExec<T, U = undefined>(
   } & ExecOptions &
     ExecCachedPromiseOptions<T, U>,
 ): UseCachedPromiseReturnType<T, U> {
-  const { parseOutput, input, onData, onWillExecute, initialData, execute, keepPreviousData, onError, failureToastOptions, ...execOptions } =
-    Array.isArray(optionsOrArgs) ? options || {} : optionsOrArgs || {};
+  const {
+    parseOutput,
+    input,
+    onData,
+    onWillExecute,
+    initialData,
+    execute,
+    keepPreviousData,
+    onError,
+    failureToastOptions,
+    ...execOptions
+  } = Array.isArray(optionsOrArgs) ? options || {} : optionsOrArgs || {};
 
   const useCachedPromiseOptions: ExecCachedPromiseOptions<T, U> = {
     initialData,
@@ -183,7 +193,7 @@ export function useExec<T, U = undefined>(
     failureToastOptions,
   };
 
-  const abortable = useRef<AbortController>();
+  const abortable = useRef<AbortController>(null);
   const parseOutputRef = useLatest(parseOutput || defaultParsing);
 
   const fn = useCallback(

@@ -1,18 +1,17 @@
 import { environment } from "@raycast/api";
-import fetch from "cross-fetch";
 import { createReadStream, createWriteStream, mkdirSync, Stats } from "node:fs";
 import { stat } from "node:fs/promises";
 import { join, normalize } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { useRef } from "react";
-import Chain from "stream-chain";
-import { parser } from "stream-json";
-import Pick from "stream-json/filters/Pick";
-import StreamArray from "stream-json/streamers/StreamArray";
+import Chain from "./vendors/stream-chain";
+import { parser, PickParser, StreamArray } from "./vendors/stream-json";
 import { isJSON } from "./fetch-utils";
 import { Flatten, FunctionReturningPaginatedPromise, UseCachedPromiseReturnType } from "./types";
 import { CachedPromiseOptions, useCachedPromise } from "./useCachedPromise";
 import { hash } from "./helpers";
+
+type RequestInfo = string | URL | globalThis.Request;
 
 async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
@@ -124,11 +123,11 @@ async function* streamJsonFile<T>(
 ): AsyncGenerator<T extends unknown[] ? T : T[]> {
   let page: T extends unknown[] ? T : T[] = [] as T extends unknown[] ? T : T[];
 
-  const pipeline = new Chain([
+  const pipeline = Chain([
     createReadStream(filePath),
-    dataPath ? Pick.withParser({ filter: dataPath }) : parser(),
-    new StreamArray(),
-    (data) => transformFn?.(data.value) ?? data.value,
+    dataPath ? PickParser({ filter: dataPath }) : parser(),
+    StreamArray(),
+    (data: any) => transformFn?.(data.value) ?? data.value,
   ]);
 
   abortSignal?.addEventListener("abort", () => {
@@ -244,7 +243,7 @@ type Options<T> = {
  *
  * type Formula = { name: string; desc?: string };
  *
- * export default function Main(): JSX.Element {
+ * export default function Main(): React.JSX.Element {
  *   const { data, isLoading, pagination } = useStreamJSON<Formula>("https://formulae.brew.sh/api/formula.json");
  *
  *   return (
@@ -266,7 +265,7 @@ type Options<T> = {
  *
  * type Formula = { name: string; desc?: string };
  *
- * export default function Main(): JSX.Element {
+ * export default function Main(): React.JSX.Element {
  *   const { data, isLoading, pagination } = useStreamJSON<Formula>(`file:///${join(homedir(), "Downloads", "formulae.json")}`);
  *
  *   return (
@@ -297,7 +296,7 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
  *
  * type Formula = { name: string; desc?: string };
  *
- * export default function Main(): JSX.Element {
+ * export default function Main(): React.JSX.Element {
  *   const [searchText, setSearchText] = useState("");
  *
  *   const formulaFilter = useCallback(
@@ -341,7 +340,7 @@ export function useStreamJSON<T, U = unknown>(url: RequestInfo): UseCachedPromis
  *
  * type Formula = { name: string; desc?: string };
  *
- * export default function Main(): JSX.Element {
+ * export default function Main(): React.JSX.Element {
  *   const [searchText, setSearchText] = useState("");
  *
  *   const formulaFilter = useCallback(
@@ -398,8 +397,8 @@ export function useStreamJSON<T, U extends any[] = any[]>(
     pageSize = 20,
     ...fetchOptions
   } = options ?? {};
-  const previousUrl = useRef<RequestInfo>();
-  const previousDestination = useRef<string>();
+  const previousUrl = useRef<RequestInfo>(null);
+  const previousDestination = useRef<string>(null);
 
   const useCachedPromiseOptions: CachedPromiseOptions<FunctionReturningPaginatedPromise, U> = {
     initialData,

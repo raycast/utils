@@ -83,6 +83,10 @@ export async function runAppleScript<T = string>(
     parseOutput?: ParseExecOutputHandler<T, string, AppleScriptOptions>;
   },
 ): Promise<string> {
+  if (process.platform !== "darwin") {
+    throw new Error("AppleScript is only supported on macOS");
+  }
+
   const { humanReadableOutput, language, timeout, ...execOptions } = Array.isArray(optionsOrArgs)
     ? options || {}
     : optionsOrArgs || {};
