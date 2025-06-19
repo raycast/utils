@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v2.0.1
+
+- Fix types for ESM extensions
+
 ### v2.0.0
 
 - The library can now be tree-shaken, reducing its size considerably.

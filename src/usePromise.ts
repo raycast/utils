@@ -168,7 +168,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       latestAbortable.current.current = new AbortController();
     }
     return ++lastCallId.current;
-  }, []);
+  }, [latestAbortable]);
 
   const callback = useCallback(
     (...args: Parameters<T>): Promise<UnwrapReturn<T>> => {
@@ -261,7 +261,6 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       }, handleError) as Promise<UnwrapReturn<T>>;
     },
     [
-      latestAbortable,
       latestOnData,
       latestOnError,
       latestArgs,
@@ -271,6 +270,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       latestOnWillExecute,
       paginationArgsRef,
       latestFailureToast,
+      abort,
     ],
   );
 
@@ -321,7 +321,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
         }
       }
     },
-    [revalidate, latestValue, set],
+    [revalidate, latestValue, set, abort],
   );
 
   const onLoadMore = useCallback(() => {
@@ -349,7 +349,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
     return () => {
       abort();
     };
-  }, []);
+  }, [abort]);
 
   // we only want to show the loading indicator if the promise is executing
   const isLoading = options?.execute !== false ? state.isLoading : false;
