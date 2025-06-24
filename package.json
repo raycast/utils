@@ -10,14 +10,9 @@
   "types": "dist/types.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "default": "./dist/module.js",
-        "types": "./dist/types.d.ts"
-      },
-      "require": {
-        "default": "./dist/main.js",
-        "types": "./dist/types.d.ts"
-      }
+      "types": "./dist/types.d.ts",
+      "import": "./dist/module.js",
+      "require": "./dist/main.js"
     }
   },
   "scripts": {
