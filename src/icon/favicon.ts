@@ -35,13 +35,53 @@ export function getFavicon(
   },
 ): Image.ImageLike {
   try {
-    const urlObj = typeof url === "string" ? new URL(url) : url;
-    const hostname = urlObj.hostname;
-    return {
-      source: `https://www.google.com/s2/favicons?sz=${options?.size ?? 64}&domain=${hostname}`,
-      fallback: options?.fallback ?? Icon.Link,
-      mask: options?.mask,
+    const sanitize = (url: string) => {
+      if (!url.startsWith("http")) {
+        return `https://${url}`;
+      }
+      return url;
     };
+
+    const urlObj = typeof url === "string" ? new URL(sanitize(url)) : url;
+    const hostname = urlObj.hostname;
+
+    const faviconProvider: "none" | "raycast" | "apple" | "google" | "duckDuckGo" | "duckduckgo" | "legacy" =
+      (process.env.FAVICON_PROVIDER as any) ?? "raycast";
+
+    switch (faviconProvider) {
+      case "none":
+        return {
+          source: options?.fallback ?? Icon.Link,
+          mask: options?.mask,
+        };
+      case "apple":
+        // we can't support apple favicons as it's a native API
+        return {
+          source: options?.fallback ?? Icon.Link,
+          mask: options?.mask,
+        };
+      case "duckduckgo":
+      case "duckDuckGo":
+        return {
+          source: `https://icons.duckduckgo.com/ip3/${hostname}.ico`,
+          fallback: options?.fallback ?? Icon.Link,
+          mask: options?.mask,
+        };
+      case "google":
+        return {
+          source: `https://www.google.com/s2/favicons?sz=${options?.size ?? 64}&domain=${hostname}`,
+          fallback: options?.fallback ?? Icon.Link,
+          mask: options?.mask,
+        };
+      case "legacy":
+      case "raycast":
+      default:
+        return {
+          source: `https://api.ray.so/favicon?url=${hostname}&size=${options?.size}`,
+          fallback: options?.fallback ?? Icon.Link,
+          mask: options?.mask,
+        };
+    }
   } catch (e) {
     console.error(e);
     return Icon.Link;
