@@ -1,6 +1,6 @@
 {
   "name": "@raycast/utils",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com/utils-reference",
@@ -65,5 +65,6 @@
     "eslint-plugin-react-hooks": "4.6.0",
     "parcel": "^2.15.2",
     "typescript": "5.8.2"
-  }
+  },
+  "packageManager": "pnpm@9.15.0+sha512.76e2379760a4328ec4415815bcd6628dee727af3779aaa4c914e3944156c4299921a89f976381ee107d41f12cfa4b66681ca9c718f0668fa0831ed4c6d8ba56c"
 }
