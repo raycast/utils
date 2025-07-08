@@ -1,9 +1,9 @@
 {
   "name": "@raycast/utils",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
-  "homepage": "https://developers.raycast.com/utils-reference",
+  "homepage": "https://developers.raycast.com/utilities/getting-started",
   "source": "src/index.ts",
   "main": "dist/main.js",
   "module": "dist/module.js",

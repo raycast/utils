@@ -77,7 +77,7 @@ export function getFavicon(
       case "raycast":
       default:
         return {
-          source: `https://api.ray.so/favicon?url=${hostname}&size=${options?.size}`,
+          source: `https://api.ray.so/favicon?url=${hostname}&size=${options?.size ?? 64}`,
           fallback: options?.fallback ?? Icon.Link,
           mask: options?.mask,
         };
