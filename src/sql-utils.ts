@@ -28,8 +28,66 @@ export async function baseExecuteSQL<T = unknown>(
     throw new Error("The database does not exist");
   }
 
+  let sqlite3: typeof import("node:sqlite");
+  try {
+    sqlite3 = require("node:sqlite");
+  } catch (error) {
+    // If sqlite3 is not available, we fallback to using the sqlite3 CLI (available on macOS and Linux by default).
+    return sqliteFallback<T>(databasePath, query, options);
+  }
+
+  let db = new sqlite3.DatabaseSync(databasePath, { open: false, readOnly: true });
+
   const abortSignal = options?.signal;
-  let workaroundCopiedDb: string | undefined;
+
+  try {
+    db.open();
+  } catch (error: any) {
+    console.log(error);
+    if (error.message.match("(5)") || error.message.match("(14)")) {
+      // That means that the DB is busy because of another app is locking it
+      // This happens when Chrome or Arc is opened: they lock the History db.
+      // As an ugly workaround, we duplicate the file and read that instead
+      // (with vfs unix - none to just not care about locks)
+      let workaroundCopiedDb: string | undefined;
+      if (!workaroundCopiedDb) {
+        const tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
+        await mkdir(tempFolder, { recursive: true });
+        checkAborted(abortSignal);
+
+        workaroundCopiedDb = path.join(tempFolder, "db.db");
+        await copyFile(databasePath, workaroundCopiedDb);
+
+        await writeFile(workaroundCopiedDb + "-shm", "");
+        await writeFile(workaroundCopiedDb + "-wal", "");
+
+        checkAborted(abortSignal);
+      }
+
+      db = new sqlite3.DatabaseSync(workaroundCopiedDb, { open: false, readOnly: true });
+      db.open();
+      checkAborted(abortSignal);
+    }
+  }
+
+  const statement = db.prepare(query);
+  checkAborted(abortSignal);
+
+  const result = statement.all();
+
+  db.close();
+
+  return result as T[];
+}
+
+async function sqliteFallback<T = unknown>(
+  databasePath: string,
+  query: string,
+  options?: {
+    signal?: AbortSignal;
+  },
+): Promise<T[]> {
+  const abortSignal = options?.signal;
 
   let spawned = childProcess.spawn("sqlite3", ["--json", "--readonly", databasePath, query], { signal: abortSignal });
   let spawnedPromise = getSpawnedPromise(spawned);
@@ -45,6 +103,7 @@ export async function baseExecuteSQL<T = unknown>(
     // This happens when Chrome or Arc is opened: they lock the History db.
     // As an ugly workaround, we duplicate the file and read that instead
     // (with vfs unix - none to just not care about locks)
+    let workaroundCopiedDb: string | undefined;
     if (!workaroundCopiedDb) {
       const tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
       await mkdir(tempFolder, { recursive: true });

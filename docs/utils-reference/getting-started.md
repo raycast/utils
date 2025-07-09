@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v2.2.0
+
+- Make `useSQL` and `executeSQL` work on Windows.
+
 ### v2.1.1
 
 - Fix the default size of `getFavicon`.
