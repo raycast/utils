@@ -114,7 +114,7 @@ export function getAvatarIcon(
   const padding = 0;
   const radius = 50 - padding;
 
-  const svg = `<svg width="100px" height="100px">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100px" height="100px">
   ${
     options?.gradient !== false
       ? `<defs>
@@ -138,5 +138,5 @@ export function getAvatarIcon(
       }
     </svg>
   `.replaceAll("\n", "");
-  return `data:image/svg+xml,${svg}`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }

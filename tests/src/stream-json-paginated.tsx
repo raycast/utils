@@ -8,7 +8,7 @@ type Formula = { name: string; desc?: string };
 
 type Cask = { token: string; name: string[]; desc?: string };
 
-export default function Main(): JSX.Element {
+export default function Main(): React.JSX.Element {
   const [searchText, setSearchText] = useState("");
   const [type, setType] = useCachedState<"cask" | "formula" | "nestedData">("cask");
 

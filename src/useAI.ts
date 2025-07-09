@@ -38,7 +38,7 @@ export function useAI(
 ) {
   const { creativity, stream, model, ...usePromiseOptions } = options;
   const [data, setData] = useState("");
-  const abortable = useRef<AbortController>();
+  const abortable = useRef<AbortController>(null);
   const { isLoading, error, revalidate } = usePromise(
     async (prompt: string, creativity?: AI.Creativity, shouldStream?: boolean) => {
       setData("");

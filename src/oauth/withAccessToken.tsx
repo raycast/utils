@@ -1,19 +1,12 @@
 import React from "react";
 import { environment, OAuth } from "@raycast/api";
-
-export type OnAuthorizeParams = {
-  type: OAuthType;
-  token: string;
-  idToken?: string;
-};
-
-type OAuthType = "oauth" | "personal";
+import type { OAuthType, OnAuthorizeParams } from "./types";
 
 let token: string | null = null;
 let type: OAuthType | null = null;
-let authorize: { read(): string } | null = null;
-let getIdToken: { read(): OAuth.TokenSet | undefined } | null = null;
-let onAuthorize: { read(): void } | null = null;
+let authorize: Promise<string> | null = null;
+let getIdToken: Promise<string | undefined> | null = null;
+let onAuthorize: Promise<void> | null = null;
 
 type WithAccessTokenParameters = {
   /**
@@ -67,9 +60,6 @@ export type WithAccessTokenComponentOrFn<T = any, U = any> = ((params: T) => Pro
  * export default withAccessToken(github)(AuthorizedComponent);
  * ```
  *
- * @param {object} options - Configuration options for the token retrieval.
- * @param {() => Promise<string>} options.authorize - A function to retrieve an OAuth token.
- * @param {string} options.personalAccessToken - An optional personal access token.
  * @returns {React.ComponentType<T>} The wrapped component.
  */
 export function withAccessToken<T = any, U = any>(
@@ -105,24 +95,26 @@ export function withAccessToken<T>(options: WithAccessTokenParameters) {
         type = "personal";
       } else {
         if (!authorize) {
-          authorize = wrapPromise(options.authorize());
+          authorize = options.authorize();
         }
-        token = authorize.read();
+        token = React.use(authorize);
         type = "oauth";
       }
 
       let idToken: string | undefined;
       if (options.client) {
         if (!getIdToken) {
-          getIdToken = wrapPromise(options.client.getTokens());
+          getIdToken = options.client?.getTokens().then((tokens) => tokens?.idToken);
         }
-        idToken = getIdToken.read()?.idToken;
+        idToken = React.use(getIdToken);
       }
 
-      if (!onAuthorize && options.onAuthorize) {
-        onAuthorize = wrapPromise(Promise.resolve(options.onAuthorize({ token, type, idToken })));
+      if (options.onAuthorize) {
+        if (!onAuthorize) {
+          onAuthorize = Promise.resolve(options.onAuthorize({ token: token!, type, idToken }));
+        }
+        React.use(onAuthorize);
       }
-      onAuthorize?.read();
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore too complicated for TS
@@ -138,44 +130,20 @@ export function withAccessToken<T>(options: WithAccessTokenParameters) {
 /**
  * Returns the access token and its type. Note that this function must be called in a component wrapped with `withAccessToken`.
  *
- * @throws {Error} If called outside of a component wrapped with `withAccessToken`
+ * Will throw an Error if called outside of a function or component wrapped with `withAccessToken`
+ *
  * @returns {{ token: string, type: "oauth" | "personal" }} An object containing the `token`
  * and its `type`, where type can be either 'oauth' for OAuth tokens or 'personal' for a
  * personal access token.
  */
-export function getAccessToken() {
+export function getAccessToken(): {
+  token: string;
+  /** `oauth` for OAuth tokens or `personal` for personal access token */
+  type: "oauth" | "personal";
+} {
   if (!token || !type) {
     throw new Error("getAccessToken must be used when authenticated (eg. used inside `withAccessToken`)");
   }
 
   return { token, type };
-}
-
-function wrapPromise<T>(promise: Promise<T>): { read(): T } {
-  let status = "pending";
-  let response: T;
-
-  const suspender = promise.then(
-    (res) => {
-      status = "success";
-      response = res;
-    },
-    (err) => {
-      status = "error";
-      response = err;
-    },
-  );
-
-  const read = () => {
-    switch (status) {
-      case "pending":
-        throw suspender;
-      case "error":
-        throw response;
-      default:
-        return response;
-    }
-  };
-
-  return { read };
 }

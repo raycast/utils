@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef } from "react";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 import { FunctionReturningPaginatedPromise, FunctionReturningPromise, UseCachedPromiseReturnType } from "./types";
-import { fetch } from "cross-fetch";
 import { isJSON } from "./fetch-utils";
 import { hash } from "./helpers";
 
@@ -23,6 +22,7 @@ function defaultMapping<V, T extends unknown[]>(result: V): { data: T; hasMore?:
   return { data: result as unknown as T, hasMore: false };
 }
 
+type RequestInfo = string | URL | globalThis.Request;
 type PaginatedRequestInfo = (pagination: { page: number; lastItem?: any; cursor?: any }) => RequestInfo;
 
 /**
@@ -142,8 +142,8 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
   const mapResultRef = useLatest(mapResult || defaultMapping);
-  const urlRef = useRef<RequestInfo | PaginatedRequestInfo>();
-  const firstPageUrlRef = useRef<RequestInfo | undefined>();
+  const urlRef = useRef<RequestInfo | PaginatedRequestInfo>(null);
+  const firstPageUrlRef = useRef<RequestInfo | undefined>(null);
   const firstPageUrl = typeof url === "function" ? url({ page: 0 }) : undefined;
   /**
    * When paginating, `url` is a `PaginatedRequestInfo`, so we only want to update the ref when the `firstPageUrl` changes.
@@ -153,7 +153,7 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
     urlRef.current = url;
   }
   firstPageUrlRef.current = firstPageUrl;
-  const abortable = useRef<AbortController>();
+  const abortable = useRef<AbortController>(null);
 
   const paginatedFn: FunctionReturningPaginatedPromise<[PaginatedRequestInfo, typeof fetchOptions], T> = useCallback(
     (url: PaginatedRequestInfo, options?: RequestInit) => async (pagination: { page: number }) => {

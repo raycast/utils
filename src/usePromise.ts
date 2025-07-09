@@ -1,4 +1,4 @@
-import { useEffect, useCallback, MutableRefObject, useRef, useState } from "react";
+import { useEffect, useCallback, RefObject, useRef, useState } from "react";
 import { environment, LaunchType, Toast } from "@raycast/api";
 import { useDeepMemo } from "./useDeepMemo";
 import {
@@ -17,7 +17,7 @@ export type PromiseOptions<T extends FunctionReturningPromise | FunctionReturnin
   /**
    * A reference to an `AbortController` to cancel a previous call when triggering a new one
    */
-  abortable?: MutableRefObject<AbortController | null | undefined>;
+  abortable?: RefObject<AbortController | null | undefined>;
   /**
    * Whether to actually execute the function or not.
    * This is useful for cases where one of the function's arguments depends on something that
@@ -155,21 +155,24 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
   const latestOnWillExecute = useLatest(options?.onWillExecute);
   const latestFailureToast = useLatest(options?.failureToastOptions);
   const latestValue = useLatest(state.data);
-  const latestCallback = useRef<(...args: Parameters<T>) => Promise<UnwrapReturn<T>>>();
+  const latestCallback = useRef<(...args: Parameters<T>) => Promise<UnwrapReturn<T>>>(null);
 
   const paginationArgsRef = useRef<PaginationOptions>({ page: 0 });
   const usePaginationRef = useRef(false);
   const hasMoreRef = useRef(true);
   const pageSizeRef = useRef(50);
 
+  const abort = useCallback(() => {
+    if (latestAbortable.current) {
+      latestAbortable.current.current?.abort();
+      latestAbortable.current.current = new AbortController();
+    }
+    return ++lastCallId.current;
+  }, [latestAbortable]);
+
   const callback = useCallback(
     (...args: Parameters<T>): Promise<UnwrapReturn<T>> => {
-      const callId = ++lastCallId.current;
-
-      if (latestAbortable.current) {
-        latestAbortable.current.current?.abort();
-        latestAbortable.current.current = new AbortController();
-      }
+      const callId = abort();
 
       latestOnWillExecute.current?.(args);
 
@@ -258,7 +261,6 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       }, handleError) as Promise<UnwrapReturn<T>>;
     },
     [
-      latestAbortable,
       latestOnData,
       latestOnError,
       latestArgs,
@@ -268,6 +270,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       latestOnWillExecute,
       paginationArgsRef,
       latestFailureToast,
+      abort,
     ],
   );
 
@@ -286,6 +289,9 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       let dataBeforeOptimisticUpdate: Awaited<ReturnType<T>> | undefined;
       try {
         if (options?.optimisticUpdate) {
+          // cancel the in-flight request to make sure it won't overwrite the optimistic update
+          abort();
+
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
             // keep track of the data before the optimistic update,
             // but only if we need it (eg. only when we want to automatically rollback after)
@@ -315,7 +321,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
         }
       }
     },
-    [revalidate, latestValue, set],
+    [revalidate, latestValue, set, abort],
   );
 
   const onLoadMore = useCallback(() => {
@@ -333,9 +339,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       callback(...((args || []) as Parameters<T>));
     } else {
       // cancel the previous request if we don't want to execute anymore
-      if (latestAbortable.current) {
-        latestAbortable.current.current?.abort();
-      }
+      abort();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useDeepMemo([args, options?.execute, callback]), latestAbortable, paginationArgsRef]);
@@ -343,12 +347,9 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
   // abort request when unmounting
   useEffect(() => {
     return () => {
-      if (latestAbortable.current) {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        latestAbortable.current.current?.abort();
-      }
+      abort();
     };
-  }, [latestAbortable]);
+  }, [abort]);
 
   // we only want to show the loading indicator if the promise is executing
   const isLoading = options?.execute !== false ? state.isLoading : false;
