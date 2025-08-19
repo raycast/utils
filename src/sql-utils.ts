@@ -30,7 +30,9 @@ export async function baseExecuteSQL<T = unknown>(
 
   let sqlite3: typeof import("node:sqlite");
   try {
-    sqlite3 = require("node:sqlite");
+    // this is a bit ugly but we can't directly import "node:sqlite" here because parcel will hoist it anyway and it will break when it's not available
+    const dynamicImport = (module: string) => import(module);
+    sqlite3 = await dynamicImport("node:sqlite");
   } catch (error) {
     // If sqlite3 is not available, we fallback to using the sqlite3 CLI (available on macOS and Linux by default).
     return sqliteFallback<T>(databasePath, query, options);
