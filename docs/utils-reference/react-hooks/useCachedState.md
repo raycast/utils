@@ -14,6 +14,7 @@ function useCachedState<T>(
   initialState?: T,
   config?: {
     cacheNamespace?: string;
+    capacity?: number;
   },
 ): [T, (newState: T | ((prevState: T) => T)) => void];
 ```
@@ -26,6 +27,7 @@ With a few options:
 
 - `initialState` is the initial value of the state if there aren't any in the Cache yet.
 - `config.cacheNamespace` is a string that can be used to namespace the key.
+- `config.capacity` is the capacity in bytes. If the stored data exceeds the capacity, the least recently used data is removed. The default capacity is 10 MB.
 
 ## Example
 
