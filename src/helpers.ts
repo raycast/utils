@@ -5,7 +5,7 @@ import { typeHasher } from "./vendors/type-hasher";
 export function replacer(this: any, key: string, _value: unknown) {
   const value = this[key];
   if (value instanceof Date) {
-    return `__raycast_cached_date__${value.toString()}`;
+    return `__raycast_cached_date__${value.toISOString()}`;
   }
   if (Buffer.isBuffer(value)) {
     return `__raycast_cached_buffer__${value.toString("base64")}`;
