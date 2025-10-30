@@ -34,17 +34,10 @@ export function getFavicon(
     mask?: Image.Mask;
   },
 ): Image.ImageLike {
-  // a func adding https:// to the URL
-  // for cases where the URL is not a full URL
-  // e.g. "raycast.com"
-  const withHttps = (url: string) => {
-    if (!url.startsWith("http")) {
-      return `https://${url}`;
-    }
-    return url;
-  };
-
   try {
+    // a func adding https:// to the URL
+    // for cases where the URL is not a full URL
+    // e.g. "raycast.com"
     const sanitize = (url: string) => {
       if (!url.startsWith("http")) {
         return `https://${url}`;
