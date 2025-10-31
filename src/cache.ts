@@ -9,6 +9,7 @@ import { hash, replacer, reviver } from "./helpers";
  * @param options - Optional configuration for the cache behavior
  * @param options.validate - Optional validation function for cached data
  * @param options.maxAge - Maximum age of cached data in milliseconds
+ * @param options.capacity - The cache capacity in bytes. If the stored data exceeds the capacity, the least recently used data is removed. By default, the capacity is 10 MB.
  * @returns An async function that returns the result of the function, either from cache or fresh execution
  *
  * @example
@@ -27,9 +28,11 @@ export function withCache<Fn extends (...args: any) => Promise<any>>(
     validate?: (data: Awaited<ReturnType<Fn>>) => boolean;
     /** Maximum age of cached data in milliseconds after which the data will be considered invalid */
     maxAge?: number;
+    /** The cache capacity in bytes. If the stored data exceeds the capacity, the least recently used data is removed. By default, the capacity is 10 MB. */
+    capacity?: number;
   },
 ): Fn & { clearCache: () => void } {
-  const cache = new Cache({ namespace: hash(fn) });
+  const cache = new Cache({ namespace: hash(fn), capacity: options?.capacity });
 
   const wrappedFn = async (...args: Parameters<Fn>) => {
     const key =

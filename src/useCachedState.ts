@@ -6,6 +6,20 @@ import { replacer, reviver } from "./helpers";
 const rootCache = /* #__PURE__ */ Symbol("cache without namespace");
 const cacheMap = /* #__PURE__ */ new Map<string | symbol, Cache>();
 
+export type CacheConfig = {
+  /**
+   * If set, the Cache will be namespaced via a subdirectory.
+   * This can be useful to separate the caches for individual commands of an extension.
+   * By default, the cache is shared between the commands of an extension.
+   */
+  cacheNamespace?: string;
+  /**
+   * The capacity in bytes. If the stored data exceeds the capacity, the least recently used data is removed.
+   * By default, the capacity is 10 MB.
+   */
+  capacity?: number;
+};
+
 /**
  * Returns a stateful value, and a function to update it. The value will be kept between command runs.
  *
@@ -14,20 +28,17 @@ const cacheMap = /* #__PURE__ */ new Map<string | symbol, Cache>();
  * @param key - The unique identifier of the state. This can be used to share the state across components and/or commands.
  * @param initialState - The initial value of the state if there aren't any in the Cache yet.
  */
-export function useCachedState<T>(
-  key: string,
-  initialState: T,
-  config?: { cacheNamespace?: string },
-): [T, Dispatch<SetStateAction<T>>];
+export function useCachedState<T>(key: string, initialState: T, config?: CacheConfig): [T, Dispatch<SetStateAction<T>>];
 export function useCachedState<T = undefined>(key: string): [T | undefined, Dispatch<SetStateAction<T | undefined>>];
 export function useCachedState<T>(
   key: string,
   initialState?: T,
-  config?: { cacheNamespace?: string },
+  config?: CacheConfig,
 ): [T, Dispatch<SetStateAction<T>>] {
   const cacheKey = config?.cacheNamespace || rootCache;
   const cache =
-    cacheMap.get(cacheKey) || cacheMap.set(cacheKey, new Cache({ namespace: config?.cacheNamespace })).get(cacheKey);
+    cacheMap.get(cacheKey) ||
+    cacheMap.set(cacheKey, new Cache({ namespace: config?.cacheNamespace, capacity: config?.capacity })).get(cacheKey);
 
   if (!cache) {
     throw new Error("Missing cache");
