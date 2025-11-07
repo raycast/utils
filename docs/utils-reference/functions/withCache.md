@@ -11,6 +11,7 @@ function withCache<Fn extends (...args: any) => Promise<any>>(
   options?: {
     validate?: (data: Awaited<ReturnType<Fn>>) => boolean;
     maxAge?: number;
+    capacity?: number;
   },
 ): Fn & { clearCache: () => void };
 ```
@@ -21,6 +22,7 @@ function withCache<Fn extends (...args: any) => Promise<any>>(
 
 - `options.validate`: an optional function that receives the cached data and returns a boolean depending on whether the data is still valid or not.
 - `options.maxAge`: Maximum age of cached data in milliseconds after which the data will be considered invalid
+- `options.capacity`: The cache capacity in bytes. If the stored data exceeds the capacity, the least recently used data is removed. By default, the capacity is 10 MB.
 
 ### Return
 
