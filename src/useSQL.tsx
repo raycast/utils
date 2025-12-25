@@ -81,10 +81,6 @@ export function useSQL<T = unknown>(
   );
 
   const fn = useMemo(() => {
-    if (!existsSync(databasePath)) {
-      throw new Error("The database does not exist");
-    }
-
     return async (databasePath: string, query: string) => {
       const abortSignal = abortable.current?.signal;
       return baseExecuteSQL<T>(databasePath, query, { signal: abortSignal });
