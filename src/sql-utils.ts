@@ -44,9 +44,17 @@ export async function baseExecuteSQL<T = unknown>(
 
   try {
     db.open();
+
+    const statement = db.prepare(query);
+    checkAborted(abortSignal);
+
+    const result = statement.all();
+
+    db.close();
+
+    return result as T[];
   } catch (error: any) {
-    console.log(error);
-    if (error.message.match("(5)") || error.message.match("(14)")) {
+    if (error.errcode === 5 || error.errcode === 14 || error.message.match("(5)") || error.message.match("(14)")) {
       // That means that the DB is busy because of another app is locking it
       // This happens when Chrome or Arc is opened: they lock the History db.
       // As an ugly workaround, we duplicate the file and read that instead
@@ -69,17 +77,19 @@ export async function baseExecuteSQL<T = unknown>(
       db = new sqlite3.DatabaseSync(workaroundCopiedDb, { open: false, readOnly: true });
       db.open();
       checkAborted(abortSignal);
+
+      const statement = db.prepare(query);
+      checkAborted(abortSignal);
+
+      const result = statement.all();
+
+      db.close();
+
+      return result as T[];
     }
+
+    throw error;
   }
-
-  const statement = db.prepare(query);
-  checkAborted(abortSignal);
-
-  const result = statement.all();
-
-  db.close();
-
-  return result as T[];
 }
 
 async function sqliteFallback<T = unknown>(
