@@ -1,6 +1,6 @@
 {
   "name": "@raycast/utils",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "Set of utilities to streamline building Raycast extensions",
   "author": "Raycast Technologies Ltd.",
   "homepage": "https://developers.raycast.com/utilities/getting-started",
@@ -46,19 +46,19 @@
     "dequal": "^2.0.3"
   },
   "devDependencies": {
-    "@parcel/packager-ts": "^2.16.0",
-    "@parcel/transformer-typescript-types": "^2.16.0",
+    "@parcel/packager-ts": "^2.16.4",
+    "@parcel/transformer-typescript-types": "^2.16.4",
     "@raycast/api": "1.99.4",
     "@types/node": "22.13.4",
-    "@typescript-eslint/eslint-plugin": "6.7.5",
-    "@typescript-eslint/parser": "6.7.5",
-    "eslint": "8.51.0",
-    "eslint-config-prettier": "9.0.0",
-    "eslint-plugin-import": "2.28.1",
+    "@typescript-eslint/eslint-plugin": "^6.7.5",
+    "@typescript-eslint/parser": "^6.7.5",
+    "eslint": "^8.51.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.28.1",
     "eslint-plugin-jest": "27.4.2",
-    "eslint-plugin-prettier": "5.0.0",
-    "eslint-plugin-react-hooks": "4.6.0",
-    "parcel": "^2.16.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "parcel": "^2.16.4",
     "typescript": "^5.9.3"
   }
 }

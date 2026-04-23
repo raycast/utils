@@ -58,6 +58,8 @@ const avatarColorSet = [
   "#5385D9", // Blue
 ];
 
+const isX = !!process.env.RAYCASTX;
+
 /**
  * Icon to represent an avatar when you don't have one. The generated avatar
  * will be generated from the initials of the name and have a colorful but consistent background.
@@ -114,6 +116,12 @@ export function getAvatarIcon(
   const padding = 0;
   const radius = 50 - padding;
 
+  const svgInitials = initials
+    ? `<text x="50" y="${isX ? 50 : 80}" font-size="${
+        radius - 1
+      }" font-family="Inter, sans-serif" text-anchor="middle" ${isX ? 'dominant-baseline="central" ' : ""}fill="white">${initials.toUpperCase()}</text>`
+    : "";
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100px" height="100px">
   ${
     options?.gradient !== false
@@ -129,13 +137,7 @@ export function getAvatarIcon(
       <circle cx="50" cy="50" r="${radius}" fill="${
         options?.gradient !== false ? "url(#Gradient)" : backgroundColor
       }" />
-      ${
-        initials
-          ? `<text x="50" y="80" font-size="${
-              radius - 1
-            }" font-family="Inter, sans-serif" text-anchor="middle" fill="white">${initials.toUpperCase()}</text>`
-          : ""
-      }
+      ${svgInitials}
     </svg>
   `.replaceAll("\n", "");
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
