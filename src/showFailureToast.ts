@@ -52,7 +52,7 @@ const handleErrorToastAction = (error: unknown): Toast.ActionOptions => {
     if (!packageJSON.owner || packageJSON.access === "public") {
       privateExtension = false;
     }
-  } catch (err) {
+  } catch {
     // no-op
   }
 

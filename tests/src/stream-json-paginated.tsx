@@ -20,7 +20,7 @@ export default function Main(): React.JSX.Element {
     [searchText],
   );
 
-  const formulaTransform = useCallback((item: any): Formula => {
+  const formulaTransform = useCallback((item: Formula): Formula => {
     return { name: item.name, desc: item.desc };
   }, []);
 
@@ -45,7 +45,7 @@ export default function Main(): React.JSX.Element {
     [searchText],
   );
 
-  const caskTransform = useCallback((item: any): Cask => {
+  const caskTransform = useCallback((item: Cask): Cask => {
     return { token: item.token, name: item.name, desc: item.desc };
   }, []);
 

@@ -66,7 +66,7 @@ async function cacheURLIfNecessary(
 
   try {
     await stat(folder);
-  } catch (e) {
+  } catch {
     mkdirSync(folder, { recursive: true });
     await cache(url, destination, fetchOptions);
     return;
@@ -79,7 +79,7 @@ async function cacheURLIfNecessary(
   let stats: Stats | undefined = undefined;
   try {
     stats = await stat(destination);
-  } catch (e) {
+  } catch {
     await cache(url, destination, fetchOptions);
     return;
   }
@@ -105,7 +105,7 @@ async function cacheURLIfNecessary(
       if (sourceStats.mtimeMs > stats.mtimeMs) {
         await cache(url, destination, fetchOptions);
       }
-    } catch (e) {
+    } catch {
       throw new Error("Source file could not be read");
     }
   } else {
