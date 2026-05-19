@@ -341,7 +341,6 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       // cancel the previous request if we don't want to execute anymore
       abort();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useDeepMemo([args, options?.execute, callback]), latestAbortable, paginationArgsRef]);
 
   // abort request when unmounting

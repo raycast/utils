@@ -268,10 +268,9 @@ export class OAuthService implements OAuthServiceOptions {
         user_scope: options.scope,
       },
       personalAccessToken: options.personalAccessToken,
-      bodyEncoding: options.tokenUrl ? options.bodyEncoding ?? "url-encoded" : "json",
+      bodyEncoding: options.tokenUrl ? (options.bodyEncoding ?? "url-encoded") : "json",
       onAuthorize: options.onAuthorize,
       tokenRefreshResponseParser: options.tokenRefreshResponseParser,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokenResponseParser:
         options.tokenResponseParser ??
         ((response: any) => {

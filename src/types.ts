@@ -21,9 +21,9 @@ export type UnwrapReturn<T extends FunctionReturningPromise | FunctionReturningP
   T extends FunctionReturningPromise
     ? Awaited<ReturnType<T>>
     : T extends FunctionReturningPaginatedPromise
-    ? // @ts-expect-error data
-      Awaited<ReturnType<ReturnType<T>>>["data"]
-    : never;
+      ? // @ts-expect-error data
+        Awaited<ReturnType<ReturnType<T>>>["data"]
+      : never;
 export type Flatten<T> = T extends Array<infer U> ? U : T;
 
 export type AsyncState<T> =

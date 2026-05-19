@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-control-regex */
 /* eslint-disable no-useless-escape */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { flushable, gen, many, none, combineManyMut } from "./stream-chain";
 import { StringDecoder } from "node:string_decoder";
 import EventEmitter from "node:events";

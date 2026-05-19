@@ -33,7 +33,7 @@ export async function baseExecuteSQL<T = unknown>(
     // this is a bit ugly but we can't directly import "node:sqlite" here because parcel will hoist it anyway and it will break when it's not available
     const dynamicImport = (module: string) => import(module);
     sqlite3 = await dynamicImport("node:sqlite");
-  } catch (error) {
+  } catch {
     // If sqlite3 is not available, we fallback to using the sqlite3 CLI (available on macOS and Linux by default).
     return sqliteFallback<T>(databasePath, query, options);
   }
@@ -66,7 +66,15 @@ export async function baseExecuteSQL<T = unknown>(
         checkAborted(abortSignal);
 
         workaroundCopiedDb = path.join(tempFolder, "db.db");
-        await copyFile(databasePath, workaroundCopiedDb);
+
+        try {
+          await copyFile(databasePath, workaroundCopiedDb);
+        } catch (copyError: any) {
+          if (process.platform === "darwin" && copyError.code === "EPERM") {
+            throw new PermissionError("You do not have permission to access the database.");
+          }
+          throw copyError;
+        }
 
         await writeFile(workaroundCopiedDb + "-shm", "");
         await writeFile(workaroundCopiedDb + "-wal", "");
@@ -87,7 +95,6 @@ export async function baseExecuteSQL<T = unknown>(
 
       return result as T[];
     }
-
     throw error;
   }
 }
@@ -143,7 +150,7 @@ async function sqliteFallback<T = unknown>(
   }
 
   if (error || exitCode !== 0 || signal !== null) {
-    if (stderrResult.includes("authorization denied")) {
+    if (process.platform === "darwin" && stderrResult.includes("authorization denied")) {
       throw new PermissionError("You do not have permission to access the database.");
     } else {
       throw new Error(stderrResult || "Unknown error");

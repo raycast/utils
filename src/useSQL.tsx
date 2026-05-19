@@ -5,7 +5,7 @@ import { useRef, useState, useCallback, useMemo } from "react";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 import { showFailureToast } from "./showFailureToast";
-import { baseExecuteSQL, PermissionError, isPermissionError } from "./sql-utils";
+import { baseExecuteSQL, isPermissionError } from "./sql-utils";
 
 /**
  * Executes a query on a local SQL database and returns the {@link AsyncState} corresponding to the query of the command. The last value will be kept between command runs.
@@ -56,13 +56,8 @@ export function useSQL<T = unknown>(
   const abortable = useRef<AbortController>(null);
 
   const handleError = useCallback(
-    (_error: Error) => {
-      console.error(_error);
-      const error =
-        _error instanceof Error && _error.message.includes("authorization denied")
-          ? new PermissionError("You do not have permission to access the database.")
-          : (_error as Error);
-
+    (error: Error) => {
+      console.error(error);
       if (isPermissionError(error)) {
         setPermissionView(<PermissionErrorScreen priming={latestOptions.current.permissionPriming} />);
       } else {
@@ -99,7 +94,7 @@ export function useSQL<T = unknown>(
 
 function PermissionErrorScreen(props: { priming?: string }) {
   const macosVenturaAndLater = parseInt(os.release().split(".")[0]) >= 22;
-  const preferencesString = macosVenturaAndLater ? "Settings" : "Preferences";
+  const preferencesString = macosVenturaAndLater ? "System Settings" : "Preferences";
 
   const action = macosVenturaAndLater
     ? {

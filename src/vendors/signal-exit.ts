@@ -218,7 +218,7 @@ class SignalExit {
         // @ts-ignore
         const fn = this.#sigListeners[sig];
         if (fn) this.#process.on(sig, fn);
-      } catch (_) {
+      } catch {
         // no-op
       }
     }
@@ -245,7 +245,7 @@ class SignalExit {
       try {
         this.#process.removeListener(sig, listener);
         /* c8 ignore start */
-      } catch (_) {
+      } catch {
         // no-op
       }
       /* c8 ignore stop */
