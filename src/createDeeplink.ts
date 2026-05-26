@@ -87,7 +87,9 @@ function getProtocol() {
     ? process.env.RAYCASTX
       ? "raycast-x-internal://"
       : "raycastinternal://"
-    : "raycast://";
+    : process.env.RAYCASTX
+      ? "raycast-x://"
+      : "raycast://";
 }
 
 function getOwnerOrAuthorName() {
