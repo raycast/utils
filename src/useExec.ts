@@ -2,83 +2,12 @@
  * Inspired by Execa
  */
 
-import childProcess from "node:child_process";
 import { useCallback, useRef } from "react";
 
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 import { UseCachedPromiseReturnType } from "./types";
-import {
-  getSpawnedPromise,
-  getSpawnedResult,
-  handleOutput,
-  defaultParsing,
-  ParseExecOutputHandler,
-} from "./exec-utils";
-
-type ExecOptions = {
-  /**
-   * If `true`, runs the command inside of a shell. Uses `/bin/sh`. A different shell can be specified as a string. The shell should understand the `-c` switch.
-   *
-   * We recommend against using this option since it is:
-   * - not cross-platform, encouraging shell-specific syntax.
-   * - slower, because of the additional shell interpretation.
-   * - unsafe, potentially allowing command injection.
-   *
-   * @default false
-   */
-  shell?: boolean | string;
-  /**
-   * Strip the final newline character from the output.
-   * @default true
-   */
-  stripFinalNewline?: boolean;
-  /**
-   * Current working directory of the child process.
-   * @default process.cwd()
-   */
-  cwd?: string;
-  /**
-   * Environment key-value pairs. Extends automatically from `process.env`.
-   * @default process.env
-   */
-  env?: NodeJS.ProcessEnv;
-  /**
-   * Specify the character encoding used to decode the stdout and stderr output. If set to `"buffer"`, then stdout and stderr will be a Buffer instead of a string.
-   *
-   * @default "utf8"
-   */
-  encoding?: BufferEncoding | "buffer";
-  /**
-   * Write some input to the `stdin` of your binary.
-   */
-  input?: string | Buffer;
-  /** If timeout is greater than `0`, the parent will send the signal `SIGTERM` if the child runs longer than timeout milliseconds.
-   *
-   * @default 10000
-   */
-  timeout?: number;
-};
-
-const SPACES_REGEXP = / +/g;
-function parseCommand(command: string, args?: string[]) {
-  if (args) {
-    return [command, ...args];
-  }
-  const tokens: string[] = [];
-  for (const token of command.trim().split(SPACES_REGEXP)) {
-    // Allow spaces to be escaped by a backslash if not meant as a delimiter
-    const previousToken = tokens[tokens.length - 1];
-    if (previousToken && previousToken.endsWith("\\")) {
-      // Merge previous token with current one
-      tokens[tokens.length - 1] = `${previousToken.slice(0, -1)} ${token}`;
-    } else {
-      tokens.push(token);
-    }
-  }
-
-  return tokens;
-}
+import { baseExec, defaultParsing, ExecOptions, ParseExecOutputHandler } from "./exec-utils";
 
 type ExecCachedPromiseOptions<T, U> = Omit<
   CachedPromiseOptions<
@@ -198,46 +127,12 @@ export function useExec<T, U = undefined>(
 
   const fn = useCallback(
     async (_command: string, _args: string[], _options?: ExecOptions, input?: string | Buffer) => {
-      const [file, ...args] = parseCommand(_command, _args);
-      const command = [file, ...args].join(" ");
-
-      const options = {
-        stripFinalNewline: true,
+      return baseExec<T>(_command, _args, {
         ..._options,
-        timeout: _options?.timeout || 10000,
-        signal: abortable.current?.signal,
-        encoding: _options?.encoding === null ? "buffer" : _options?.encoding || "utf8",
-        env: { PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", ...process.env, ..._options?.env },
-      };
-
-      const spawned = childProcess.spawn(file, args, options);
-      const spawnedPromise = getSpawnedPromise(spawned, options);
-
-      if (input) {
-        spawned.stdin.end(input);
-      }
-
-      const [{ error, exitCode, signal, timedOut }, stdoutResult, stderrResult] = await getSpawnedResult(
-        spawned,
-        options,
-        spawnedPromise,
-      );
-      const stdout = handleOutput(options, stdoutResult);
-      const stderr = handleOutput(options, stderrResult);
-
-      return parseOutputRef.current({
-        // @ts-expect-error too many generics, I give up
-        stdout,
-        // @ts-expect-error too many generics, I give up
-        stderr,
-        error,
-        exitCode,
-        signal,
-        timedOut,
-        command,
-        options,
-        parentError: new Error(),
-      }) as T;
+        input,
+        signal: abortable.current?.signal ?? undefined,
+        parseOutput: parseOutputRef.current as ParseExecOutputHandler<T, string | Buffer, ExecOptions>,
+      });
     },
     [parseOutputRef],
   );

@@ -3,6 +3,7 @@
 - [Getting Started](utils-reference/getting-started.md)
 - [Functions](utils-reference/functions/README.md)
   - [createDeeplink](utils-reference/functions/createDeeplink.md)
+  - [exec](utils-reference/functions/exec.md)
   - [executeSQL](utils-reference/functions/executeSQL.md)
   - [runAppleScript](utils-reference/functions/runAppleScript.md)
   - [runPowerShellScript](utils-reference/functions/runPowerShellScript.md)
