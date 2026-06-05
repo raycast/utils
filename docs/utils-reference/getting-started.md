@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v2.2.6
+
+- Fixed `createDeeplink` on Raycast V2
+
 ### v2.2.5
 
 - Fixed an issue where `useSql` would not properly show the permission priming screen
