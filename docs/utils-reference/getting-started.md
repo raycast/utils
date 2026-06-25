@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v2.2.6
+
+- Fixed an issue where refreshing OAuth tokens would fails for providers that return scope as an array instead of a string
+
 ### v2.2.5
 
 - Fixed an issue where `useSql` would not properly show the permission priming screen
