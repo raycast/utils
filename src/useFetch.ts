@@ -144,7 +144,16 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
   const mapResultRef = useLatest(mapResult || defaultMapping);
   const urlRef = useRef<RequestInfo | PaginatedRequestInfo>(null);
   const firstPageUrlRef = useRef<RequestInfo | undefined>(null);
-  const firstPageUrl = typeof url === "function" ? url({ page: 0 }) : undefined;
+  const isPaginated = typeof url === "function";
+  let firstPageUrl: RequestInfo | undefined;
+
+  if (isPaginated) {
+    try {
+      firstPageUrl = url({ page: 0 });
+    } catch {
+      // Defer URL factory errors to the paginated fetcher so usePromise can expose them through its error state.
+    }
+  }
   /**
    * When paginating, `url` is a `PaginatedRequestInfo`, so we only want to update the ref when the `firstPageUrl` changes.
    * When not paginating, `url` is a `RequestInfo`, so we want to update the ref whenever `url` changes.
@@ -174,11 +183,11 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
   );
 
   const promise = useMemo(() => {
-    if (firstPageUrlRef.current) {
+    if (isPaginated) {
       return paginatedFn;
     }
     return fn;
-  }, [firstPageUrlRef, fn, paginatedFn]);
+  }, [isPaginated, fn, paginatedFn]);
 
   // @ts-expect-error lastItem can't be inferred properly
   return useCachedPromise(promise, [urlRef.current as PaginatedRequestInfo, fetchOptions], {
