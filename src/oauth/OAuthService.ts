@@ -7,6 +7,11 @@ import type {
   ProviderWithDefaultClientOptions,
 } from "./types";
 
+function normalizeTokenResponse(tokens: OAuth.TokenResponse): OAuth.TokenResponse {
+  // Some clients such as Linear can return a scope array instead of a string.
+  return Array.isArray(tokens.scope) ? { ...tokens, scope: tokens.scope.join(" ") } : tokens;
+}
+
 /**
  * Class allowing to create an OAuth service using the the PKCE (Proof Key for Code Exchange) flow.
  *
@@ -400,8 +405,7 @@ export class OAuthService implements OAuthServiceOptions {
     }
     const tokens = this.tokenResponseParser(await response.json());
 
-    // Some clients such as Linear can return a scope array instead of a string
-    return Array.isArray(tokens.scope) ? { ...tokens, scope: tokens.scope.join(" ") } : tokens;
+    return normalizeTokenResponse(tokens);
   }
 
   private async refreshTokens({ token }: { token: string }) {
@@ -435,7 +439,7 @@ export class OAuthService implements OAuthServiceOptions {
     } else {
       const tokenResponse = this.tokenRefreshResponseParser(await response.json());
       tokenResponse.refresh_token = tokenResponse.refresh_token ?? token;
-      return tokenResponse;
+      return normalizeTokenResponse(tokenResponse);
     }
   }
 }
