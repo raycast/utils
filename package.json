@@ -45,6 +45,9 @@
   "dependencies": {
     "dequal": "^2.0.3"
   },
+  "overrides": {
+    "js-yaml": "4.3.0"
+  },
   "devDependencies": {
     "@raycast/eslint-config": "^2.0.4",
     "@parcel/packager-ts": "^2.16.4",
