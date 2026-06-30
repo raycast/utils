@@ -2,7 +2,52 @@ import childProcess from "node:child_process";
 import { constants as BufferConstants } from "node:buffer";
 import Stream from "node:stream";
 import { promisify } from "node:util";
+import crossSpawn from "cross-spawn";
 import { onExit } from "./vendors/signal-exit";
+
+export type ExecOptions = {
+  /**
+   * If `true`, runs the command inside of a shell. Uses `/bin/sh`. A different shell can be specified as a string. The shell should understand the `-c` switch.
+   *
+   * We recommend against using this option since it is:
+   * - not cross-platform, encouraging shell-specific syntax.
+   * - slower, because of the additional shell interpretation.
+   * - unsafe, potentially allowing command injection.
+   *
+   * @default false
+   */
+  shell?: boolean | string;
+  /**
+   * Strip the final newline character from the output.
+   * @default true
+   */
+  stripFinalNewline?: boolean;
+  /**
+   * Current working directory of the child process.
+   * @default process.cwd()
+   */
+  cwd?: string;
+  /**
+   * Environment key-value pairs. Extends automatically from `process.env`.
+   * @default process.env
+   */
+  env?: NodeJS.ProcessEnv;
+  /**
+   * Specify the character encoding used to decode the stdout and stderr output. If set to `"buffer"`, then stdout and stderr will be a Buffer instead of a string.
+   *
+   * @default "utf8"
+   */
+  encoding?: BufferEncoding | "buffer";
+  /**
+   * Write some input to the `stdin` of your binary.
+   */
+  input?: string | Buffer;
+  /** If timeout is greater than `0`, the parent will send the signal `SIGTERM` if the child runs longer than timeout milliseconds.
+   *
+   * @default 10000
+   */
+  timeout?: number;
+};
 
 export type SpawnedPromise = Promise<{
   exitCode: number | null;
@@ -331,4 +376,93 @@ export function defaultParsing<T extends string | Buffer>({
   }
 
   return stdout;
+}
+
+const SPACES_REGEXP = / +/g;
+export function parseCommand(command: string, args?: string[]) {
+  if (args) {
+    return [command, ...args];
+  }
+  const tokens: string[] = [];
+  for (const token of command.trim().split(SPACES_REGEXP)) {
+    // Allow spaces to be escaped by a backslash if not meant as a delimiter
+    const previousToken = tokens[tokens.length - 1];
+    if (previousToken && previousToken.endsWith("\\")) {
+      // Merge previous token with current one
+      tokens[tokens.length - 1] = `${previousToken.slice(0, -1)} ${token}`;
+    } else {
+      tokens.push(token);
+    }
+  }
+
+  return tokens;
+}
+
+/**
+ * Cross-OS-correct command execution shared by `useExec` and the imperative `exec`.
+ *
+ * Uses `cross-spawn` in place of `childProcess.spawn` so commands resolve across `PATH` + `PATHEXT`
+ * (finding `.cmd`/`.bat` shims like `npx.cmd`), read `PATH` under its real case-insensitive key, and
+ * are escaped correctly when Windows routes them through `cmd.exe`, without the injection hazards of
+ * `shell: true`. On macOS/Linux `cross-spawn` delegates straight to `childProcess.spawn`, so behavior
+ * there is unchanged.
+ */
+export async function baseExec<T = string>(
+  _command: string,
+  _args?: string[],
+  _options?: ExecOptions & {
+    parseOutput?: ParseExecOutputHandler<T, string | Buffer, ExecOptions>;
+    /**
+     * A Signal object that allows you to abort the command if required via an AbortController object.
+     */
+    signal?: AbortSignal;
+  },
+): Promise<T> {
+  const { parseOutput, input, signal, ...execOptions } = _options ?? {};
+  const [file, ...args] = parseCommand(_command, _args);
+  const command = [file, ...args].join(" ");
+
+  const options = {
+    stripFinalNewline: true,
+    ...execOptions,
+    timeout: execOptions.timeout || 10000,
+    signal,
+    encoding: execOptions.encoding || "utf8",
+    env: {
+      // The default Unix `PATH` is meaningless on Windows and would collide with `process.env.Path`.
+      ...(process.platform === "win32" ? {} : { PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" }),
+      ...process.env,
+      ...execOptions.env,
+    },
+  };
+
+  const spawned = crossSpawn(file, args, options) as childProcess.ChildProcessWithoutNullStreams;
+  const spawnedPromise = getSpawnedPromise(spawned, options);
+
+  if (input) {
+    spawned.stdin.end(input);
+  }
+
+  const [{ error, exitCode, signal: exitSignal, timedOut }, stdoutResult, stderrResult] = await getSpawnedResult(
+    spawned,
+    options,
+    spawnedPromise,
+  );
+  const stdout = handleOutput(options, stdoutResult);
+  const stderr = handleOutput(options, stderrResult);
+
+  const parse = parseOutput ?? (defaultParsing as ParseExecOutputHandler<T, string | Buffer, ExecOptions>);
+  const parseArgs = {
+    stdout,
+    stderr,
+    error,
+    exitCode,
+    signal: exitSignal,
+    timedOut,
+    command,
+    options,
+    parentError: new Error(),
+  };
+
+  return parse(parseArgs) as T;
 }

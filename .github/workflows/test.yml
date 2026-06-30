@@ -16,7 +16,11 @@ on:
 jobs:
   tests:
     if: github.repository == 'raycast/utils'
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: raycast/github-actions/git-checkout@v1.13.0
@@ -30,9 +34,15 @@ jobs:
         run: npm run test
       - name: Build
         run: npm run build
+      - name: Unit Tests
+        run: npm run test:unit
+      # The Raycast CLI's `ray build` does not run on Windows, so Windows coverage
+      # stops at the unit tests above; the example extension builds on Linux and macOS.
       - name: Npm Install Tests
+        if: runner.os != 'Windows'
         run: npm ci
         working-directory: ./tests
       - name: Build tests
+        if: runner.os != 'Windows'
         run: npm run build
         working-directory: ./tests
