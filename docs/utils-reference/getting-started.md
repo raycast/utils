@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v2.2.7
+
+- Fixed `runAppleScript` timeout error messages reporting `undefined` instead of the effective timeout.
+
 ### v2.2.6
 
 - Fixed an issue where refreshing OAuth tokens would fails for providers that return scope as an array instead of a string
