@@ -124,7 +124,12 @@ export async function runAppleScript<T = string>(
     signal,
     timedOut,
     command: "osascript",
-    options: { timeout: effectiveTimeout },
+    options: {
+      humanReadableOutput,
+      language,
+      timeout: effectiveTimeout,
+      ...execOptions,
+    },
     parentError: new Error(),
   });
 }
