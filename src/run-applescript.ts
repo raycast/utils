@@ -103,7 +103,8 @@ export async function runAppleScript<T = string>(
     ...execOptions,
     env: { PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" },
   });
-  const spawnedPromise = getSpawnedPromise(spawned, { timeout: timeout ?? 10000 });
+  const effectiveTimeout = timeout ?? 10000;
+  const spawnedPromise = getSpawnedPromise(spawned, { timeout: effectiveTimeout });
 
   spawned.stdin.end(script);
 
@@ -123,7 +124,12 @@ export async function runAppleScript<T = string>(
     signal,
     timedOut,
     command: "osascript",
-    options,
+    options: {
+      humanReadableOutput,
+      language,
+      timeout: effectiveTimeout,
+      ...execOptions,
+    },
     parentError: new Error(),
   });
 }
