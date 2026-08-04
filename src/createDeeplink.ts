@@ -1,7 +1,6 @@
 import { environment, LaunchProps, LaunchType } from "@raycast/api";
 import fs from "node:fs";
 import path from "node:path";
-import process from "node:process";
 
 export enum DeeplinkType {
   /** A script command */
@@ -84,7 +83,14 @@ export type CreateExtensionDeeplinkOptions = CreateInterExtensionDeeplinkOptions
 export type CreateDeeplinkOptions = CreateScriptCommandDeeplinkOptions | CreateExtensionDeeplinkOptions;
 
 function getProtocol() {
-  return `${process.env.RAYCAST_SCHEME}://`;
+  if (process.env.RAYCAST_SCHEME) {
+    return `${process.env.RAYCAST_SCHEME}://`;
+  }
+  return environment.raycastVersion.includes("alpha")
+    ? process.env.RAYCASTX
+      ? "raycast-x-internal://"
+      : "raycastinternal://"
+    : "raycast://";
 }
 
 function getOwnerOrAuthorName() {
