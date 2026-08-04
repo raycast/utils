@@ -83,6 +83,9 @@ export type CreateExtensionDeeplinkOptions = CreateInterExtensionDeeplinkOptions
 export type CreateDeeplinkOptions = CreateScriptCommandDeeplinkOptions | CreateExtensionDeeplinkOptions;
 
 function getProtocol() {
+  if (process.env.RAYCAST_SCHEME) {
+    return `${process.env.RAYCAST_SCHEME}://`;
+  }
   return environment.raycastVersion.includes("alpha")
     ? process.env.RAYCASTX
       ? "raycast-x-internal://"
