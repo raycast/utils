@@ -19,8 +19,8 @@
     "lint": "eslint src/ test/",
     "build": "(rm -rf .parcel-cache || true) && (rm -rf dist || true) && parcel build",
     "dev": "parcel watch",
-    "test": "tsc -p test/tsconfig.json && vitest run && npm run lint",
-    "prepublishOnly": "npm run build && npm test",
+    "test": "tsc -p test/tsconfig.json && vitest run",
+    "prepublishOnly": "npm run build && npm run lint && npm test",
     "postpublish": "gh workflow run sync-utils-docs.yml --repo raycast/extensions"
   },
   "peerDependencies": {
