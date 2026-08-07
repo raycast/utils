@@ -46,7 +46,7 @@ jobs:
         run: npm run build
       - name: Npm Install Tests
         run: npm ci
-        working-directory: ./tests
+        working-directory: ./smoke-tests
       - name: Build tests
         run: npm run build
-        working-directory: ./tests
+        working-directory: ./smoke-tests
