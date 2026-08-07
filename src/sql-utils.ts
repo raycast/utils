@@ -38,65 +38,77 @@ export async function baseExecuteSQL<T = unknown>(
     return sqliteFallback<T>(databasePath, query, options);
   }
 
-  let db = new sqlite3.DatabaseSync(databasePath, { open: false, readOnly: true });
-
   const abortSignal = options?.signal;
 
   try {
-    db.open();
-
-    const statement = db.prepare(query);
-    checkAborted(abortSignal);
-
-    const result = statement.all();
-
-    db.close();
-
-    return result as T[];
-  } catch (error: any) {
-    if (error.errcode === 5 || error.errcode === 14 || error.message.match("(5)") || error.message.match("(14)")) {
+    return executeWithNodeSQLite<T>(sqlite3, databasePath, query, abortSignal);
+  } catch (error) {
+    if (isDatabaseBusy(error)) {
       // That means that the DB is busy because of another app is locking it
       // This happens when Chrome or Arc is opened: they lock the History db.
       // As an ugly workaround, we duplicate the file and read that instead
       // (with vfs unix - none to just not care about locks)
-      let workaroundCopiedDb: string | undefined;
-      if (!workaroundCopiedDb) {
-        const tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
-        await mkdir(tempFolder, { recursive: true });
-        checkAborted(abortSignal);
-
-        workaroundCopiedDb = path.join(tempFolder, "db.db");
-
-        try {
-          await copyFile(databasePath, workaroundCopiedDb);
-        } catch (copyError: any) {
-          if (process.platform === "darwin" && copyError.code === "EPERM") {
-            throw new PermissionError("You do not have permission to access the database.");
-          }
-          throw copyError;
-        }
-
-        await writeFile(workaroundCopiedDb + "-shm", "");
-        await writeFile(workaroundCopiedDb + "-wal", "");
-
-        checkAborted(abortSignal);
-      }
-
-      db = new sqlite3.DatabaseSync(workaroundCopiedDb, { open: false, readOnly: true });
-      db.open();
-      checkAborted(abortSignal);
-
-      const statement = db.prepare(query);
-      checkAborted(abortSignal);
-
-      const result = statement.all();
-
-      db.close();
-
-      return result as T[];
+      const workaroundCopiedDb = await createDatabaseCopy(databasePath, abortSignal);
+      return executeWithNodeSQLite<T>(sqlite3, workaroundCopiedDb, query, abortSignal);
     }
     throw error;
   }
+}
+
+function executeWithNodeSQLite<T>(
+  sqlite3: typeof import("node:sqlite"),
+  databasePath: string,
+  query: string,
+  abortSignal?: AbortSignal,
+) {
+  const db = new sqlite3.DatabaseSync(databasePath, { open: false, readOnly: true });
+  let opened = false;
+  try {
+    db.open();
+    opened = true;
+    checkAborted(abortSignal);
+    const statement = db.prepare(query);
+    checkAborted(abortSignal);
+    return statement.all() as T[];
+  } finally {
+    if (opened) {
+      db.close();
+    }
+  }
+}
+
+function isDatabaseBusy(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const errorWithCode = error as Error & { errcode?: number };
+  return (
+    errorWithCode.errcode === 5 ||
+    errorWithCode.errcode === 14 ||
+    error.message.includes("(5)") ||
+    error.message.includes("(14)")
+  );
+}
+
+async function createDatabaseCopy(databasePath: string, abortSignal?: AbortSignal) {
+  const tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
+  await mkdir(tempFolder, { recursive: true });
+  checkAborted(abortSignal);
+
+  const workaroundCopiedDb = path.join(tempFolder, "db.db");
+  try {
+    await copyFile(databasePath, workaroundCopiedDb);
+  } catch (error) {
+    if (process.platform === "darwin" && error instanceof Error && "code" in error && error.code === "EPERM") {
+      throw new PermissionError("You do not have permission to access the database.");
+    }
+    throw error;
+  }
+
+  await writeFile(workaroundCopiedDb + "-shm", "");
+  await writeFile(workaroundCopiedDb + "-wal", "");
+  checkAborted(abortSignal);
+  return workaroundCopiedDb;
 }
 
 async function sqliteFallback<T = unknown>(
@@ -117,25 +129,12 @@ async function sqliteFallback<T = unknown>(
   );
   checkAborted(abortSignal);
 
-  if (stderrResult.match("(5)") || stderrResult.match("(14)")) {
+  if (stderrResult.includes("(5)") || stderrResult.includes("(14)")) {
     // That means that the DB is busy because of another app is locking it
     // This happens when Chrome or Arc is opened: they lock the History db.
     // As an ugly workaround, we duplicate the file and read that instead
     // (with vfs unix - none to just not care about locks)
-    let workaroundCopiedDb: string | undefined;
-    if (!workaroundCopiedDb) {
-      const tempFolder = path.join(os.tmpdir(), "useSQL", hash(databasePath));
-      await mkdir(tempFolder, { recursive: true });
-      checkAborted(abortSignal);
-
-      workaroundCopiedDb = path.join(tempFolder, "db.db");
-      await copyFile(databasePath, workaroundCopiedDb);
-
-      await writeFile(workaroundCopiedDb + "-shm", "");
-      await writeFile(workaroundCopiedDb + "-wal", "");
-
-      checkAborted(abortSignal);
-    }
+    const workaroundCopiedDb = await createDatabaseCopy(databasePath, abortSignal);
 
     spawned = childProcess.spawn("sqlite3", ["--json", "--readonly", "--vfs", "unix-none", workaroundCopiedDb, query], {
       signal: abortSignal,

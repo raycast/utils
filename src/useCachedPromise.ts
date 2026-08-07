@@ -24,6 +24,10 @@ export type CachedPromiseOptions<
    */
   initialData?: U;
   /**
+   * The debounce time in milliseconds for writing to the cache.
+   */
+  cacheWriteDebounce?: number;
+  /**
    * Tells the hook to keep the previous results instead of returning the initial value
    * if there aren't any in the cache for the new arguments.
    * This is particularly useful when used for data for a List to avoid flickering.
@@ -144,21 +148,22 @@ export function useCachedPromise<
     initialData,
     keepPreviousData,
     internal_cacheKeySuffix,
+    cacheWriteDebounce,
     ...usePromiseOptions
   }: CachedPromiseOptions<T, U> & { internal_cacheKeySuffix?: string } = options || {};
-  const lastUpdateFrom = useRef<"cache" | "promise">(null);
+  const lastUpdateFrom = useRef<{ cacheKey: string; source: "cache" | "promise" } | null>(null);
+  const cacheKey = hash(args || []) + internal_cacheKeySuffix;
 
-  const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (UnwrapReturn<T> | U)>(
-    hash(args || []) + internal_cacheKeySuffix,
-    emptyCache,
-    {
-      cacheNamespace: hash(fn),
-    },
-  );
+  const [cachedData, mutateCache] = useCachedState<typeof emptyCache | (UnwrapReturn<T> | U)>(cacheKey, emptyCache, {
+    cacheNamespace: hash(fn),
+    cacheWriteDebounce,
+  });
 
   // Use a ref to store previous returned data. Use the inital data as its inital value from the cache.
   const laggyDataRef = useRef<Awaited<ReturnType<T>> | U>(cachedData !== emptyCache ? cachedData : (initialData as U));
-  const paginationArgsRef = useRef<PaginationOptions<UnwrapReturn<T> | U> | undefined>(undefined);
+  const paginationArgsRef = useRef<
+    { cacheKey: string; pagination: PaginationOptions<UnwrapReturn<T> | U> | undefined } | undefined
+  >(undefined);
 
   const {
     mutate: _mutate,
@@ -169,28 +174,30 @@ export function useCachedPromise<
   } = usePromise(fn, args || ([] as any as Parameters<T>), {
     ...usePromiseOptions,
     onData(data, pagination) {
-      paginationArgsRef.current = pagination;
-      if (usePromiseOptions.onData) {
-        usePromiseOptions.onData(data, pagination);
-      }
+      paginationArgsRef.current = { cacheKey, pagination };
+      const onDataResult = usePromiseOptions.onData?.(data, pagination);
       if (pagination && pagination.page > 0) {
         // don't cache beyond the first page
-        return;
+        return onDataResult;
       }
-      lastUpdateFrom.current = "promise";
+      lastUpdateFrom.current = { cacheKey, source: "promise" };
       laggyDataRef.current = data;
       mutateCache(data);
+      return onDataResult;
     },
   });
 
   let returnedData: U | Awaited<ReturnType<T>> | UnwrapReturn<T>;
   const pagination = state.pagination;
+  const currentPaginationArgs =
+    paginationArgsRef.current?.cacheKey === cacheKey ? paginationArgsRef.current.pagination : undefined;
+  const currentLastUpdateFrom = lastUpdateFrom.current?.cacheKey === cacheKey ? lastUpdateFrom.current.source : null;
   // when paginating, only the first page gets cached, so we return the data we get from `usePromise`, because
   // it will be accumulated.
-  if (paginationArgsRef.current && paginationArgsRef.current.page > 0 && state.data) {
+  if (currentPaginationArgs && currentPaginationArgs.page > 0 && state.data) {
     returnedData = state.data as UnwrapReturn<T>;
     // if the latest update if from the Promise, we keep it
-  } else if (lastUpdateFrom.current === "promise") {
+  } else if (currentLastUpdateFrom === "promise") {
     returnedData = laggyDataRef.current;
   } else if (keepPreviousData && cachedData !== emptyCache) {
     // if we want to keep the latest data, we pick the cache but only if it's not empty
@@ -214,11 +221,13 @@ export function useCachedPromise<
   }
 
   const latestData = useLatest(returnedData);
+  const latestCacheKey = useLatest(cacheKey);
 
   // we rewrite the mutate function to update the cache instead
   const mutate = useCallback<MutatePromise<Awaited<ReturnType<T>> | U>>(
     async (asyncUpdate, options) => {
       let dataBeforeOptimisticUpdate;
+      let mutationData = latestData.current;
       try {
         if (options?.optimisticUpdate) {
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
@@ -226,43 +235,48 @@ export function useCachedPromise<
             // but only if we need it (eg. only when we want to automatically rollback after)
             dataBeforeOptimisticUpdate = structuredClone(latestData.current);
           }
-          const data = options.optimisticUpdate(latestData.current);
-          lastUpdateFrom.current = "cache";
+          const data = options.optimisticUpdate(mutationData);
+          mutationData = data;
+          lastUpdateFrom.current = { cacheKey, source: "cache" };
           laggyDataRef.current = data;
           mutateCache(data);
         }
         return await _mutate(asyncUpdate, { shouldRevalidateAfter: options?.shouldRevalidateAfter });
       } catch (err) {
         if (typeof options?.rollbackOnError === "function") {
-          const data = options.rollbackOnError(latestData.current);
-          lastUpdateFrom.current = "cache";
-          laggyDataRef.current = data;
+          const data = options.rollbackOnError(mutationData);
+          if (latestCacheKey.current === cacheKey) {
+            lastUpdateFrom.current = { cacheKey, source: "cache" };
+            laggyDataRef.current = data;
+          }
           mutateCache(data);
         } else if (options?.optimisticUpdate && options?.rollbackOnError !== false) {
-          lastUpdateFrom.current = "cache";
-          // @ts-expect-error when undefined, it's expected
-          laggyDataRef.current = dataBeforeOptimisticUpdate;
+          if (latestCacheKey.current === cacheKey) {
+            lastUpdateFrom.current = { cacheKey, source: "cache" };
+            // @ts-expect-error when undefined, it's expected
+            laggyDataRef.current = dataBeforeOptimisticUpdate;
+          }
           // @ts-expect-error when undefined, it's expected
           mutateCache(dataBeforeOptimisticUpdate);
         }
         throw err;
       }
     },
-    [mutateCache, _mutate, latestData, laggyDataRef, lastUpdateFrom],
+    [cacheKey, mutateCache, _mutate, latestData, latestCacheKey, laggyDataRef, lastUpdateFrom],
   );
 
   useEffect(() => {
     if (cachedData !== emptyCache) {
-      lastUpdateFrom.current = "cache";
+      lastUpdateFrom.current = { cacheKey, source: "cache" };
       laggyDataRef.current = cachedData;
     }
-  }, [cachedData]);
+  }, [cacheKey, cachedData]);
 
   return {
     data: returnedData,
     isLoading: state.isLoading,
     error: state.error,
-    mutate: paginationArgsRef.current && paginationArgsRef.current.page > 0 ? _mutate : mutate,
+    mutate: currentPaginationArgs && currentPaginationArgs.page > 0 ? _mutate : mutate,
     pagination,
     revalidate,
   };

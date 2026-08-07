@@ -1,6 +1,7 @@
 import { environment } from "@raycast/api";
 import { createReadStream, createWriteStream, mkdirSync, Stats } from "node:fs";
-import { stat } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { rename, rm, stat } from "node:fs/promises";
 import { join, normalize } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { useRef } from "react";
@@ -14,21 +15,29 @@ import { hash } from "./helpers";
 type RequestInfo = string | URL | globalThis.Request;
 
 async function cache(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
-  if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
-    return await cacheURL(url, destination, fetchOptions);
-  } else if (url.startsWith("file://")) {
-    return await cacheFile(
-      normalize(decodeURIComponent(new URL(url).pathname)),
-      destination,
-      fetchOptions?.signal ? fetchOptions.signal : undefined,
-    );
-  } else {
-    throw new Error("Only HTTP(S) or file URLs are supported");
+  const temporaryDestination = `${destination}.${randomUUID()}.tmp`;
+  try {
+    if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
+      await cacheURL(url, temporaryDestination, fetchOptions);
+    } else if (url.startsWith("file://")) {
+      await cacheFile(
+        normalize(decodeURIComponent(new URL(url).pathname)),
+        temporaryDestination,
+        fetchOptions?.signal ? fetchOptions.signal : undefined,
+      );
+    } else {
+      throw new Error("Only HTTP(S) or file URLs are supported");
+    }
+    await rename(temporaryDestination, destination);
+  } catch (error) {
+    await rm(temporaryDestination, { force: true }).catch(() => undefined);
+    throw error;
   }
 }
 
 async function cacheURL(url: RequestInfo, destination: string, fetchOptions?: RequestInit) {
-  const response = await fetch(url, fetchOptions);
+  const request = url instanceof Request ? url.clone() : url;
+  const response = await fetch(request, fetchOptions);
 
   if (!response.ok) {
     throw new Error("Failed to fetch URL");
@@ -85,7 +94,15 @@ async function cacheURLIfNecessary(
   }
 
   if (typeof url === "object" || url.startsWith("http://") || url.startsWith("https://")) {
-    const headResponse = await fetch(url, { ...fetchOptions, method: "HEAD" });
+    const method = (fetchOptions?.method || (url instanceof Request ? url.method : "GET")).toUpperCase();
+    const hasBody = fetchOptions?.body != null || (url instanceof Request && url.body !== null);
+    if ((method !== "GET" && method !== "HEAD") || hasBody) {
+      await cache(url, destination, fetchOptions);
+      return;
+    }
+
+    const request = url instanceof Request ? url.clone() : url;
+    const headResponse = await fetch(request, { ...fetchOptions, method: "HEAD", body: undefined });
     if (!headResponse.ok) {
       throw new Error("Could not fetch URL");
     }
@@ -127,7 +144,6 @@ async function* streamJsonFile<T>(
     createReadStream(filePath),
     dataPath ? PickParser({ filter: dataPath }) : parser(),
     StreamArray(),
-    (data: any) => transformFn?.(data.value) ?? data.value,
   ]);
 
   abortSignal?.addEventListener("abort", () => {
@@ -139,12 +155,19 @@ async function* streamJsonFile<T>(
       if (abortSignal?.aborted) {
         return [];
       }
-      if (!filterFn || filterFn(data)) {
-        page.push(data);
-      }
-      if (page.length >= pageSize) {
-        yield page;
-        page = [] as T extends unknown[] ? T : T[];
+
+      const transformedData = transformFn ? transformFn(data.value) : data.value;
+      const items = (
+        transformFn && Array.isArray(transformedData) ? transformedData : [transformedData]
+      ) as Flatten<T>[];
+      for (const item of items) {
+        if (!filterFn || filterFn(item)) {
+          (page as Flatten<T>[]).push(item);
+        }
+        if (page.length >= pageSize) {
+          yield page;
+          page = [] as T extends unknown[] ? T : T[];
+        }
       }
     }
   } catch (e) {
@@ -385,6 +408,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
 ): UseCachedPromiseReturnType<T extends unknown[] ? T : T[], U> {
   const {
     initialData,
+    cacheWriteDebounce,
     execute,
     keepPreviousData,
     onError,
@@ -402,6 +426,7 @@ export function useStreamJSON<T, U extends any[] = any[]>(
 
   const useCachedPromiseOptions: CachedPromiseOptions<FunctionReturningPaginatedPromise, U> = {
     initialData,
+    cacheWriteDebounce,
     execute,
     keepPreviousData,
     onError,
@@ -435,9 +460,9 @@ export function useStreamJSON<T, U extends any[] = any[]>(
            */
           const forceCacheUpdate = Boolean(
             previousUrl.current &&
-              previousUrl.current !== url &&
-              previousDestination.current &&
-              previousDestination.current === destination,
+            previousUrl.current !== url &&
+            previousDestination.current &&
+            previousDestination.current === destination,
           );
           previousUrl.current = url;
           previousDestination.current = destination;

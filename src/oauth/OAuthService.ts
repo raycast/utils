@@ -157,7 +157,7 @@ export class OAuthService implements OAuthServiceOptions {
       clientId: options.clientId,
       authorizeUrl: options.authorizeUrl ?? "https://accounts.google.com/o/oauth2/v2/auth",
       tokenUrl: options.tokenUrl ?? "https://oauth2.googleapis.com/token",
-      refreshTokenUrl: options.tokenUrl,
+      refreshTokenUrl: options.refreshTokenUrl ?? options.tokenUrl,
       scope: options.scope,
       personalAccessToken: options.personalAccessToken,
       bodyEncoding: options.bodyEncoding ?? "url-encoded",
@@ -267,7 +267,7 @@ export class OAuthService implements OAuthServiceOptions {
       clientId: options.clientId ?? PROVIDER_CLIENT_IDS.slack,
       authorizeUrl: options.authorizeUrl ?? "https://slack.oauth.raycast.com/authorize",
       tokenUrl: options.tokenUrl ?? "https://slack.oauth.raycast.com/token",
-      refreshTokenUrl: options.tokenUrl ?? "https://slack.oauth.raycast.com/refresh-token",
+      refreshTokenUrl: options.refreshTokenUrl ?? options.tokenUrl ?? "https://slack.oauth.raycast.com/refresh-token",
       scope: "",
       extraParameters: {
         user_scope: options.scope,
@@ -330,9 +330,9 @@ export class OAuthService implements OAuthServiceOptions {
    * If the current token set has a refresh token and it is expired, then the function will refresh the tokens.
    * If no tokens exist, it will initiate the OAuth authorization process and fetch the tokens.
    *
-   * @returns {Promise<string>} A promise that resolves with the access token obtained from the authorization flow, or null if the token could not be obtained.
+   * @returns {Promise<string>} A promise that resolves with the access token obtained from the authorization flow.
    */
-  async authorize() {
+  async authorize(): Promise<string> {
     const currentTokenSet = await this.client.getTokens();
     if (currentTokenSet?.accessToken) {
       if (currentTokenSet.refreshToken && currentTokenSet.isExpired()) {
@@ -345,6 +345,7 @@ export class OAuthService implements OAuthServiceOptions {
           await this.client.setTokens(tokens);
           return tokens.access_token;
         }
+        return this.authorize();
       }
       return currentTokenSet.accessToken;
     }
@@ -435,7 +436,7 @@ export class OAuthService implements OAuthServiceOptions {
       // If the refresh token is invalid, stop the flow here, log out the user and prompt them to re-authorize.
       this.client.description = `${this.client.providerName} needs you to sign-in again. Press ⏎ or click the button below to continue.`;
       await this.client.removeTokens();
-      await this.authorize();
+      return;
     } else {
       const tokenResponse = this.tokenRefreshResponseParser(await response.json());
       tokenResponse.refresh_token = tokenResponse.refresh_token ?? token;

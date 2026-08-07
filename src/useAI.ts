@@ -39,20 +39,27 @@ export function useAI(
   const { creativity, stream, model, ...usePromiseOptions } = options;
   const [data, setData] = useState("");
   const abortable = useRef<AbortController>(null);
+  const requestIdRef = useRef(0);
   const { isLoading, error, revalidate } = usePromise(
-    async (prompt: string, creativity?: AI.Creativity, shouldStream?: boolean) => {
+    async (prompt: string, creativity?: AI.Creativity, shouldStream?: boolean, model?: AI.Model) => {
+      const requestId = ++requestIdRef.current;
       setData("");
       const stream = AI.ask(prompt, { creativity, model, signal: abortable.current?.signal });
       if (shouldStream === false) {
-        setData(await stream);
+        const result = await stream;
+        if (requestId === requestIdRef.current) {
+          setData(result);
+        }
       } else {
         stream.on("data", (data) => {
-          setData((x) => x + data);
+          if (requestId === requestIdRef.current) {
+            setData((x) => x + data);
+          }
         });
         await stream;
       }
     },
-    [prompt, creativity, stream],
+    [prompt, creativity, stream, model],
     { ...usePromiseOptions, abortable },
   );
 

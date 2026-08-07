@@ -1,7 +1,6 @@
 import { List, MenuBarExtra, Icon, open, LaunchType, environment, ActionPanel, Action } from "@raycast/api";
-import { existsSync } from "node:fs";
 import os from "node:os";
-import { useRef, useState, useCallback, useMemo } from "react";
+import { useRef, useState, useCallback } from "react";
 import { usePromise, PromiseOptions } from "./usePromise";
 import { useLatest } from "./useLatest";
 import { showFailureToast } from "./showFailureToast";
@@ -61,8 +60,9 @@ export function useSQL<T = unknown>(
       if (isPermissionError(error)) {
         setPermissionView(<PermissionErrorScreen priming={latestOptions.current.permissionPriming} />);
       } else {
+        setPermissionView(null);
         if (latestOptions.current.onError) {
-          latestOptions.current.onError(error);
+          return latestOptions.current.onError(error);
         } else {
           if (environment.launchType !== LaunchType.Background) {
             showFailureToast(error, {
@@ -75,19 +75,21 @@ export function useSQL<T = unknown>(
     [latestOptions],
   );
 
-  const fn = useMemo(() => {
-    if (!existsSync(databasePath)) {
-      throw new Error("The database does not exist");
-    }
+  const handleData = useCallback(
+    (data: T[]) => {
+      setPermissionView(null);
+      return latestOptions.current.onData?.(data);
+    },
+    [latestOptions],
+  );
 
-    return async (databasePath: string, query: string) => {
-      const abortSignal = abortable.current?.signal;
-      return baseExecuteSQL<T>(databasePath, query, { signal: abortSignal });
-    };
-  }, [databasePath]);
+  const fn = useCallback(async (databasePath: string, query: string) => {
+    const abortSignal = abortable.current?.signal;
+    return baseExecuteSQL<T>(databasePath, query, { signal: abortSignal });
+  }, []);
 
   return {
-    ...usePromise(fn, [databasePath, query], { ...usePromiseOptions, onError: handleError }),
+    ...usePromise(fn, [databasePath, query], { ...usePromiseOptions, onData: handleData, onError: handleError }),
     permissionView,
   };
 }
