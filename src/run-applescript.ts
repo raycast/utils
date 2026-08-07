@@ -61,7 +61,7 @@ export async function runAppleScript<T = string>(
   options?: AppleScriptOptions & {
     parseOutput?: ParseExecOutputHandler<T, string, AppleScriptOptions>;
   },
-): Promise<string>;
+): Promise<T>;
 export async function runAppleScript<T = string>(
   script: string,
   /**
@@ -71,7 +71,7 @@ export async function runAppleScript<T = string>(
   options?: AppleScriptOptions & {
     parseOutput?: ParseExecOutputHandler<T, string, AppleScriptOptions>;
   },
-): Promise<string>;
+): Promise<T>;
 export async function runAppleScript<T = string>(
   script: string,
   optionsOrArgs?:
@@ -82,12 +82,12 @@ export async function runAppleScript<T = string>(
   options?: AppleScriptOptions & {
     parseOutput?: ParseExecOutputHandler<T, string, AppleScriptOptions>;
   },
-): Promise<string> {
+): Promise<T> {
   if (process.platform !== "darwin") {
     throw new Error("AppleScript is only supported on macOS");
   }
 
-  const { humanReadableOutput, language, timeout, ...execOptions } = Array.isArray(optionsOrArgs)
+  const { humanReadableOutput, language, parseOutput, timeout, ...execOptions } = Array.isArray(optionsOrArgs)
     ? options || {}
     : optionsOrArgs || {};
 
@@ -116,7 +116,7 @@ export async function runAppleScript<T = string>(
   const stdout = handleOutput({ stripFinalNewline: true }, stdoutResult);
   const stderr = handleOutput({ stripFinalNewline: true }, stderrResult);
 
-  return defaultParsing({
+  return (parseOutput ?? defaultParsing)({
     stdout,
     stderr,
     error,
@@ -127,9 +127,9 @@ export async function runAppleScript<T = string>(
     options: {
       humanReadableOutput,
       language,
-      timeout: effectiveTimeout,
       ...execOptions,
+      timeout: effectiveTimeout,
     },
     parentError: new Error(),
-  });
+  }) as T;
 }

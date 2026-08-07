@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["./**/*", "../vitest.config.mts"],
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "rootDir": "..",
+    "types": ["node", "vitest/globals"]
+  }
+}

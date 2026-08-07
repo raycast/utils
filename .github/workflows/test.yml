@@ -5,12 +5,26 @@ on:
   pull_request:
     paths:
       - "src/**"
+      - "test/**"
       - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "eslint.config.js"
+      - "vitest.config.mts"
+      - ".github/workflows/test.yml"
     branches: [main, master]
   push:
     paths:
       - "src/**"
+      - "test/**"
       - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "eslint.config.js"
+      - "vitest.config.mts"
+      - ".github/workflows/test.yml"
     branches: [main, master]
 
 jobs:
@@ -21,18 +35,20 @@ jobs:
       - name: Checkout
         uses: raycast/github-actions/git-checkout@v1.13.0
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 22.14.0
+          node-version: 22.22.2
       - name: Npm Install
         run: npm ci
       - name: Npm Lint
+        run: npm run lint
+      - name: Npm Test
         run: npm run test
       - name: Build
         run: npm run build
       - name: Npm Install Tests
         run: npm ci
-        working-directory: ./tests
+        working-directory: ./smoke-tests
       - name: Build tests
         run: npm run build
-        working-directory: ./tests
+        working-directory: ./smoke-tests

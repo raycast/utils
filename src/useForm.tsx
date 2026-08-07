@@ -229,7 +229,7 @@ export function useForm<T extends Form.Values>(props: {
     (values?: Partial<T>) => {
       setErrors({});
       Object.entries(refs.current).forEach(([id, ref]) => {
-        if (!values?.[id]) {
+        if (!values || !Object.prototype.hasOwnProperty.call(values, id)) {
           ref?.reset();
         }
       });

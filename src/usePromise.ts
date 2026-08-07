@@ -174,40 +174,57 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
     (...args: Parameters<T>): Promise<UnwrapReturn<T>> => {
       const callId = abort();
 
-      latestOnWillExecute.current?.(args);
-
       set((prevState) => ({ ...prevState, isLoading: true }));
 
-      const promiseOrPaginatedPromise = bindPromiseIfNeeded(fnRef.current)(...args);
-
-      function handleError(error: any) {
-        if (error.name == "AbortError") {
-          return error;
+      async function handleError(error: unknown) {
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        if (normalizedError.name === "AbortError") {
+          return normalizedError;
         }
 
         if (callId === lastCallId.current) {
           // handle errors
           if (latestOnError.current) {
-            latestOnError.current(error);
+            try {
+              await latestOnError.current(normalizedError);
+            } catch (onErrorError) {
+              console.error("The onError callback failed", onErrorError);
+            }
           } else {
             if (environment.launchType !== LaunchType.Background) {
-              showFailureToast(error, {
-                title: "Failed to fetch latest data",
-                primaryAction: {
-                  title: "Retry",
-                  onAction(toast) {
-                    toast.hide();
-                    latestCallback.current?.(...((latestArgs.current || []) as Parameters<T>));
+              try {
+                await showFailureToast(normalizedError, {
+                  title: "Failed to fetch latest data",
+                  primaryAction: {
+                    title: "Retry",
+                    onAction(toast) {
+                      toast.hide();
+                      latestCallback.current?.(...((latestArgs.current || []) as Parameters<T>));
+                    },
                   },
-                },
-                ...latestFailureToast.current,
-              });
+                  ...latestFailureToast.current,
+                });
+              } catch (toastError) {
+                console.error("Failed to show the error toast", toastError);
+              }
             }
           }
-          set({ error, isLoading: false });
+          if (callId === lastCallId.current) {
+            set({ error: normalizedError, isLoading: false });
+          }
         }
 
-        return error;
+        return normalizedError;
+      }
+
+      let promiseOrPaginatedPromise: ReturnType<FunctionReturningPromise | FunctionReturningPaginatedPromise>;
+      try {
+        latestOnWillExecute.current?.(args);
+        promiseOrPaginatedPromise = bindPromiseIfNeeded(fnRef.current)(...args) as ReturnType<
+          FunctionReturningPromise | FunctionReturningPaginatedPromise
+        >;
+      } catch (error) {
+        return handleError(error) as Promise<UnwrapReturn<T>>;
       }
 
       if (typeof promiseOrPaginatedPromise === "function") {
@@ -221,8 +238,11 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
                 paginationArgsRef.current.lastItem = data?.[data.length - 1];
               }
 
-              if (latestOnData.current) {
-                latestOnData.current(data, paginationArgsRef.current);
+              try {
+                const onDataResult = latestOnData.current?.(data, paginationArgsRef.current);
+                void Promise.resolve(onDataResult).catch((error) => console.error("The onData callback failed", error));
+              } catch (error) {
+                console.error("The onData callback failed", error);
               }
 
               if (hasMore) {
@@ -251,8 +271,11 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
       usePaginationRef.current = false;
       return promiseOrPaginatedPromise.then((data: UnwrapReturn<T>) => {
         if (callId === lastCallId.current) {
-          if (latestOnData.current) {
-            latestOnData.current(data);
+          try {
+            const onDataResult = latestOnData.current?.(data);
+            void Promise.resolve(onDataResult).catch((error) => console.error("The onData callback failed", error));
+          } catch (error) {
+            console.error("The onData callback failed", error);
           }
           set({ data, isLoading: false });
         }
@@ -295,7 +318,7 @@ export function usePromise<T extends FunctionReturningPromise | FunctionReturnin
           if (typeof options?.rollbackOnError !== "function" && options?.rollbackOnError !== false) {
             // keep track of the data before the optimistic update,
             // but only if we need it (eg. only when we want to automatically rollback after)
-            dataBeforeOptimisticUpdate = structuredClone(latestValue.current?.value);
+            dataBeforeOptimisticUpdate = structuredClone(latestValue.current);
           }
           const update = options.optimisticUpdate;
           set((prevState) => ({ ...prevState, data: update(prevState.data) }));

@@ -67,7 +67,7 @@ export function typeHasher(
 
       if (Buffer.isBuffer(object)) {
         write("buffer:");
-        return write(object.toString("utf8"));
+        return write(object.toString("base64"));
       }
 
       if (objType !== "object" && objType !== "function" && objType !== "asyncfunction") {
@@ -240,12 +240,42 @@ export function typeHasher(
       write("file:");
       this.dispatch([file.name, file.size, file.type, file.lastModified]);
     },
-    _blob: function () {
-      throw Error(
-        "Hashing Blob objects is currently not supported\n" +
-          "(see https://github.com/puleos/object-hash/issues/26)\n" +
-          'Use "options.replacer" or "options.ignoreUnknown"\n',
-      );
+    _blob: function (blob: Blob) {
+      write("blob:");
+      this.dispatch([blob.size, blob.type]);
+    },
+    _headers: function (headers: Headers) {
+      write("headers:");
+      this.dispatch(Array.from(headers.entries()).sort(([left], [right]) => left.localeCompare(right)));
+    },
+    _request: function (request: Request) {
+      write("request:");
+      this.dispatch({
+        cache: request.cache,
+        credentials: request.credentials,
+        hasBody: request.body !== null,
+        headers: request.headers,
+        integrity: request.integrity,
+        method: request.method,
+        mode: request.mode,
+        redirect: request.redirect,
+        referrer: request.referrer,
+        referrerPolicy: request.referrerPolicy,
+        url: request.url,
+      });
+    },
+    _abortsignal: function (signal: AbortSignal) {
+      write("abortsignal:");
+      this.dispatch([signal.aborted, signal.aborted ? String(signal.reason) : undefined]);
+    },
+    _formdata: function (formData: FormData) {
+      write("formdata:");
+      this.dispatch(Array.from(formData.entries()));
+    },
+    _readablestream: function () {
+      // Stream contents cannot be read synchronously without consuming them. The marker still
+      // makes stream-bearing values hashable; callers that need content identity must add it.
+      write("readablestream");
     },
     _domwindow: function () {
       write("domwindow");

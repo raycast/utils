@@ -22,13 +22,9 @@ const VISIT_TYPE_POINTS = {
 
 function getNewFrecency(item?: Frecency): Frecency {
   const now = Date.now();
-  const lastVisited = item ? item.lastVisited : 0;
-  const frecency = item ? item.frecency : 0;
-
-  const visitAgeInDays = (now - lastVisited) / MS_PER_DAY;
-  const DECAY_RATE_CONSTANT = Math.log(2) / (HALF_LIFE_DAYS * MS_PER_DAY);
-  const currentVisitValue = VISIT_TYPE_POINTS.Default * Math.exp(-DECAY_RATE_CONSTANT * visitAgeInDays);
-  const totalVisitValue = frecency + currentVisitValue;
+  const visitAgeInDays = item ? (now - item.lastVisited) / MS_PER_DAY : 0;
+  const decay = Math.exp(-(Math.log(2) / HALF_LIFE_DAYS) * visitAgeInDays);
+  const totalVisitValue = (item?.frecency ?? 0) * decay + VISIT_TYPE_POINTS.Default;
 
   return {
     lastVisited: now,
@@ -148,7 +144,7 @@ export function useFrecencySorting<T>(
       return [];
     }
 
-    return data.sort((a, b) => {
+    return [...data].sort((a, b) => {
       const frecencyA = storedFrecencies[keyRef.current(a)];
       const frecencyB = storedFrecencies[keyRef.current(b)];
 

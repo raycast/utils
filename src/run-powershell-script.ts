@@ -46,19 +46,20 @@ export async function runPowerShellScript<T = string>(
   options?: PowerShellScriptOptions & {
     parseOutput?: ParseExecOutputHandler<T, string, PowerShellScriptOptions>;
   },
-): Promise<string> {
+): Promise<T> {
   if (process.platform !== "win32") {
     throw new Error("PowerShell is only supported on Windows");
   }
 
-  const { timeout, ...execOptions } = options || {};
+  const { parseOutput, timeout, ...execOptions } = options || {};
 
   const outputArguments = ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "-"];
 
   const spawned = childProcess.spawn("powershell.exe", outputArguments, {
     ...execOptions,
   });
-  const spawnedPromise = getSpawnedPromise(spawned, { timeout: timeout ?? 10000 });
+  const effectiveTimeout = timeout ?? 10000;
+  const spawnedPromise = getSpawnedPromise(spawned, { timeout: effectiveTimeout });
 
   spawned.stdin.end(script);
 
@@ -70,7 +71,7 @@ export async function runPowerShellScript<T = string>(
   const stdout = handleOutput({ stripFinalNewline: true }, stdoutResult);
   const stderr = handleOutput({ stripFinalNewline: true }, stderrResult);
 
-  return defaultParsing({
+  return (parseOutput ?? defaultParsing)({
     stdout,
     stderr,
     error,
@@ -78,7 +79,7 @@ export async function runPowerShellScript<T = string>(
     signal,
     timedOut,
     command: "powershell.exe",
-    options,
+    options: { ...execOptions, timeout: effectiveTimeout },
     parentError: new Error(),
-  });
+  }) as T;
 }

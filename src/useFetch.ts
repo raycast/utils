@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCachedPromise, CachedPromiseOptions } from "./useCachedPromise";
 import { useLatest } from "./useLatest";
 import { FunctionReturningPaginatedPromise, FunctionReturningPromise, UseCachedPromiseReturnType } from "./types";
@@ -24,6 +24,47 @@ function defaultMapping<V, T extends unknown[]>(result: V): { data: T; hasMore?:
 
 type RequestInfo = string | URL | globalThis.Request;
 type PaginatedRequestInfo = (pagination: { page: number; lastItem?: any; cursor?: any }) => RequestInfo;
+
+async function getRequestInfoCacheKey(requestInfo: RequestInfo) {
+  if (typeof requestInfo === "string" || requestInfo instanceof URL) {
+    return requestInfo.toString();
+  }
+
+  const body = requestInfo.body === null ? undefined : new Uint8Array(await requestInfo.clone().arrayBuffer());
+
+  return hash({
+    body,
+    cache: requestInfo.cache,
+    credentials: requestInfo.credentials,
+    headers: Array.from(requestInfo.headers.entries()),
+    integrity: requestInfo.integrity,
+    method: requestInfo.method,
+    mode: requestInfo.mode,
+    redirect: requestInfo.redirect,
+    referrer: requestInfo.referrer,
+    referrerPolicy: requestInfo.referrerPolicy,
+    url: requestInfo.url,
+  });
+}
+
+function getUrlFactoryErrorCacheKey(url: PaginatedRequestInfo, error: unknown) {
+  // The error itself can be recreated with a different identity or message on every call. Keying the failed state by
+  // the factory implementation keeps inline factories stable across error-state renders while still distinguishing
+  // factories with different implementations.
+  const normalizedError = error instanceof Error ? { name: error.name, message: error.message } : String(error);
+  return `url-factory-error:${hash([url.toString(), normalizedError])}`;
+}
+
+function combineAbortSignals(...signals: Array<AbortSignal | null | undefined>) {
+  const definedSignals = signals.filter((signal): signal is AbortSignal => Boolean(signal));
+  if (definedSignals.length === 0) {
+    return undefined;
+  }
+  if (definedSignals.length === 1) {
+    return definedSignals[0];
+  }
+  return AbortSignal.any(definedSignals);
+}
 
 /**
  * Fetches the paginatedURL and returns the {@link AsyncState} corresponding to the execution of the fetch. The last value will be kept between command runs.
@@ -121,6 +162,7 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
     parseResponse,
     mapResult,
     initialData,
+    cacheWriteDebounce,
     execute,
     keepPreviousData,
     onError,
@@ -132,6 +174,7 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
 
   const useCachedPromiseOptions: CachedPromiseOptions<(url: RequestInfo, options?: RequestInit) => Promise<T>, U> = {
     initialData,
+    cacheWriteDebounce,
     execute,
     keepPreviousData,
     onError,
@@ -142,22 +185,113 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
 
   const parseResponseRef = useLatest(parseResponse || defaultParsing);
   const mapResultRef = useLatest(mapResult || defaultMapping);
-  const urlRef = useRef<RequestInfo | PaginatedRequestInfo>(null);
-  const firstPageUrlRef = useRef<RequestInfo | undefined>(null);
-  const firstPageUrl = typeof url === "function" ? url({ page: 0 }) : undefined;
-  /**
-   * When paginating, `url` is a `PaginatedRequestInfo`, so we only want to update the ref when the `firstPageUrl` changes.
-   * When not paginating, `url` is a `RequestInfo`, so we want to update the ref whenever `url` changes.
-   */
-  if (!urlRef.current || typeof firstPageUrlRef.current === "undefined" || firstPageUrlRef.current !== firstPageUrl) {
-    urlRef.current = url;
-  }
-  firstPageUrlRef.current = firstPageUrl;
+  const isPaginated = typeof url === "function";
+  const paginatedUrlRef = useRef<PaginatedRequestInfo>(null);
+  const firstPageErrorRef = useRef<{ error: unknown }>(null);
+  const [paginatedRequest, setPaginatedRequest] = useState<{
+    cacheKey: string;
+    requestInfo: PaginatedRequestInfo;
+  } | null>(null);
+  const [resolvedRequest, setResolvedRequest] = useState<{ request: Request; cacheKey: string } | null>(null);
+
+  // Resolve the first page after render. The wrapper below stays referentially stable until that page's cache key
+  // changes, so inline URL factories don't revalidate again when the request updates this hook's own state.
+  useEffect(() => {
+    if (!isPaginated || execute === false) {
+      paginatedUrlRef.current = null;
+      firstPageErrorRef.current = null;
+      setPaginatedRequest(null);
+      return;
+    }
+
+    const paginatedUrl = url as PaginatedRequestInfo;
+    paginatedUrlRef.current = paginatedUrl;
+
+    let cancelled = false;
+    void (async () => {
+      let cacheKey: string;
+      let firstPageError: { error: unknown } | null = null;
+      try {
+        const requestInfo = paginatedUrl({ page: 0 });
+        cacheKey = await getRequestInfoCacheKey(requestInfo);
+      } catch (error) {
+        firstPageError = { error };
+        cacheKey = getUrlFactoryErrorCacheKey(paginatedUrl, error);
+      }
+
+      if (cancelled) {
+        return;
+      }
+      firstPageErrorRef.current = firstPageError;
+
+      setPaginatedRequest((previous) => {
+        if (previous?.cacheKey === cacheKey) {
+          return previous;
+        }
+
+        return {
+          cacheKey,
+          requestInfo(pagination) {
+            const currentUrl = paginatedUrlRef.current;
+            if (!currentUrl) {
+              throw new Error("The paginated URL factory is not ready");
+            }
+
+            if (pagination.page === 0) {
+              const firstPageError = firstPageErrorRef.current;
+              if (firstPageError) {
+                throw firstPageError.error;
+              }
+            }
+
+            return currentUrl(pagination);
+          },
+        };
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [execute, isPaginated, url]);
+
+  useEffect(() => {
+    if (isPaginated || execute === false || !(url instanceof Request)) {
+      setResolvedRequest(null);
+      return;
+    }
+
+    let cancelled = false;
+    void getRequestInfoCacheKey(url).then(
+      (cacheKey) => {
+        if (!cancelled) {
+          setResolvedRequest({ request: url, cacheKey });
+        }
+      },
+      (error) => {
+        if (!cancelled) {
+          setResolvedRequest({ request: url, cacheKey: `request-error:${hash(String(error))}` });
+        }
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [execute, isPaginated, url]);
+
   const abortable = useRef<AbortController>(null);
 
   const paginatedFn: FunctionReturningPaginatedPromise<[PaginatedRequestInfo, typeof fetchOptions], T> = useCallback(
     (url: PaginatedRequestInfo, options?: RequestInit) => async (pagination: { page: number }) => {
-      const res = await fetch(url(pagination), { signal: abortable.current?.signal, ...options });
+      const requestInfo = url(pagination);
+      const request = requestInfo instanceof Request ? requestInfo.clone() : requestInfo;
+      const signal = combineAbortSignals(
+        abortable.current?.signal,
+        options?.signal,
+        requestInfo instanceof Request ? requestInfo.signal : undefined,
+      );
+      const res = await fetch(request, { ...options, signal });
       const parsed = (await parseResponseRef.current(res)) as V;
       return mapResultRef.current?.(parsed);
     },
@@ -165,7 +299,13 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
   );
   const fn: FunctionReturningPromise<[RequestInfo, RequestInit?], T> = useCallback(
     async (url: RequestInfo, options?: RequestInit) => {
-      const res = await fetch(url, { signal: abortable.current?.signal, ...options });
+      const request = url instanceof Request ? url.clone() : url;
+      const signal = combineAbortSignals(
+        abortable.current?.signal,
+        options?.signal,
+        url instanceof Request ? url.signal : undefined,
+      );
+      const res = await fetch(request, { ...options, signal });
       const parsed = (await parseResponseRef.current(res)) as V;
       const mapped = mapResultRef.current(parsed);
       return mapped?.data as unknown as T;
@@ -174,16 +314,31 @@ export function useFetch<V = unknown, U = undefined, T extends unknown[] = unkno
   );
 
   const promise = useMemo(() => {
-    if (firstPageUrlRef.current) {
+    if (isPaginated) {
       return paginatedFn;
     }
     return fn;
-  }, [firstPageUrlRef, fn, paginatedFn]);
+  }, [isPaginated, fn, paginatedFn]);
+
+  const requestInfo = isPaginated ? paginatedRequest?.requestInfo : url;
+  const requestCacheKey =
+    !isPaginated && url instanceof Request && resolvedRequest?.request === url ? resolvedRequest.cacheKey : null;
+  const isResolvingRequestCacheKey = !isPaginated && url instanceof Request && execute !== false && !requestCacheKey;
 
   // @ts-expect-error lastItem can't be inferred properly
-  return useCachedPromise(promise, [urlRef.current as PaginatedRequestInfo, fetchOptions], {
+  const result = useCachedPromise(promise, [requestInfo, fetchOptions], {
     ...useCachedPromiseOptions,
-    internal_cacheKeySuffix: firstPageUrlRef.current + hash(mapResultRef.current) + hash(parseResponseRef.current),
+    execute: isPaginated ? execute !== false && paginatedRequest !== null : !isResolvingRequestCacheKey && execute,
+    internal_cacheKeySuffix:
+      (isPaginated ? paginatedRequest?.cacheKey : requestCacheKey || "") +
+      hash(mapResultRef.current) +
+      hash(parseResponseRef.current),
     abortable,
-  });
+  }) as UseCachedPromiseReturnType<T, U>;
+
+  if ((isPaginated && execute !== false && paginatedRequest === null) || isResolvingRequestCacheKey) {
+    return { ...result, isLoading: true } as UseCachedPromiseReturnType<T, U>;
+  }
+
+  return result;
 }

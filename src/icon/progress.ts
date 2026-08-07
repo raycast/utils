@@ -40,7 +40,7 @@ export function getProgressIcon(
   options?: { background?: Color | string; backgroundOpacity?: number },
 ): Image.Asset {
   const background = options?.background || (environment.appearance === "light" ? "black" : "white");
-  const backgroundOpacity = options?.backgroundOpacity || 0.1;
+  const backgroundOpacity = options?.backgroundOpacity ?? 0.1;
 
   const stroke = 10;
   const padding = 5;

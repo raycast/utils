@@ -176,6 +176,7 @@ export function useExec<T, U = undefined>(
     onData,
     onWillExecute,
     initialData,
+    cacheWriteDebounce,
     execute,
     keepPreviousData,
     onError,
@@ -185,6 +186,7 @@ export function useExec<T, U = undefined>(
 
   const useCachedPromiseOptions: ExecCachedPromiseOptions<T, U> = {
     initialData,
+    cacheWriteDebounce,
     execute,
     keepPreviousData,
     onError,
@@ -204,7 +206,7 @@ export function useExec<T, U = undefined>(
       const options = {
         stripFinalNewline: true,
         ..._options,
-        timeout: _options?.timeout || 10000,
+        timeout: _options?.timeout ?? 10000,
         signal: abortable.current?.signal,
         encoding: _options?.encoding === null ? "buffer" : _options?.encoding || "utf8",
         env: { PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", ...process.env, ..._options?.env },
@@ -213,9 +215,7 @@ export function useExec<T, U = undefined>(
       const spawned = childProcess.spawn(file, args, options);
       const spawnedPromise = getSpawnedPromise(spawned, options);
 
-      if (input) {
-        spawned.stdin.end(input);
-      }
+      spawned.stdin.end(input);
 
       const [{ error, exitCode, signal, timedOut }, stdoutResult, stderrResult] = await getSpawnedResult(
         spawned,
