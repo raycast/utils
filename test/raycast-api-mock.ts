@@ -56,4 +56,25 @@ export const Clipboard = { copy() {} };
 export function open() {}
 export async function showToast() {}
 
-export const OAuth = {};
+type PKCEClientOptions = {
+  redirectMethod: string;
+  providerName: string;
+  providerIcon?: unknown;
+  providerId?: string;
+  description?: string;
+};
+
+class MockPKCEClient {
+  options: PKCEClientOptions;
+
+  constructor(options: PKCEClientOptions) {
+    this.options = options;
+  }
+}
+
+export const OAuth = {
+  RedirectMethod: { Web: "web", App: "app", AppURI: "appURI" },
+  PKCEClient: MockPKCEClient,
+};
+
+export const Color = { PrimaryText: "raycast-primary-text" };
