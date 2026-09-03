@@ -25,6 +25,8 @@ export interface OAuthServiceOptions {
 
 type BaseProviderOptions = {
   scope: string;
+  providerId?: string;
+  extraParameters?: Record<string, string>;
   personalAccessToken?: string;
   authorizeUrl?: string;
   tokenUrl?: string;
