@@ -16,6 +16,10 @@ npm install --save @raycast/utils
 
 ## Changelog
 
+### v2.3.1
+
+- Allow overriding providerId and extraParameters in built-in OAuthService providers (Thanks @smorin!)
+
 ### v2.3.0
 
 - Added `cacheWriteDebounce` to `useCachedState`, `useCachedPromise`, `useFetch`, `useExec`, and `useStreamJSON`
