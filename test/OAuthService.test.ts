@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { OAuthService } from "../src/oauth/OAuthService";
 
-type MockedClient = { options: { providerId?: string; providerName?: string } };
+type MockedClient = { options: { providerId?: string; providerName: string; description?: string } };
 
 function clientOptions(service: OAuthService) {
   return (service.client as unknown as MockedClient).options;
@@ -46,24 +46,98 @@ describe("OAuthService built-in providers", () => {
     expect(service.extraParameters).toEqual({ audience: "api.atlassian.com" });
   });
 
-  // Table test: the change touches all seven providers — each must keep its default
-  // providerId when the option is omitted and accept an override when given.
-  const providers: Array<{ name: string; make: (extra?: object) => OAuthService }> = [
-    { name: "asana", make: (extra = {}) => OAuthService.asana({ scope: "default", ...extra }) },
-    { name: "github", make: (extra = {}) => OAuthService.github({ scope: "repo", ...extra }) },
-    { name: "google", make: (extra = {}) => OAuthService.google({ clientId: "cid", scope: "email", ...extra }) },
-    { name: "jira", make: (extra = {}) => OAuthService.jira({ clientId: "cid", scope: "read:jira-user", ...extra }) },
-    { name: "linear", make: (extra = {}) => OAuthService.linear({ scope: "read write", ...extra }) },
-    { name: "slack", make: (extra = {}) => OAuthService.slack({ scope: "emoji:read", ...extra }) },
-    { name: "zoom", make: (extra = {}) => OAuthService.zoom({ clientId: "cid", scope: "meeting:write", ...extra }) },
+  // Table tests cover all seven built-in providers so an omitted option always preserves
+  // the existing PKCE client metadata and each option can be overridden independently.
+  const providers: Array<{
+    id: string;
+    providerName: string;
+    description: string;
+    make: (extra?: object) => OAuthService;
+  }> = [
+    {
+      id: "asana",
+      providerName: "Asana",
+      description: "Connect your Asana account",
+      make: (extra = {}) => OAuthService.asana({ scope: "default", ...extra }),
+    },
+    {
+      id: "github",
+      providerName: "GitHub",
+      description: "Connect your GitHub account",
+      make: (extra = {}) => OAuthService.github({ scope: "repo", ...extra }),
+    },
+    {
+      id: "google",
+      providerName: "Google",
+      description: "Connect your Google account",
+      make: (extra = {}) => OAuthService.google({ clientId: "cid", scope: "email", ...extra }),
+    },
+    {
+      id: "jira",
+      providerName: "Jira",
+      description: "Connect your Jira account",
+      make: (extra = {}) => OAuthService.jira({ clientId: "cid", scope: "read:jira-user", ...extra }),
+    },
+    {
+      id: "linear",
+      providerName: "Linear",
+      description: "Connect your Linear account",
+      make: (extra = {}) => OAuthService.linear({ scope: "read write", ...extra }),
+    },
+    {
+      id: "slack",
+      providerName: "Slack",
+      description: "Connect your Slack account",
+      make: (extra = {}) => OAuthService.slack({ scope: "emoji:read", ...extra }),
+    },
+    {
+      id: "zoom",
+      providerName: "Zoom",
+      description: "Connect your Zoom account",
+      make: (extra = {}) => OAuthService.zoom({ clientId: "cid", scope: "meeting:write", ...extra }),
+    },
   ];
 
-  it.each(providers)("keeps the default providerId for $name and accepts an override", ({ name, make }) => {
-    expect(clientOptions(make()).providerId).toBe(name);
-    expect(clientOptions(make({ providerId: `${name}-second-account` })).providerId).toBe(`${name}-second-account`);
+  it.each(providers)("keeps the default PKCE client metadata for $id", ({ id, providerName, description, make }) => {
+    expect(clientOptions(make())).toMatchObject({ providerId: id, providerName, description });
   });
 
-  it.each(providers)("passes extraParameters through for $name without dropping provider defaults", ({ make }) => {
+  it.each(providers)("accepts custom PKCE client metadata for $id", ({ id, make }) => {
+    expect(
+      clientOptions(
+        make({
+          providerId: `${id}-second-account`,
+          providerName: "Work Account",
+          description: "Connect the work account",
+        }),
+      ),
+    ).toMatchObject({
+      providerId: `${id}-second-account`,
+      providerName: "Work Account",
+      description: "Connect the work account",
+    });
+  });
+
+  it.each(providers)(
+    "allows independent providerName and description overrides for $id",
+    ({ providerName, description, make }) => {
+      expect(clientOptions(make({ providerName: "Work Account" }))).toMatchObject({
+        providerName: "Work Account",
+        description,
+      });
+      expect(clientOptions(make({ description: "Connect the work account" }))).toMatchObject({
+        providerName,
+        description: "Connect the work account",
+      });
+    },
+  );
+
+  it.each(providers)("keeps the default providerId for $id and accepts an override", ({ id, make }) => {
+    expect(clientOptions(make()).providerId).toBe(id);
+    expect(clientOptions(make({ providerId: `${id}-second-account` })).providerId).toBe(`${id}-second-account`);
+  });
+
+  it.each(providers)("passes extraParameters through for $id without dropping provider defaults", ({ make }) => {
     const service = make({ extraParameters: { custom_param: "x" } });
     expect(service.extraParameters).toMatchObject({ custom_param: "x" });
   });
