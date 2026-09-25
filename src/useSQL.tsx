@@ -89,7 +89,7 @@ export function useSQL<T = unknown>(
   }, []);
 
   return {
-    ...usePromise(fn, [databasePath, query], { ...usePromiseOptions, onData: handleData, onError: handleError }),
+    ...usePromise(fn, [databasePath, query], { ...usePromiseOptions, abortable, onData: handleData, onError: handleError }),
     permissionView,
   };
 }
