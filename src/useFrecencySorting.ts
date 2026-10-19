@@ -20,11 +20,18 @@ const VISIT_TYPE_POINTS = {
   Bookmark: 140,
 };
 
+function getDecayedFrecency(item: Frecency | undefined, now: number): number {
+  if (!item) {
+    return 0;
+  }
+  const visitAgeInDays = (now - item.lastVisited) / MS_PER_DAY;
+  const decay = Math.exp(-(Math.log(2) / HALF_LIFE_DAYS) * visitAgeInDays);
+  return item.frecency * decay;
+}
+
 function getNewFrecency(item?: Frecency): Frecency {
   const now = Date.now();
-  const visitAgeInDays = item ? (now - item.lastVisited) / MS_PER_DAY : 0;
-  const decay = Math.exp(-(Math.log(2) / HALF_LIFE_DAYS) * visitAgeInDays);
-  const totalVisitValue = (item?.frecency ?? 0) * decay + VISIT_TYPE_POINTS.Default;
+  const totalVisitValue = getDecayedFrecency(item, now) + VISIT_TYPE_POINTS.Default;
 
   return {
     lastVisited: now,
@@ -144,6 +151,8 @@ export function useFrecencySorting<T>(
       return [];
     }
 
+    const now = Date.now();
+
     return [...data].sort((a, b) => {
       const frecencyA = storedFrecencies[keyRef.current(a)];
       const frecencyB = storedFrecencies[keyRef.current(b)];
@@ -158,9 +167,10 @@ export function useFrecencySorting<T>(
         return 1;
       }
 
-      // If both frecencies are defined,put the one with the higher frecency first
+      // If both frecencies are defined, put the one with the higher frecency first.
+      // Scores are decayed to the same point in time so that old visits count less than recent ones.
       if (frecencyA && frecencyB) {
-        return frecencyB.frecency - frecencyA.frecency;
+        return getDecayedFrecency(frecencyB, now) - getDecayedFrecency(frecencyA, now);
       }
 
       // If both frecencies are undefined, keep the original order
