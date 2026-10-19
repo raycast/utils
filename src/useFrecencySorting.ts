@@ -2,17 +2,20 @@ import { useMemo, useCallback } from "react";
 import { useLatest } from "./useLatest";
 import { useCachedState } from "./useCachedState";
 
-// The algorithm below is inspired by the one used by Firefox:
+// The algorithm below is based on Mozilla's exponential-decay frecency proposal:
 // https://wiki.mozilla.org/User:Jesse/NewFrecency
 
-type Frecency = {
+type LegacyFrecency = {
   lastVisited: number;
   frecency: number;
 };
 
+type StoredFrecency = number | LegacyFrecency;
+
 const HALF_LIFE_DAYS = 10;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const HALF_LIFE_MS = HALF_LIFE_DAYS * MS_PER_DAY;
 
 const VISIT_TYPE_POINTS = {
   Default: 100,
@@ -20,16 +23,25 @@ const VISIT_TYPE_POINTS = {
   Bookmark: 140,
 };
 
-function getNewFrecency(item?: Frecency): Frecency {
+// Store the timestamp at which the decaying score reaches 1. Later timestamps
+// mean higher scores, so ranking only requires comparing the stored numbers.
+function getNewFrecency(rankTimestamp?: number): number {
   const now = Date.now();
-  const visitAgeInDays = item ? (now - item.lastVisited) / MS_PER_DAY : 0;
-  const decay = Math.exp(-(Math.log(2) / HALF_LIFE_DAYS) * visitAgeInDays);
-  const totalVisitValue = (item?.frecency ?? 0) * decay + VISIT_TYPE_POINTS.Default;
+  const currentScore = rankTimestamp === undefined ? 0 : 2 ** ((rankTimestamp - now) / HALF_LIFE_MS);
+  return now + HALF_LIFE_MS * Math.log2(currentScore + VISIT_TYPE_POINTS.Default);
+}
 
-  return {
-    lastVisited: now,
-    frecency: totalVisitValue,
-  };
+function normalizeFrecencies(
+  storedFrecencies: Record<string, StoredFrecency | undefined>,
+): Record<string, number | undefined> {
+  return Object.fromEntries(
+    Object.entries(storedFrecencies).map(([key, value]) => [
+      key,
+      typeof value === "number" || value === undefined
+        ? value
+        : value.lastVisited + HALF_LIFE_MS * Math.log2(value.frecency),
+    ]),
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,23 +115,24 @@ export function useFrecencySorting<T>(
   const keyRef = useLatest(options?.key || defaultKey);
   const sortUnvisitedRef = useLatest(options?.sortUnvisited);
 
-  const [storedFrecencies, setStoredFrecencies] = useCachedState<Record<string, Frecency | undefined>>(
+  const [storedFrecencies, setStoredFrecencies] = useCachedState<Record<string, StoredFrecency | undefined>>(
     `raycast_frecency_${options?.namespace}`,
     {},
   );
+
+  // Read legacy entries without writing on mount. The next visit or reset persists
+  // the normalized map using the latest cached state inside the updater.
+  const frecencies = useMemo(() => normalizeFrecencies(storedFrecencies), [storedFrecencies]);
 
   const visitItem = useCallback(
     async function updateFrecency(item: T) {
       const itemKey = keyRef.current(item);
 
       setStoredFrecencies((storedFrecencies) => {
-        const frecency = storedFrecencies[itemKey];
-        const newFrecency = getNewFrecency(frecency);
+        const frecencies = normalizeFrecencies(storedFrecencies);
+        frecencies[itemKey] = getNewFrecency(frecencies[itemKey]);
 
-        return {
-          ...storedFrecencies,
-          [itemKey]: newFrecency,
-        };
+        return frecencies;
       });
     },
     [keyRef, setStoredFrecencies],
@@ -130,10 +143,10 @@ export function useFrecencySorting<T>(
       const itemKey = keyRef.current(item);
 
       setStoredFrecencies((storedFrecencies) => {
-        const newFrencencies = { ...storedFrecencies };
-        delete newFrencencies[itemKey];
+        const frecencies = normalizeFrecencies(storedFrecencies);
+        delete frecencies[itemKey];
 
-        return newFrencencies;
+        return frecencies;
       });
     },
     [keyRef, setStoredFrecencies],
@@ -145,28 +158,28 @@ export function useFrecencySorting<T>(
     }
 
     return [...data].sort((a, b) => {
-      const frecencyA = storedFrecencies[keyRef.current(a)];
-      const frecencyB = storedFrecencies[keyRef.current(b)];
+      const frecencyA = frecencies[keyRef.current(a)];
+      const frecencyB = frecencies[keyRef.current(b)];
 
       // If a has a frecency, but b doesn't, a should come first
-      if (frecencyA && !frecencyB) {
+      if (frecencyA !== undefined && frecencyB === undefined) {
         return -1;
       }
 
       // If b has a frecency, but a doesn't, b should come first
-      if (!frecencyA && frecencyB) {
+      if (frecencyA === undefined && frecencyB !== undefined) {
         return 1;
       }
 
-      // If both frecencies are defined,put the one with the higher frecency first
-      if (frecencyA && frecencyB) {
-        return frecencyB.frecency - frecencyA.frecency;
+      // If both frecencies are defined, put the one with the higher frecency first
+      if (frecencyA !== undefined && frecencyB !== undefined) {
+        return frecencyB - frecencyA;
       }
 
       // If both frecencies are undefined, keep the original order
       return sortUnvisitedRef.current ? sortUnvisitedRef.current(a, b) : 0;
     });
-  }, [storedFrecencies, data, keyRef, sortUnvisitedRef]);
+  }, [frecencies, data, keyRef, sortUnvisitedRef]);
 
   return { data: sortedData, visitItem, resetRanking };
 }
