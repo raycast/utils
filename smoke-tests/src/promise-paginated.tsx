@@ -25,7 +25,7 @@ export default function Command() {
             <ActionPanel>
               <Action title="Reload" onAction={() => revalidate()} />
               <Action
-                title="Delete All Items But This One"
+                title="Delete All Items but This One"
                 onAction={async () => {
                   mutate(setTimeoutAsync(1000), {
                     optimisticUpdate: () => {
