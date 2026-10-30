@@ -117,7 +117,7 @@ export default function Main(): React.JSX.Element {
                 actions={
                   <ActionPanel>
                     <Action
-                      title="Delete All Items But This One"
+                      title="Delete All Items but This One"
                       onAction={async () => {
                         mutateCasks(setTimeout(5000), {
                           optimisticUpdate: () => {
@@ -145,7 +145,7 @@ export default function Main(): React.JSX.Element {
                 actions={
                   <ActionPanel>
                     <Action
-                      title="Delete All Items But This One"
+                      title="Delete All Items but This One"
                       onAction={async () => {
                         mutateFormulae(setTimeout(5000), {
                           optimisticUpdate: () => {
@@ -172,7 +172,7 @@ export default function Main(): React.JSX.Element {
                 actions={
                   <ActionPanel>
                     <Action
-                      title="Delete All Items But This One"
+                      title="Delete All Items but This One"
                       onAction={async () => {
                         mutateNestedData(setTimeout(5000), {
                           optimisticUpdate: () => {
